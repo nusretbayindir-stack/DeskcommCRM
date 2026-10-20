@@ -61,6 +61,11 @@ export const FUSOS_OFERECIDOS: { codigo: string; rotulo: string }[] = [
   { codigo: "America/Rio_Branco", rotulo: "Rio Branco (Brasil)" },
   { codigo: "Europe/Madrid", rotulo: "Madri (Espanha)" },
   { codigo: "Europe/Rome", rotulo: "Roma (Itália)" },
+  // Para quem opera da Bélgica e da Turquia. De Bruxelas, Madri acertava o
+  // relógio e errava o lugar; de Istambul não havia opção nenhuma — a lista não
+  // tinha um fuso UTC+3 sequer.
+  { codigo: "Europe/Brussels", rotulo: "Bruxelas (Bélgica)" },
+  { codigo: "Europe/Istanbul", rotulo: "Istambul (Turquia)" },
   { codigo: "America/New_York", rotulo: "Nova York (EUA)" },
   { codigo: "America/Los_Angeles", rotulo: "Los Angeles (EUA)" },
   { codigo: "UTC", rotulo: "UTC" },
@@ -85,6 +90,8 @@ export const FUSOS_DO_ONBOARDING: { id: string; cidade: string }[] = [
   { id: "Europe/Lisbon", cidade: "Lisboa" },
   { id: "Europe/Madrid", cidade: "Madri" },
   { id: "Europe/Rome", cidade: "Roma" },
+  { id: "Europe/Brussels", cidade: "Bruxelas" },
+  { id: "Europe/Istanbul", cidade: "Istambul" },
   { id: "America/New_York", cidade: "Nova York" },
   { id: "America/Los_Angeles", cidade: "Los Angeles" },
   { id: "UTC", cidade: "Outro (horário universal)" },
