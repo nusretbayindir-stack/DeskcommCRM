@@ -44,12 +44,16 @@ const PALAVRA_POR_IDIOMA: Record<string, string> = {
   // aprovadas pedem é BAJA, e ela está no conjunto por causa disso.
   es: "BAJA",
   en: "STOP",
+  // Em turco também STOP: o detector não tem palavra turca, e prometer uma que
+  // ele não reconhece seria a saída que não sai.
+  tr: "STOP",
 };
 
 const TEXTO_POR_IDIOMA: Record<string, (palavra: string) => string> = {
   pt: (p) => `Se não quiser mais receber mensagens, responda ${p}.`,
   es: (p) => `Si no querés recibir más mensajes, respondé ${p}.`,
   en: (p) => `If you'd rather not receive these messages, reply ${p}.`,
+  tr: (p) => `Artık mesaj almak istemiyorsanız ${p} yazın.`,
 };
 
 function raiz(locale: string | null | undefined): string {
