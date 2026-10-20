@@ -31,6 +31,7 @@
  * chave crua nem para erro. Uma tradução incompleta não pode deixar a tela pior
  * do que estava.
  */
+import { entradaDoCatalogo } from "./catalogos";
 import type { Idioma } from "./idiomas";
 
 /** `pt-BR` não aparece: é a chave. Só o que DIFERE precisa de linha. */
@@ -16223,5 +16224,5 @@ export const DICIONARIO: Traducoes = {
  */
 export function traduzir(texto: string, idioma: Idioma): string {
   if (idioma === "pt-BR") return texto;
-  return DICIONARIO[texto]?.[idioma] ?? texto;
+  return DICIONARIO[texto]?.[idioma] ?? entradaDoCatalogo(idioma, texto) ?? texto;
 }
