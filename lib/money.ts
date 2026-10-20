@@ -384,7 +384,7 @@ export function formatSomaPorMoeda(
  * ABERTO que a doutrina de modelagem descreve. O conjunto vive só aqui, no
  * TypeScript.
  *
- * As cinco têm subunidade de 2 casas, então nenhuma esbarra na ressalva de
+ * Todas têm subunidade de 2 casas, então nenhuma esbarra na ressalva de
  * unidades menores de `formatCents`. Acrescentar JPY ou CLP funciona — o
  * formatador já os cobre —, mas exige olhar `precoParaCentavos`, que ainda
  * multiplica por 100 na leitura do que a pessoa digita.
@@ -400,8 +400,12 @@ export function formatSomaPorMoeda(
  * zona euro. É o caso que a maximização não resolve (ver
  * `LOCALE_DA_MOEDA_SEM_PAIS`): sem a exceção, `formatCents(24990, "EUR")`
  * sairia `€249.90`, e a varredura de degradação deixaria passar.
+ *
+ * `TRY` (lira turca) entrou para quem vende na Turquia. Medido antes de entrar,
+ * como o kwanza: `formatCents(1234550, "TRY")` → `"₺12.345,50"` (a maximização
+ * leva `und-TR` a `tr-TR`) e `maximumFractionDigits` responde 2.
  */
-export const MOEDAS_SERVIDAS = ["AOA", "BRL", "EUR", "MXN", "USD"] as const;
+export const MOEDAS_SERVIDAS = ["AOA", "BRL", "EUR", "MXN", "TRY", "USD"] as const;
 export type MoedaServida = (typeof MOEDAS_SERVIDAS)[number];
 
 /** O que o `default` da coluna grava quando ninguém escolheu. */
