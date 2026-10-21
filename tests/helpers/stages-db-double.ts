@@ -500,15 +500,23 @@ export function comAutoria(
   return { ...patch, last_change_actor_kind: quem, last_change_at: expect.any(String) };
 }
 
-export function authOk(role: "manager" | "admin" = "manager"): void {
+/**
+ * `idioma` é o de quem está logado; `localeDaOrg`, o `organizations.locale` da
+ * organização ativa. Os dois existem separados porque divergem: a etapa é dado
+ * da empresa, e a mensagem de erro é de quem clicou.
+ */
+export function authOk(
+  role: "manager" | "admin" = "manager",
+  { idioma = "pt-BR", localeDaOrg = null }: { idioma?: AuthUser["idioma"]; localeDaOrg?: string | null } = {},
+): void {
   const user: AuthUser = {
     id: USER_ID,
     email: "a@example.com",
     full_name: null,
     avatar_url: null,
     is_platform_admin: false,
-    idioma: "pt-BR" as const,
-    organizations: [{ organization_id: ORG_ID, organization_name: "Org", role }],
+    idioma,
+    organizations: [{ organization_id: ORG_ID, organization_name: "Org", role, locale: localeDaOrg }],
   };
   vi.mocked(requireRole).mockResolvedValue({
     ok: true,
