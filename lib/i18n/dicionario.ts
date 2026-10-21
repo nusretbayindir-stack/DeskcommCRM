@@ -9383,6 +9383,12 @@ export const DICIONARIO: Traducoes = {
   "Disponibilidade de": { es: "Disponibilidad de" },
 
   // ─── Pipelines/Kanban: lista de funis, board, card, dossiê, diálogos ───
+  // O rodapé do card (`tempoNaEtapa`, lib/kanban/card-state.ts): frase inteira,
+  // porque cada idioma põe a etapa num lugar.
+  "{tempo} em {etapa}": { es: "{tempo} en {etapa}" },
+  "em {etapa}": { es: "en {etapa}" },
+  "{n}d": { es: "{n}d" },
+  "{n}h": { es: "{n}h" },
   "Não consegui completar essa ação. Tente de novo.": {
     es: "No pude completar esa acción. Intenta de nuevo.",
   },

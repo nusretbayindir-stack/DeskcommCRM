@@ -269,14 +269,38 @@ export function coolingLabel(
   return t("Sem resposta");
 }
 
-/** "3d" / "5h" / "agora" — o tempo parado no estágio, no rodapé do card. */
+/**
+ * "3d" / "5h" / "agora" — o tempo parado no estágio, no rodapé do card.
+ *
+ * A unidade é palavra do idioma (o turco escreve "3g" e "5sa"), por isso o
+ * número entra num modelo traduzido em vez de ganhar a letra colada.
+ */
 export function stageAgeLabel(
   hoursInStage: number | null,
   t: (texto: string) => string = (texto) => texto,
 ): string {
   if (hoursInStage == null) return "";
   const hours = Math.floor(hoursInStage);
-  if (hours >= 24) return `${Math.floor(hours / 24)}d`;
-  if (hours >= 1) return `${hours}h`;
+  if (hours >= 24) return t("{n}d").replace("{n}", String(Math.floor(hours / 24)));
+  if (hours >= 1) return t("{n}h").replace("{n}", String(hours));
   return t("agora");
+}
+
+/**
+ * A linha do rodapé: há quanto tempo o negócio está em qual etapa.
+ *
+ * Uma frase INTEIRA por caso, e não pedaços colados: `${idade} ${t("em")}
+ * ${etapa}` saía "şimdi içinde Novo" em turco, porque cada idioma põe a etapa
+ * num lugar. O nome da etapa entra por função no `replace` — como texto, nunca
+ * como padrão (`$&` num nome de etapa não pode virar outra coisa).
+ */
+export function tempoNaEtapa(
+  stageName: string,
+  idade: string,
+  t: (texto: string) => string = (texto) => texto,
+): string {
+  if (!idade) return t("em {etapa}").replace("{etapa}", () => stageName);
+  return t("{tempo} em {etapa}")
+    .replace("{tempo}", () => idade)
+    .replace("{etapa}", () => stageName);
 }

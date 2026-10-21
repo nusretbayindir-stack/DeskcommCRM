@@ -5,7 +5,7 @@ import { useT } from "@/hooks/i18n/useT";
 import { cn } from "@/lib/utils";
 import { formatValorDoNegocio, MOEDA_PADRAO } from "@/lib/money";
 import type { Lead } from "@/lib/types/leads";
-import { resolveCardState, stageAgeLabel, type CardInput } from "@/lib/kanban/card-state";
+import { resolveCardState, stageAgeLabel, tempoNaEtapa, type CardInput } from "@/lib/kanban/card-state";
 import { KanbanCardActions } from "./KanbanCardActions";
 import { NextActionSlot } from "./NextActionSlot";
 import { ReactivationSlot } from "./ReactivationSlot";
@@ -311,9 +311,7 @@ export function KanbanCard({
               <TarefasNoCard tarefas={lead.tarefas} />
             </div>
             <span className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-text-muted">
-              {state.showStageAge && age
-                ? `${age} ${t("em")} ${card.stageName}`
-                : `${t("em")} ${card.stageName}`}
+              {tempoNaEtapa(card.stageName, state.showStageAge ? age : "", t)}
             </span>
           </div>
         </div>

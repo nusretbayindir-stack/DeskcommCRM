@@ -6,11 +6,14 @@
  */
 import { describe, it, expect } from "vitest";
 
+import { traduzir } from "@/lib/i18n/dicionario";
+
 import {
   buildCardInput,
   resolveCardState,
   coolingLabel,
   stageAgeLabel,
+  tempoNaEtapa,
   type CardInput,
 } from "./card-state";
 
@@ -134,6 +137,33 @@ describe("rótulos de tempo", () => {
     expect(stageAgeLabel(5)).toBe("5h");
     expect(stageAgeLabel(0.2)).toBe("agora");
     expect(stageAgeLabel(null)).toBe("");
+  });
+
+  /**
+   * Medido na v1.85.2: o card turco dizia "şimdi içinde Novo". O rodapé colava
+   * três pedaços (`${idade} ${t("em")} ${etapa}`), e a ordem do português não é
+   * a do turco. Uma frase inteira por caso deixa cada idioma pôr a etapa onde
+   * ela cabe — e a unidade ("d", "h") também é palavra do idioma.
+   */
+  describe("tempoNaEtapa: uma frase inteira, na ordem do idioma", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+
+    it("em português, o rodapé de sempre", () => {
+      expect(tempoNaEtapa("Novo", stageAgeLabel(72))).toBe("3d em Novo");
+      expect(tempoNaEtapa("Novo", stageAgeLabel(0.2))).toBe("agora em Novo");
+      expect(tempoNaEtapa("Novo", "")).toBe("em Novo");
+    });
+
+    it("em turco, a etapa vem primeiro e a unidade é turca", () => {
+      expect(tempoNaEtapa("Yeni", stageAgeLabel(72, tr), tr)).toBe("Yeni · 3g");
+      expect(tempoNaEtapa("Yeni", stageAgeLabel(5, tr), tr)).toBe("Yeni · 5sa");
+      expect(tempoNaEtapa("Yeni", stageAgeLabel(0.2, tr), tr)).toBe("Yeni · şimdi");
+      expect(tempoNaEtapa("Yeni", "", tr)).toBe("Aşama: Yeni");
+    });
+
+    it("o nome da etapa entra como texto, nunca como padrão de replace", () => {
+      expect(tempoNaEtapa("R$ $& 50", "3d")).toBe("3d em R$ $& 50");
+    });
   });
 });
 
