@@ -5442,14 +5442,9 @@ export const DICIONARIO: Traducoes = {
   "Gerenciamento de Platform Admins é restrito ao DBA": {
     es: "Solo el DBA puede gestionar Platform Admins",
   },
-  "Conforme Spec 01 §3.4 T-04: adição, remoção ou alteração de": {
-    es: "Según la Spec 01 §3.4 T-04: la adición, eliminación o modificación de",
-  },
-  "é feita exclusivamente via SQL pelo DBA, com nota explicativa em": {
-    es: "se hace exclusivamente vía SQL por el DBA, con una nota explicativa en",
-  },
-  ". Esta página é informativa e read-only — nenhum botão de modificação está disponível por design.": {
-    es: ". Esta página es informativa y de solo lectura: por diseño, no incluye botones para modificar nada.",
+  // Uma frase só, com os nomes em `<code>` como marcadores (DBAOnlyNotice.tsx).
+  "Conforme Spec 01 §3.4 T-04: adição, remoção ou alteração de {tabela} é feita exclusivamente via SQL pelo DBA, com nota explicativa em {auditoria}. Esta página é informativa e read-only — nenhum botão de modificação está disponível por design.": {
+    es: "Según la Spec 01 §3.4 T-04: la adición, eliminación o modificación de {tabela} se hace exclusivamente vía SQL por el DBA, con una nota explicativa en {auditoria}. Esta página es informativa y de solo lectura: por diseño, no incluye botones para modificar nada.",
   },
   "Ver runbook →": { es: "Ver runbook →" },
   "Usuário": { es: "Usuario" },
