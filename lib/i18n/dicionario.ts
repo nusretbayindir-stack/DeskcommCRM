@@ -1643,6 +1643,7 @@ export const DICIONARIO: Traducoes = {
   Descrição: { es: "Descripción" },
   "Fechamento previsto": { es: "Cierre previsto" },
   "Tags (separadas por vírgula)": { es: "Etiquetas (separadas por coma)" },
+  "vip, recompra": { es: "vip, recompra" },
   Salvar: { es: "Guardar" },
   vazio: { es: "vacío" },
   "Abrir conversa no Inbox": { es: "Abrir conversación en el Inbox" },
