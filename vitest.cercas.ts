@@ -70,7 +70,7 @@ function resolver(raiz: string, arquivo: string, especificador: string): string 
   else if (especificador.startsWith(".")) base = join(dirname(arquivo), especificador);
   else return null;
   const candidato = EXTENSOES.map((ext) => base + ext).find(
-    (c) => /\.tsx?$/.test(c) && existsSync(c) && statSync(c).isFile(),
+    (c) => /\.(?:tsx?|json)$/.test(c) && existsSync(c) && statSync(c).isFile(),
   );
   return candidato ?? null;
 }
@@ -80,6 +80,11 @@ function resolver(raiz: string, arquivo: string, especificador: string): string 
 function classificador(raiz: string): (arquivo: string) => boolean {
   const memo = new Map<string, boolean>();
   const classificar = (arquivo: string): boolean => {
+    // JSON do repositório é dado puro: não importa nada nem toca DOM. Desde o
+    // catálogo turco, `lib/i18n/catalogos.ts` importa `traducoes/tr.json`, e
+    // sem esta linha `i18n-espanhol-cobre-a-tela` saía da seleção. O texto do
+    // catálogo nem passa por USA_DOM — uma frase com "window" não é código.
+    if (arquivo.endsWith(".json")) return true;
     const conhecido = memo.get(arquivo);
     if (conhecido !== undefined) return conhecido;
     memo.set(arquivo, false);
