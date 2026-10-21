@@ -34,8 +34,9 @@ import { existeConexaoDeLeitura } from "@/lib/plataformas-de-anuncio/credenciais
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { FormularioDeMetaAds } from "./_form";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Meta Ads" };
+export const generateMetadata = tituloDaAba((t) => t("Meta Ads"));
 export const dynamic = "force-dynamic";
 
 export default async function MetaAdsSettingsPage() {

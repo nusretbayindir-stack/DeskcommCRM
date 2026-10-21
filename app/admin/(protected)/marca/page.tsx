@@ -16,8 +16,9 @@ import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 import { FormularioDaMarca } from "./_form";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Marca da instalação" };
+export const generateMetadata = tituloDaAba((t) => t("Marca da instalação"));
 export const dynamic = "force-dynamic";
 
 /**

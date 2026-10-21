@@ -1,5 +1,6 @@
 import { LinksRastreaveis } from "./_linksRastreaveis";
 import { listarLinks, metricasLinks } from "@/lib/plataformas-de-anuncio/rastreio/links";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 /**
  * Configurações → Conversões. Onde o dono do tráfego conecta a conta de anúncios
  * e vê quais vendas foram (ou não foram) reportadas de volta.
@@ -79,7 +80,7 @@ import { listarRegrasGoogle } from "@/lib/conversoes/regras-google";
 import { RegrasDeConversaoMeta } from "./_regrasMeta";
 import { listarRegrasMeta, rotuloDoEventoDaMeta } from "@/lib/conversoes/regras-meta";
 
-export const metadata = { title: "Conversões" };
+export const generateMetadata = tituloDaAba((t) => t("Conversões"));
 export const dynamic = "force-dynamic";
 
 /** O que a volta do OAuth do Google Ads diz, traduzido — ver o callback. */

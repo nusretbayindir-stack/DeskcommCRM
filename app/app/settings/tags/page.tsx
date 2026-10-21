@@ -34,8 +34,9 @@ import type { LinhaDeVocabulario } from "@/lib/schemas/tags";
 import { createClient } from "@/lib/supabase/server";
 
 import { PainelDeTags } from "./_painel";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Tags" };
+export const generateMetadata = tituloDaAba((t) => t("Tags"));
 export const dynamic = "force-dynamic";
 
 export default async function TagsPage() {

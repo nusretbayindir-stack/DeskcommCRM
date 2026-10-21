@@ -5,8 +5,9 @@ import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { signOut } from "@/app/actions/auth/signOut";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Acesso revogado" };
+export const generateMetadata = tituloDaAba((t) => t("Acesso revogado"));
 
 /**
  * Tela terminal de quem TINHA acesso e não tem mais.

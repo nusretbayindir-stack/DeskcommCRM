@@ -11,8 +11,9 @@ import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerCadastroNaTela, planoInicialDoSeletor } from "@/lib/cobranca/cadastro";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Criar conta" };
+export const generateMetadata = tituloDaAba((t) => t("Criar conta"));
 
 /**
  * Aceita `?invite=<token>`: é o caminho de quem foi convidado e ainda não tem

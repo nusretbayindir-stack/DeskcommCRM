@@ -5,8 +5,9 @@ import { loadAuthUser } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { listarModulos } from "@/lib/modulos/service";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Módulos da instalação" };
+export const generateMetadata = tituloDaAba((t) => t("Módulos da instalação"));
 export const dynamic = "force-dynamic";
 
 /**

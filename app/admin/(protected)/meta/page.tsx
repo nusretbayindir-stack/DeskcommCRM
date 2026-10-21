@@ -7,8 +7,9 @@ import type { Idioma } from "@/lib/i18n/idiomas";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { FormularioDaMeta } from "./_form";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "API Oficial da Meta da instalação" };
+export const generateMetadata = tituloDaAba((t) => t("API Oficial da Meta da instalação"));
 export const dynamic = "force-dynamic";
 
 /**

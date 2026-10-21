@@ -18,12 +18,11 @@ import { traduzir } from "@/lib/i18n/dicionario";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { ehOperante, tipoDaSuspensao } from "@/lib/organizacao/operante";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Conta suspensa",
-};
+export const generateMetadata = tituloDaAba((t) => t("Conta suspensa"));
 
 const PEDIDO = z.uuid();
 

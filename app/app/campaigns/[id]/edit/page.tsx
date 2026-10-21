@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 
 import { EditarCampanha } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Editar campanha" };
+export const generateMetadata = tituloDaAba((t) => t("Editar campanha"));
 
 export default async function EditarCampanhaPage({
   params,

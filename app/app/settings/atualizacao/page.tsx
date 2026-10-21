@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 
 import { loadAuthUser } from "@/lib/auth/server";
 import { UpdatePanel } from "./_components/UpdatePanel";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Atualização do sistema" };
+export const generateMetadata = tituloDaAba((t) => t("Atualização do sistema"));
 export const dynamic = "force-dynamic";
 
 /**

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
@@ -6,9 +5,10 @@ import { roleAtLeast } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 
 import { NewProposalClient, type LeadOption } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Nova Proposta" };
+export const generateMetadata = tituloDaAba((t) => t("Nova Proposta"));
 
 export default async function NewProposalPage({
   searchParams,

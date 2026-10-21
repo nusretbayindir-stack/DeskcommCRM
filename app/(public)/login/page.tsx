@@ -6,8 +6,9 @@ import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Entrar" };
+export const generateMetadata = tituloDaAba((t) => t("Entrar"));
 
 export default async function LoginPage({
   searchParams,

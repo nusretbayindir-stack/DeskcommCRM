@@ -19,8 +19,9 @@ import {
 import { detectarServidor } from "@/lib/recursos-opcionais/estado";
 
 import { FormularioDeComportamento, FormularioDeModulos } from "./_form";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Recursos opcionais" };
+export const generateMetadata = tituloDaAba((t) => t("Recursos opcionais"));
 
 /** Para o que depende do servidor, a voz é "configurado", não "ligado". */
 const ROTULO_NO_SERVIDOR: Record<EstadoDoRecurso, string> = {

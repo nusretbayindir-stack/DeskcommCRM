@@ -18,8 +18,9 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Dados externos" };
+export const generateMetadata = tituloDaAba((t) => t("Dados externos"));
 export const dynamic = "force-dynamic";
 
 const COLUNAS_SEGURAS =

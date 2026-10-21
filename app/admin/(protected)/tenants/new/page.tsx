@@ -2,8 +2,9 @@ import { moduloLigado } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { NewTenantForm, type PlanoParaEscolher } from "./_form";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Novo Tenant — Admin Plataforma" };
+export const generateMetadata = tituloDaAba((t) => t("Novo Tenant — Admin Plataforma"));
 export const dynamic = "force-dynamic";
 
 /**

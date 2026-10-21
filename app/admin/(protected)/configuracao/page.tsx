@@ -8,8 +8,9 @@ import { traduzir } from "@/lib/i18n/dicionario";
 
 import { PainelDeConfiguracao } from "./_form";
 import { GRUPOS_DA_TELA } from "./_grupos";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Configuração da instalação" };
+export const generateMetadata = tituloDaAba((t) => t("Configuração da instalação"));
 export const dynamic = "force-dynamic";
 
 export interface LinhaDaTela {
