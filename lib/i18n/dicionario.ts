@@ -5126,6 +5126,7 @@ export const DICIONARIO: Traducoes = {
   "organizações ativas": { es: "organizaciones activas" },
   "Pendentes >10min": { es: "Pendientes >10min" },
   "conversas sem resposta": { es: "conversaciones sin respuesta" },
+  "Alertas do WhatsApp": { es: "Alertas de WhatsApp" },
   "sessões com problema": { es: "sesiones con problema" },
   "LGPD em Risco": { es: "LGPD en riesgo" },
   "requisições próximas do prazo": { es: "solicitudes próximas a vencer" },
