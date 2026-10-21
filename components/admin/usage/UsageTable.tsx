@@ -106,7 +106,7 @@ export function UsageTable({ tenants, range }: UsageTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tenant</TableHead>
+              <TableHead>{t("Tenant")}</TableHead>
               <TableHead>{t("Agente")}</TableHead>
               <TableHead className="text-right">{t("Mensagens")}</TableHead>
               <TableHead className="text-right">{t("Conversas")}</TableHead>

@@ -57,7 +57,7 @@ export function AuditTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            {[t("Quando"), "Action", "Tenant", "Actor", t("Recurso"), ""].map((h) => (
+            {[t("Quando"), t("Action"), t("Tenant"), t("Actor"), t("Recurso"), ""].map((h) => (
               <TableHead key={h}>{h}</TableHead>
             ))}
           </TableRow>
@@ -126,9 +126,9 @@ export function AuditTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[130px]">{t("Quando")}</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead className="w-[130px]">Tenant</TableHead>
-              <TableHead className="w-[160px]">Actor</TableHead>
+              <TableHead>{t("Action")}</TableHead>
+              <TableHead className="w-[130px]">{t("Tenant")}</TableHead>
+              <TableHead className="w-[160px]">{t("Actor")}</TableHead>
               <TableHead className="w-[180px]">{t("Recurso")}</TableHead>
               <TableHead className="w-[60px]" />
             </TableRow>

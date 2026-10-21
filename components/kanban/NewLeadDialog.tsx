@@ -367,7 +367,7 @@ export function NewLeadDialog({
             <Label htmlFor="tagsRaw">{t("Tags (separadas por vírgula)")}</Label>
             <Input
               id="tagsRaw"
-              placeholder="vip, recompra"
+              placeholder={t("vip, recompra")}
               {...form.register("tagsRaw")}
             />
           </div>

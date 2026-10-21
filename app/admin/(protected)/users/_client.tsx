@@ -93,7 +93,7 @@ export function UsersClient() {
           onValueChange={handleTenant}
         >
           <SelectTrigger className="sm:w-52" aria-label={t("Filtrar por tenant")}>
-            <SelectValue placeholder="Tenant" />
+            <SelectValue placeholder={t("Tenant")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("Todos os tenants")}</SelectItem>
@@ -107,7 +107,7 @@ export function UsersClient() {
 
         <Select value={filters.role ?? "all"} onValueChange={handleRole}>
           <SelectTrigger className="sm:w-40" aria-label={t("Filtrar por role")}>
-            <SelectValue placeholder="Role" />
+            <SelectValue placeholder={t("Role")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("Todos os roles")}</SelectItem>

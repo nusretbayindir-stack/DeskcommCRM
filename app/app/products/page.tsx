@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
@@ -19,9 +18,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 import { ProdutosClient } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Produtos" };
+export const generateMetadata = tituloDaAba((t) => t("Produtos"));
 
 /**
  * O CATÁLOGO DA LOJA — onde o preço que a IA responde é cadastrado.

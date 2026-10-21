@@ -1,8 +1,7 @@
 import { LgpdRequestAdminDetail } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = {
-  title: "Solicitação LGPD — Admin",
-};
+export const generateMetadata = tituloDaAba((t) => t("Solicitação LGPD — Admin"));
 
 export default async function AdminLgpdRequestPage({
   params,

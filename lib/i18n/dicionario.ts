@@ -1643,6 +1643,7 @@ export const DICIONARIO: Traducoes = {
   Descrição: { es: "Descripción" },
   "Fechamento previsto": { es: "Cierre previsto" },
   "Tags (separadas por vírgula)": { es: "Etiquetas (separadas por coma)" },
+  "vip, recompra": { es: "vip, recompra" },
   Salvar: { es: "Guardar" },
   vazio: { es: "vacío" },
   "Abrir conversa no Inbox": { es: "Abrir conversación en el Inbox" },
@@ -5076,6 +5077,15 @@ export const DICIONARIO: Traducoes = {
   "Voltar pra app": { es: "Volver a la app" },
   Dashboard: { es: "Panel" },
   Tenants: { es: "Tenants" },
+  // Cabeçalhos que o admin escreve em inglês também em português; passam por
+  // t() para os outros idiomas (tests/unit/admin-sem-ingles-fora-de-t).
+  Tenant: { es: "Tenant" },
+  Action: { es: "Acción" },
+  Actions: { es: "Acciones" },
+  Actor: { es: "Actor" },
+  "Actor (user ID)": { es: "Actor (ID de usuario)" },
+  Role: { es: "Rol" },
+  Scope: { es: "Alcance" },
   Audit: { es: "Auditoría" },
   Incidents: { es: "Incidentes" },
   Usage: { es: "Uso" },
@@ -5126,6 +5136,7 @@ export const DICIONARIO: Traducoes = {
   "organizações ativas": { es: "organizaciones activas" },
   "Pendentes >10min": { es: "Pendientes >10min" },
   "conversas sem resposta": { es: "conversaciones sin respuesta" },
+  "Alertas do WhatsApp": { es: "Alertas de WhatsApp" },
   "sessões com problema": { es: "sesiones con problema" },
   "LGPD em Risco": { es: "LGPD en riesgo" },
   "requisições próximas do prazo": { es: "solicitudes próximas a vencer" },
@@ -5441,14 +5452,9 @@ export const DICIONARIO: Traducoes = {
   "Gerenciamento de Platform Admins é restrito ao DBA": {
     es: "Solo el DBA puede gestionar Platform Admins",
   },
-  "Conforme Spec 01 §3.4 T-04: adição, remoção ou alteração de": {
-    es: "Según la Spec 01 §3.4 T-04: la adición, eliminación o modificación de",
-  },
-  "é feita exclusivamente via SQL pelo DBA, com nota explicativa em": {
-    es: "se hace exclusivamente vía SQL por el DBA, con una nota explicativa en",
-  },
-  ". Esta página é informativa e read-only — nenhum botão de modificação está disponível por design.": {
-    es: ". Esta página es informativa y de solo lectura: por diseño, no incluye botones para modificar nada.",
+  // Uma frase só, com os nomes em `<code>` como marcadores (DBAOnlyNotice.tsx).
+  "Conforme Spec 01 §3.4 T-04: adição, remoção ou alteração de {tabela} é feita exclusivamente via SQL pelo DBA, com nota explicativa em {auditoria}. Esta página é informativa e read-only — nenhum botão de modificação está disponível por design.": {
+    es: "Según la Spec 01 §3.4 T-04: la adición, eliminación o modificación de {tabela} se hace exclusivamente vía SQL por el DBA, con una nota explicativa en {auditoria}. Esta página es informativa y de solo lectura: por diseño, no incluye botones para modificar nada.",
   },
   "Ver runbook →": { es: "Ver runbook →" },
   "Usuário": { es: "Usuario" },
@@ -5472,7 +5478,7 @@ export const DICIONARIO: Traducoes = {
     es: "Error al cargar los datos de uso. Intenta recargar.",
   },
   "Mensagens / dia": { es: "Mensajes / día" },
-  "Custo AI / dia (R$)": { es: "Costo IA / día (R$)" },
+  "Custo AI / dia (US$)": { es: "Costo IA / día (US$)" },
   "AI Tokens / dia": { es: "Tokens de IA / día" },
   "Não há dados de uso no período selecionado.": {
     es: "No hay datos de uso en el período seleccionado.",
@@ -8636,6 +8642,7 @@ export const DICIONARIO: Traducoes = {
     es: "Todavía no hay ningún cliente aquí. En cuanto empiece la primera conversación, su tarjeta aparecerá en esta columna.",
   },
   "Nenhum contato ainda": { es: "Ningún contacto todavía" },
+  "Contatos chegam automaticamente via WhatsApp.": { es: "Los contactos llegan automáticamente por WhatsApp." },
   "Contatos chegam automaticamente via WhatsApp ou Nuvemshop.": {
     es: "Los contactos llegan automáticamente vía WhatsApp o Nuvemshop.",
   },
@@ -9383,6 +9390,12 @@ export const DICIONARIO: Traducoes = {
   "Disponibilidade de": { es: "Disponibilidad de" },
 
   // ─── Pipelines/Kanban: lista de funis, board, card, dossiê, diálogos ───
+  // O rodapé do card (`tempoNaEtapa`, lib/kanban/card-state.ts): frase inteira,
+  // porque cada idioma põe a etapa num lugar.
+  "{tempo} em {etapa}": { es: "{tempo} en {etapa}" },
+  "em {etapa}": { es: "en {etapa}" },
+  "{n}d": { es: "{n}d" },
+  "{n}h": { es: "{n}h" },
   "Não consegui completar essa ação. Tente de novo.": {
     es: "No pude completar esa acción. Intenta de nuevo.",
   },
@@ -16217,6 +16230,40 @@ export const DICIONARIO: Traducoes = {
   "A resposta ia mostrar um produto que não foi encontrado no cadastro. Confira o produto e gere de novo.": { es: "La respuesta iba a mostrar un producto que no se encontró en el registro. Revisa el producto y genera de nuevo." },
   "A sugestão tentou usar uma ação que a prévia não reconhece. Gere de novo; se repetir, revise as ferramentas ligadas no agente.": { es: "La sugerencia intentó usar una acción que la previsualización no reconoce. Genera de nuevo; si se repite, revisa las herramientas activadas en el agente." },
   "A geração da sugestão falhou, ou o contexto da conversa não pôde ser montado. Tente de novo; se repetir, o motivo ficou registrado no servidor.": { es: "La generación de la sugerencia falló, o no se pudo armar el contexto de la conversación. Inténtalo de nuevo; si se repite, el motivo quedó registrado en el servidor." },
+
+  // ─── Título da aba (`tituloDaAba` em lib/i18n/titulo-da-aba.ts) ───
+  // Eram `export const metadata` em português fixo; passando por t(), a guarda
+  // cobrou os que nunca tinham entrado no dicionário.
+  "{marca} — atendimento e vendas por WhatsApp com agentes de IA": {
+    es: "{marca} — atención y ventas por WhatsApp con agentes de IA",
+  },
+  "Centralize o atendimento por WhatsApp num funil só. Agentes de IA resolvem o que dá pra resolver e passam para o time humano o que importa — com tudo registrado. Multi-tenant, LGPD-nativo, feito para operações brasileiras.": {
+    es: "Centraliza la atención por WhatsApp en un solo embudo. Los agentes de IA resuelven lo que se puede resolver y pasan al equipo humano lo que importa — con todo registrado. Multi-tenant, nativo en LGPD, hecho para operaciones brasileñas.",
+  },
+  "Audit Log — Admin": { es: "Registro de auditoría — Admin" },
+  "Audit Entry — Admin": { es: "Entrada de auditoría — Admin" },
+  "Cadastro na instalação": { es: "Registro en la instalación" },
+  "Cobrança — Admin Plataforma": { es: "Cobro — Admin Plataforma" },
+  "Dashboard — Admin Plataforma": { es: "Panel — Admin Plataforma" },
+  "Servidor de e-mail da instalação": { es: "Servidor de correo de la instalación" },
+  "Google Agenda da instalação": { es: "Google Calendar de la instalación" },
+  "Incidentes — Admin Plataforma": { es: "Incidentes — Admin Plataforma" },
+  "Detalhe do Incidente — Admin Plataforma": { es: "Detalle del incidente — Admin Plataforma" },
+  "LGPD — Admin": { es: "LGPD — Admin" },
+  "Solicitação LGPD — Admin": { es: "Solicitud LGPD — Admin" },
+  "Marca da instalação": { es: "Marca de la instalación" },
+  "API Oficial da Meta da instalação": { es: "API oficial de Meta de la instalación" },
+  "Platform Admins — Admin Plataforma": { es: "Administradores de la plataforma — Admin Plataforma" },
+  "Novo Tenant — Admin Plataforma": { es: "Nuevo tenant — Admin Plataforma" },
+  "Tenants — Admin Plataforma": { es: "Tenants — Admin Plataforma" },
+  "Uso & Custo — Admin Plataforma": { es: "Uso y costo — Admin Plataforma" },
+  "Usuários — Admin Plataforma": { es: "Usuarios — Admin Plataforma" },
+  "Detalhe de Usuário — Admin Plataforma": { es: "Detalle del usuario — Admin Plataforma" },
+  "Acesso negado — Admin Plataforma": { es: "Acceso denegado — Admin Plataforma" },
+  "Guia da extensão": { es: "Guía de la extensión" },
+  "Nova Proposta": { es: "Nueva propuesta" },
+  "Editor de Proposta": { es: "Editor de propuesta" },
+  "Modelo de proposta": { es: "Plantilla de propuesta" },
 };
 
 /**

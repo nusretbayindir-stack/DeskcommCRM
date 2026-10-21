@@ -84,6 +84,30 @@ describe("POST /api/v1/pipelines", () => {
     expect(etapas.every((e) => e.organization_id === ORG_ID)).toBe(true);
   });
 
+  it("as etapas nascem no idioma da organização, e o slug não muda", async () => {
+    // Medido na v1.85.2: org em turco, funil novo com «Novo / Em andamento /
+    // Ganho / Perdido». A etapa é DADO da empresa (todo mundo vê o mesmo nome),
+    // então quem decide é `organizations.locale`. O slug é identificador: fica.
+    authOk("manager", { localeDaOrg: "tr" });
+    const db = makeDb({ pipelines: umFunil() });
+    const { POST } = await import("./route");
+    await POST(reqPost({ name: "Klinik" }));
+
+    const etapas = db.escritas.find((e) => e.table === "crm_stages")?.patch as Record<string, unknown>[];
+    expect(etapas.map((e) => e.name)).toEqual(["Yeni", "Devam ediyor", "Kazanıldı", "Kaybedildi"]);
+    expect(etapas.map((e) => e.slug)).toEqual(["novo", "em_andamento", "ganho", "perdido"]);
+  });
+
+  it("é a organização que decide o nome da etapa, não o idioma de quem clica", async () => {
+    authOk("manager", { idioma: "tr", localeDaOrg: "pt-BR" });
+    const db = makeDb({ pipelines: umFunil() });
+    const { POST } = await import("./route");
+    await POST(reqPost({ name: "Clínica" }));
+
+    const etapas = db.escritas.find((e) => e.table === "crm_stages")?.patch as Record<string, unknown>[];
+    expect(etapas.map((e) => e.name)).toEqual(["Novo", "Em andamento", "Ganho", "Perdido"]);
+  });
+
   it("as etapas entram DEPOIS do funil — antes não haveria pipeline_id para elas", async () => {
     authOk();
     const db = makeDb({ pipelines: umFunil() });

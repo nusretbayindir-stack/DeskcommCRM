@@ -61,7 +61,7 @@ export function AdminSidePanel({ data }: Props) {
       {/* ── Tenant info ── */}
       <section>
         <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tenant
+          {t("Tenant")}
         </h3>
         {organization ? (
           <div className="flex flex-col gap-2">

@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { nomeDoOperador, resolverOperador } from "@/lib/legal/operador";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Política de Privacidade" };
+export const generateMetadata = tituloDaAba((t) => t("Política de Privacidade"));
 
 export default async function PrivacyPage() {
   const op = await resolverOperador();

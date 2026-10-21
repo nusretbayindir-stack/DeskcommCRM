@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Confirmar acesso" };
+export const generateMetadata = tituloDaAba((t) => t("Confirmar acesso"));
 
 /**
  * Parada dos links de e-mail (recuperação, convite, confirmação de cadastro).

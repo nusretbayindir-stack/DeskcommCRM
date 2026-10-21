@@ -77,7 +77,7 @@ export function UsersTableAdminSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            {["Email", t("Nome"), "Tenant", "Role", t("Último acesso"), t("Status"), ""].map(
+            {[t("Email"), t("Nome"), t("Tenant"), t("Role"), t("Último acesso"), t("Status"), ""].map(
               (h) => (
                 <TableHead key={h}>{h}</TableHead>
               ),
@@ -137,10 +137,10 @@ export function UsersTableAdmin({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Email</TableHead>
+              <TableHead>{t("Email")}</TableHead>
               <TableHead className="w-[160px]">{t("Nome")}</TableHead>
-              <TableHead className="w-[160px]">Tenant</TableHead>
-              <TableHead className="w-[100px]">Role</TableHead>
+              <TableHead className="w-[160px]">{t("Tenant")}</TableHead>
+              <TableHead className="w-[100px]">{t("Role")}</TableHead>
               <TableHead className="w-[160px]">{t("Último acesso")}</TableHead>
               <TableHead className="w-[100px]">{t("Status")}</TableHead>
               <TableHead className="w-[60px]" />

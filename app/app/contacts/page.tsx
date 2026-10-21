@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import { ContactsListClient } from "./_client";
+import { env } from "@/lib/env";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Contatos" };
+export const generateMetadata = tituloDaAba((t) => t("Contatos"));
 
 export default function ContactsPage() {
-  return <ContactsListClient />;
+  // A Nuvemshop só aparece na tela com a loja ligada — a régua do onboarding.
+  return <ContactsListClient lojaLigada={env.NUVEMSHOP_ENABLED} />;
 }

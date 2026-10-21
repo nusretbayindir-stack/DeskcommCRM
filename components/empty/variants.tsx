@@ -53,13 +53,21 @@ export function EmptyKanban({ primary, secondary }: VariantProps = {}) {
   );
 }
 
-export function EmptyContacts({ primary, secondary }: VariantProps = {}) {
+/**
+ * `lojaLigada`: a instalação ligou a Nuvemshop (`env.NUVEMSHOP_ENABLED`). Sem
+ * ela, a frase prometia uma porta de entrada que esta instalação não tem.
+ */
+export function EmptyContacts({ primary, secondary, lojaLigada = false }: VariantProps & { lojaLigada?: boolean } = {}) {
   const t = useT();
   return (
     <EmptyState
       icon={UsersThree}
       headline={t("Nenhum contato ainda")}
-      subcopy={t("Contatos chegam automaticamente via WhatsApp ou Nuvemshop.")}
+      subcopy={
+        lojaLigada
+          ? t("Contatos chegam automaticamente via WhatsApp ou Nuvemshop.")
+          : t("Contatos chegam automaticamente via WhatsApp.")
+      }
       primary={primary}
       secondary={secondary}
     />

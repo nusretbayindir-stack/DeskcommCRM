@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import { NavHub } from "@/components/shell/NavHub";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { modulosLigados } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Agente de IA" };
+export const generateMetadata = tituloDaAba((t) => t("Agente de IA"));
 
 /**
  * Hub da área de IA.

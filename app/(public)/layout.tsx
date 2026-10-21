@@ -3,6 +3,7 @@ import { marcaEhADoProduto } from "@/lib/branding";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
+import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 
 /**
  * A casca das telas de acesso — login, cadastro, recuperação, MFA, confirmar acesso.
@@ -46,16 +47,17 @@ export default async function PublicLayout({ children }: { children: React.React
   // A maioria destas telas roda ANTES do login (não há usuário nenhum), mas
   // duas — `/login/mfa` e, em parte, `/login/recovery` — rodam com uma sessão
   // parcial já criada (primeiro fator verificado, segundo pendente). Onde há
-  // sessão, o idioma salvo no perfil vale; sem ela, `IdiomaProvider` já cai no
-  // padrão pt-BR sozinho (ver o cabeçalho do provider) — nunca lança.
+  // sessão, o idioma salvo no perfil vale; sem ela, vale o `Accept-Language` —
+  // a MESMA cadeia que o título de cada página usa. Passar o `locale` cru
+  // deixava o formulário (componente cliente) em pt-BR sob um título em turco.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const locale = (user?.user_metadata?.locale as string | undefined) ?? null;
+  const idioma = await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null);
 
   return (
-    <IdiomaProvider locale={locale}>
+    <IdiomaProvider locale={idioma}>
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm space-y-6">
           {marca.logoUrl || marca.logoDarkUrl ? (

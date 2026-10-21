@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { roleAtLeast } from "@/lib/auth/types";
 
 import { ProposalEditorClient } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Editor de Proposta" };
+export const generateMetadata = tituloDaAba((t) => t("Editor de Proposta"));
 
 export default async function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireAuth();

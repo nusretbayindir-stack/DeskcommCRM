@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -7,9 +6,10 @@ import { InboxLayout } from "@/components/inbox/InboxLayout";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
 import { lerRascunho, type AvisoDeRascunho } from "@/lib/inbox/rascunho-sugerido";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Inbox" };
+export const generateMetadata = tituloDaAba((t) => t("Inbox"));
 
 export default async function InboxPage({
   searchParams,

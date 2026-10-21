@@ -67,16 +67,12 @@ export function KPICards({ kpis }: KPICardsProps) {
         accent={kpis.conv_pending_10min > 0}
       />
       <KPICard
-        // SEM `t()`, e não é esquecimento: "Alertas WAHA" é nome próprio, e o
-        // espanhol seria idêntico — a entrada no dicionário não mudaria uma
-        // letra na tela. O que ela mudaria é a superfície: `lint:channels`
-        // proíbe nomear o provider fora de `lib/channels/`, este arquivo já é
-        // dívida DECLARADA (issue #118) e o dicionário não era. Traduzir aqui
-        // espalharia o acoplamento para um arquivo novo em troca de nada.
-        //
-        // Quando o rótulo virar neutro de canal (Fase 3a, junto do seletor de
-        // canal), ele passa a ter tradução de verdade e volta para `t()`.
-        label="Alertas WAHA"
+        // O rótulo é NEUTRO de canal: nomear o provider aqui o deixava fora de
+        // `t()` (`lint:channels` proíbe o nome fora de `lib/channels/`, e o
+        // dicionário não é dívida declarada como este arquivo), e "Alertas" é
+        // português — o admin em turco lia "Alertas WAHA" (v1.85.2). O número
+        // continua sendo o das sessões do canal QR; o subtítulo diz isso.
+        label={t("Alertas do WhatsApp")}
         value={kpis.waha_ban_alerts}
         subtitle={t("sessões com problema")}
         Icon={WifiSlash}

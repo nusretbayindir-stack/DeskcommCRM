@@ -22,6 +22,7 @@ import {
   type MarcaResolvida,
 } from "@/lib/branding/resolve";
 import { env } from "@/lib/env";
+import { tradutorDaRequisicao } from "@/lib/i18n/titulo-da-aba";
 import { logger } from "@/lib/logger";
 import { ThemeProvider } from "@/lib/theme";
 import { Providers } from "./providers";
@@ -96,13 +97,18 @@ async function marcaResolvida(): Promise<{
 export async function generateMetadata(): Promise<Metadata> {
   const { linha, marca } = await marcaResolvida();
   const { name } = marca;
+  // O título padrão (página sem título próprio) e a descrição saem no idioma de
+  // quem abre — ver `lib/i18n/titulo-da-aba.ts`. O template não tem palavra:
+  // só o nome da marca, que não se traduz.
+  const t = await tradutorDaRequisicao();
   return {
     title: {
-      default: `${name} — atendimento e vendas por WhatsApp com agentes de IA`,
+      default: t("{marca} — atendimento e vendas por WhatsApp com agentes de IA").replace("{marca}", () => name),
       template: `%s · ${name}`,
     },
-    description:
+    description: t(
       "Centralize o atendimento por WhatsApp num funil só. Agentes de IA resolvem o que dá pra resolver e passam para o time humano o que importa — com tudo registrado. Multi-tenant, LGPD-nativo, feito para operações brasileiras.",
+    ),
     applicationName: name,
     authors: [{ name }],
     keywords: ["CRM", "atendimento", "WhatsApp", "IA conversacional", "LGPD", "multi-tenant"],

@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 import { conflitoDoBanco, corpo, lerFunis } from "./_funis";
 import { listPipelinesHandler } from "./_handler";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +56,18 @@ const bodySchema = z
   })
   .strict();
 
-/** As etapas com que o funil nasce, já com a régua de posição do board. */
-function etapasIniciais(orgId: string, pipelineId: string) {
+/**
+ * As etapas com que o funil nasce, já com a régua de posição do board.
+ *
+ * O nome sai no idioma da ORGANIZAÇÃO, e não no de quem clicou: a etapa é dado
+ * da empresa, e todo mundo dela vê o mesmo nome. O slug é identificador e não
+ * se traduz.
+ */
+function etapasIniciais(orgId: string, pipelineId: string, idiomaDaOrg: Idioma) {
   return ETAPAS_INICIAIS.map((etapa, i) => ({
     organization_id: orgId,
     pipeline_id: pipelineId,
-    name: etapa.name,
+    name: traduzir(etapa.name, idiomaDaOrg),
     slug: etapa.slug,
     position: (i + 1) * 1000,
     is_won: etapa.is_won,
@@ -137,10 +144,13 @@ export async function POST(req: NextRequest): Promise<Response> {
     return fail("internal_error", error.message, 500, { requestId });
   }
   const pipelineId = (criado as { id: string }).id;
+  const idiomaDaOrg = normalizarIdioma(
+    authz.user.organizations.find((o) => o.organization_id === orgId)?.locale ?? null,
+  );
 
   const { error: etapasErr } = await supabase
     .from("crm_stages")
-    .insert(etapasIniciais(orgId, pipelineId));
+    .insert(etapasIniciais(orgId, pipelineId, idiomaDaOrg));
 
   // ⚠️ COMPENSAÇÃO, PORQUE SÃO DUAS ESCRITAS SEM TRANSAÇÃO. Um funil sem etapa é
   // quadro morto: o board abre sem coluna nenhuma, não recebe negócio, e quem

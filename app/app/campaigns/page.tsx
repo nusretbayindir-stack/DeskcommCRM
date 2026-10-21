@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 
 import { ListaDeCampanhas } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Campanhas" };
+export const generateMetadata = tituloDaAba((t) => t("Campanhas"));
 
 export default function CampanhasPage() {
   // Auth e organização já vêm garantidas pelo layout de /app; a lista carrega

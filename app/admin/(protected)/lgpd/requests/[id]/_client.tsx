@@ -332,7 +332,7 @@ export function LgpdRequestAdminDetail({ id }: Props) {
             <Row label={t("Tentativas")} value={String(request.attempts)} />
             {tenant && (
               <>
-                <Row label="Tenant" value={tenant.display_name} />
+                <Row label={t("Tenant")} value={tenant.display_name} />
                 <Row label="Slug" value={tenant.slug} />
               </>
             )}

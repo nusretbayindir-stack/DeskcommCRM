@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ModelosDeProposta } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Modelos de proposta" };
+export const generateMetadata = tituloDaAba((t) => t("Modelos de proposta"));
 
 export default async function ModelosDePropostaPage() {
   const user = await requireAuth();

@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { MfaForm } from "@/components/auth/MfaForm";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
-export const metadata = { title: "Verificação em duas etapas" };
+export const generateMetadata = tituloDaAba((t) => t("Verificação em duas etapas"));
 
 export default async function MfaChallengePage({
   searchParams,

@@ -54,7 +54,7 @@ export function PlatformAdminsTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            {[t("Usuário"), t("Concedido em"), t("Concedido por"), "Scope", "MFA", t("Status"), t("Motivo")].map(
+            {[t("Usuário"), t("Concedido em"), t("Concedido por"), t("Scope"), "MFA", t("Status"), t("Motivo")].map(
               (h) => (
                 <TableHead key={h}>{h}</TableHead>
               ),
@@ -140,7 +140,7 @@ export function PlatformAdminsTable({ data }: PlatformAdminsTableProps) {
             <TableHead className="min-w-[200px]">{t("Usuário")}</TableHead>
             <TableHead className="w-[140px]">{t("Concedido em")}</TableHead>
             <TableHead className="w-[160px]">{t("Concedido por")}</TableHead>
-            <TableHead className="w-[120px]">Scope</TableHead>
+            <TableHead className="w-[120px]">{t("Scope")}</TableHead>
             <TableHead className="w-[60px]">MFA</TableHead>
             <TableHead className="w-[90px]">{t("Status")}</TableHead>
             <TableHead>{t("Motivo")}</TableHead>
