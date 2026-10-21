@@ -31,6 +31,7 @@
  * chave crua nem para erro. Uma tradução incompleta não pode deixar a tela pior
  * do que estava.
  */
+import { entradaDoCatalogo } from "./catalogos";
 import type { Idioma } from "./idiomas";
 
 /** `pt-BR` não aparece: é a chave. Só o que DIFERE precisa de linha. */
@@ -6866,6 +6867,8 @@ export const DICIONARIO: Traducoes = {
   "Rio Branco (Brasil)": { es: "Rio Branco (Brasil)" },
   "Madri (Espanha)": { es: "Madrid (España)" },
   "Roma (Itália)": { es: "Roma (Italia)" },
+  "Bruxelas (Bélgica)": { es: "Bruselas (Bélgica)" },
+  "Istambul (Turquia)": { es: "Estambul (Turquía)" },
   "Nova York (EUA)": { es: "Nueva York (EE. UU.)" },
   "Los Angeles (EUA)": { es: "Los Ángeles (EE. UU.)" },
   "Roma": { es: "Roma" },
@@ -8609,6 +8612,8 @@ export const DICIONARIO: Traducoes = {
   "Buenos Aires": { es: "Buenos Aires" },
   "Lisboa": { es: "Lisboa" },
   "Madri": { es: "Madrid" },
+  "Bruxelas": { es: "Bruselas" },
+  "Istambul": { es: "Estambul" },
   "Nova York": { es: "Nueva York" },
   "Los Angeles": { es: "Los Ángeles" },
   "Outro (horário universal)": { es: "Otro (horario universal)" },
@@ -16223,5 +16228,5 @@ export const DICIONARIO: Traducoes = {
  */
 export function traduzir(texto: string, idioma: Idioma): string {
   if (idioma === "pt-BR") return texto;
-  return DICIONARIO[texto]?.[idioma] ?? texto;
+  return DICIONARIO[texto]?.[idioma] ?? entradaDoCatalogo(idioma, texto) ?? texto;
 }

@@ -35,6 +35,16 @@ describe("fusos: uma lista só", () => {
     expect(fusoOferecidoOuPadrao("America/Guayaquil")).toBe("America/Guayaquil");
   });
 
+  // Bélgica e Turquia faltavam: quem operava de Bruxelas escolhia Madri (bate no
+  // relógio, não no lugar), e de Istambul não achava nada — não havia UTC+3.
+  it.each(["Europe/Brussels", "Europe/Istanbul"])(
+    "quem opera de %s encontra o próprio fuso, nas telas e no onboarding",
+    (fuso) => {
+      expect(fusoOferecidoOuPadrao(fuso)).toBe(fuso);
+      expect(FUSOS_DO_ONBOARDING.map((f) => f.id)).toContain(fuso);
+    },
+  );
+
   it("toda opção é um fuso que o Intl aceita", () => {
     const invalidos = [...oferecidos, ...FUSOS_DO_ONBOARDING.map((f) => f.id)].filter((tz) => !fusoValido(tz));
     expect(invalidos).toEqual([]);
