@@ -192,8 +192,8 @@ export function UserDetailClient({ id }: UserDetailClientProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tenant</TableHead>
-                  <TableHead className="w-[100px]">Role</TableHead>
+                  <TableHead>{t("Tenant")}</TableHead>
+                  <TableHead className="w-[100px]">{t("Role")}</TableHead>
                   <TableHead className="w-[140px]">{t("Aceito em")}</TableHead>
                   <TableHead className="w-[100px]">{t("Status")}</TableHead>
                 </TableRow>

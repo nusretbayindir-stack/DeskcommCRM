@@ -5076,6 +5076,15 @@ export const DICIONARIO: Traducoes = {
   "Voltar pra app": { es: "Volver a la app" },
   Dashboard: { es: "Panel" },
   Tenants: { es: "Tenants" },
+  // Cabeçalhos que o admin escreve em inglês também em português; passam por
+  // t() para os outros idiomas (tests/unit/admin-sem-ingles-fora-de-t).
+  Tenant: { es: "Tenant" },
+  Action: { es: "Acción" },
+  Actions: { es: "Acciones" },
+  Actor: { es: "Actor" },
+  "Actor (user ID)": { es: "Actor (ID de usuario)" },
+  Role: { es: "Rol" },
+  Scope: { es: "Alcance" },
   Audit: { es: "Auditoría" },
   Incidents: { es: "Incidentes" },
   Usage: { es: "Uso" },

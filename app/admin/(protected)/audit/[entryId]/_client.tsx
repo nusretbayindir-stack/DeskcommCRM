@@ -156,11 +156,11 @@ export function AuditDetailClient({ entryId }: AuditDetailClientProps) {
         <div className="space-y-4">
           {/* Actor card */}
           <div className="rounded-md border p-4 space-y-2">
-            <h2 className="text-sm font-medium">Actor</h2>
+            <h2 className="text-sm font-medium">{t("Actor")}</h2>
             {actor ? (
               <div className="space-y-1 text-sm">
                 <Row label="User ID" value={actor.id} mono />
-                <Row label="Email" value={maskEmail(actor.email)} />
+                <Row label={t("Email")} value={maskEmail(actor.email)} />
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ export function AuditDetailClient({ entryId }: AuditDetailClientProps) {
           {/* Tenant card */}
           {tenant && (
             <div className="rounded-md border p-4 space-y-2">
-              <h2 className="text-sm font-medium">Tenant</h2>
+              <h2 className="text-sm font-medium">{t("Tenant")}</h2>
               <div className="space-y-1 text-sm">
                 <Row label={t("Nome")} value={tenant.display_name} />
                 <Row label="Slug" value={tenant.slug} mono />

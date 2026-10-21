@@ -211,21 +211,21 @@ export function AuditFiltersAdmin({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <MultiSelectPopover
-        label="Tenants"
+        label={t("Tenants")}
         options={tenantOptions}
         selected={selectedTenants}
         onToggle={toggleTenant}
         onClear={() => onChange({ ...filters, tenant_ids: undefined })}
       />
       <MultiSelectPopover
-        label="Actions"
+        label={t("Actions")}
         options={actionOptions}
         selected={selectedActions}
         onToggle={toggleAction}
         onClear={() => onChange({ ...filters, actions: undefined })}
       />
       <Input
-        placeholder="Actor (user ID)"
+        placeholder={t("Actor (user ID)")}
         value={actorInput}
         onChange={(e) => handleActorChange(e.target.value)}
         className="h-9 w-60 text-sm"
