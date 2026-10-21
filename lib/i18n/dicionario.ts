@@ -8637,6 +8637,7 @@ export const DICIONARIO: Traducoes = {
     es: "Todavía no hay ningún cliente aquí. En cuanto empiece la primera conversación, su tarjeta aparecerá en esta columna.",
   },
   "Nenhum contato ainda": { es: "Ningún contacto todavía" },
+  "Contatos chegam automaticamente via WhatsApp.": { es: "Los contactos llegan automáticamente por WhatsApp." },
   "Contatos chegam automaticamente via WhatsApp ou Nuvemshop.": {
     es: "Los contactos llegan automáticamente vía WhatsApp o Nuvemshop.",
   },
