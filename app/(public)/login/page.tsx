@@ -6,9 +6,10 @@ import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
+import { tituloDaTelaPublica } from "@/lib/i18n/titulo-da-tela-publica";
 
-export const generateMetadata = tituloDaAba((t) => t("Entrar"));
+// A aba no idioma do visitante, como o corpo (`lib/i18n/titulo-da-tela-publica.ts`).
+export const generateMetadata = () => tituloDaTelaPublica((t) => t("Entrar"));
 
 export default async function LoginPage({
   searchParams,

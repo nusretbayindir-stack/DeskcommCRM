@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { requireAuth } from "@/lib/auth/server";
+import { exigirProvaDeMfa, mfaEmDividaEstrita, requireAuth } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { CadastroDoServidorMcpExterno } from "./_components/CadastroDoServidorMcpExterno";
 import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
@@ -36,6 +36,8 @@ export const generateMetadata = tituloDaAba((t) => t("Servidor MCP externo"));
 export default async function ServidorMcpExternoPage() {
   const user = await requireAuth();
   if (!user.is_platform_admin || user.support) redirect("/403");
+  // A action que grava exige o código provado nesta sessão: vai a ele antes.
+  await exigirProvaDeMfa(mfaEmDividaEstrita);
 
   const idioma = user.idioma;
 

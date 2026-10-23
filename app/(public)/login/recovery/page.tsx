@@ -4,9 +4,10 @@ import { RecoveryForm } from "@/components/auth/RecoveryForm";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
+import { tituloDaTelaPublica } from "@/lib/i18n/titulo-da-tela-publica";
 
-export const generateMetadata = tituloDaAba((t) => t("Recuperar acesso"));
+// A aba no idioma do visitante, como o corpo (`lib/i18n/titulo-da-tela-publica.ts`).
+export const generateMetadata = () => tituloDaTelaPublica((t) => t("Recuperar acesso"));
 
 export default async function RecoveryPage({
   searchParams,

@@ -47,17 +47,18 @@ export default async function PublicLayout({ children }: { children: React.React
   // A maioria destas telas roda ANTES do login (não há usuário nenhum), mas
   // duas — `/login/mfa` e, em parte, `/login/recovery` — rodam com uma sessão
   // parcial já criada (primeiro fator verificado, segundo pendente). Onde há
-  // sessão, o idioma salvo no perfil vale; sem ela, vale o `Accept-Language` —
-  // a MESMA cadeia que o título de cada página usa. Passar o `locale` cru
-  // deixava o formulário (componente cliente) em pt-BR sob um título em turco.
+  // sessão, o idioma salvo no perfil vale; sem ela, o do navegador (Accept-Language),
+  // pela MESMA função das páginas (`idiomaDoVisitante`). Com o perfil só, quem chegava
+  // sem sessão via o servidor no idioma do navegador e os formulários do cliente
+  // (cadastro, login, senha) no padrão pt-BR do provider.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null);
+  const locale = await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null);
 
   return (
-    <IdiomaProvider locale={idioma}>
+    <IdiomaProvider locale={locale}>
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm space-y-6">
           {marca.logoUrl || marca.logoDarkUrl ? (
