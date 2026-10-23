@@ -9,6 +9,10 @@ import type * as Instalacao from "@/lib/branding/instalacao";
  */
 vi.mock("next/font/local", () => ({ default: () => ({ variable: "" }) }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
+// O título padrão do layout sai no idioma de quem abre (sessão → cookies); aqui
+// só o ícone e o nome curto importam. O idioma tem a sua guarda em
+// titulo-da-aba-fala-o-idioma-de-quem-abre.
+vi.mock("@/lib/i18n/titulo-da-aba", () => ({ tradutorDaRequisicao: async () => (texto: string) => texto }));
 vi.mock("@/lib/branding/instalacao", async (original) => ({
   ...(await original<typeof Instalacao>()),
   marcaDaInstalacao: vi.fn().mockResolvedValue({ app_name: "Central", favicon_path: "platform/x.png" }),
