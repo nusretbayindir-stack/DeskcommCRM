@@ -11449,5 +11449,13 @@
   "Quer marcar": "Randevu istiyor",
   "Quer retomar": "Devam etmek istiyor",
   "Quer remarcar": "Yeniden randevu istiyor",
-  "O paciente respondeu — quem segue a conversa é o atendimento.": "Hasta yanıt verdi: görüşmeye bundan sonra ekip devam eder."
+  "O paciente respondeu — quem segue a conversa é o atendimento.": "Hasta yanıt verdi: görüşmeye bundan sonra ekip devam eder.",
+  "{convidador} convidou você para a {empresa} no {marca}": "{convidador} sizi {marca} üzerinden {empresa} şirketine davet etti",
+  "Você foi convidado para a {empresa}": "{empresa} şirketine davet edildiniz",
+  "{convidador} convidou você como {papel} no {marca}.": "{convidador} sizi {marca} üzerinde {papel} olarak davet etti.",
+  "Ou copie e cole este link no navegador:": "Ya da şu bağlantıyı kopyalayıp tarayıcınıza yapıştırın:",
+  "Este link expira em {data}. Se você não esperava este convite, pode ignorá-lo.": "Bu bağlantı {data} tarihinde sona erer. Bu daveti beklemiyorsanız dikkate almayabilirsiniz.",
+  "Você foi convidado para a {empresa} como {papel} no {marca}.": "{empresa} şirketine {marca} üzerinde {papel} olarak davet edildiniz.",
+  "Aceitar: {url}": "Kabul edin: {url}",
+  "Expira em {data}.": "Geçerlilik sonu: {data}."
 }

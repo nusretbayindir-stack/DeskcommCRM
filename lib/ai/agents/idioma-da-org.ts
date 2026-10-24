@@ -13,6 +13,7 @@
 import type pg from "pg";
 
 import { IDIOMA_PADRAO, normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type LeitorSupabase = {
   from(tabela: string): {
@@ -49,5 +50,29 @@ export async function idiomaDaOrgPeloPg(
     return normalizarIdioma(rows?.[0]?.locale ?? null);
   } catch {
     return IDIOMA_PADRAO;
+  }
+}
+
+/**
+ * O idioma E o fuso da organização, numa ida só ao banco, para o e-mail que
+ * sai em nome dela (o convite de time).
+ *
+ * Nunca lança, nem quando o cliente de serviço não está configurado: o convite
+ * não pode deixar de sair por causa de idioma. Sem resposta, vale o idioma do
+ * produto e nenhum fuso (quem usa cai em `FUSO_PADRAO`).
+ */
+export async function idiomaEFusoDaOrg(
+  orgId: string,
+): Promise<{ idioma: Idioma; fuso: string | null }> {
+  try {
+    const { data } = await (createAdminClient() as unknown as LeitorSupabase)
+      .from("organizations")
+      .select("locale, timezone")
+      .eq("id", orgId)
+      .maybeSingle();
+    const linha = data as { locale?: string | null; timezone?: string | null } | null;
+    return { idioma: normalizarIdioma(linha?.locale ?? null), fuso: linha?.timezone || null };
+  } catch {
+    return { idioma: IDIOMA_PADRAO, fuso: null };
   }
 }

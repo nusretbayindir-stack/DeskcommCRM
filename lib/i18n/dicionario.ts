@@ -17676,6 +17676,15 @@ export const DICIONARIO: Traducoes = {
   "Quer retomar": { es: "Quiere retomar" },
   "Quer remarcar": { es: "Quiere reagendar" },
   "O paciente respondeu — quem segue a conversa é o atendimento.": { es: "El paciente respondió: quien sigue la conversación es el equipo de atención." },
+  // Convite de time (`lib/email/templates/invite.ts`), no idioma da empresa.
+  "{convidador} convidou você para a {empresa} no {marca}": { es: "{convidador} te invitó a {empresa} en {marca}" },
+  "Você foi convidado para a {empresa}": { es: "Te invitaron a {empresa}" },
+  "{convidador} convidou você como {papel} no {marca}.": { es: "{convidador} te invitó como {papel} en {marca}." },
+  "Ou copie e cole este link no navegador:": { es: "O copia y pega este enlace en el navegador:" },
+  "Este link expira em {data}. Se você não esperava este convite, pode ignorá-lo.": { es: "Este enlace vence el {data}. Si no esperabas esta invitación, puedes ignorarla." },
+  "Você foi convidado para a {empresa} como {papel} no {marca}.": { es: "Te invitaron a {empresa} como {papel} en {marca}." },
+  "Aceitar: {url}": { es: "Aceptar: {url}" },
+  "Expira em {data}.": { es: "Vence el {data}." },
 };
 
 /**

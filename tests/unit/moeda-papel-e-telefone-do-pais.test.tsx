@@ -176,6 +176,7 @@ describe("2. o convite de equipe diz o papel pelo nome", () => {
       role: "agent",
       expiresAt: new Date("2026-10-28T12:00:00.000Z"),
       marca: MARCA,
+      idioma: "pt-BR",
     });
     expect(html).toContain("<strong>Atendente</strong>");
     expect(html).not.toContain(">agent<");
@@ -190,6 +191,7 @@ describe("2. o convite de equipe diz o papel pelo nome", () => {
       role: "papel-novo",
       expiresAt: new Date("2026-10-28T12:00:00.000Z"),
       marca: MARCA,
+      idioma: "pt-BR",
     });
     expect(html).toContain("<strong>papel-novo</strong>");
   });
