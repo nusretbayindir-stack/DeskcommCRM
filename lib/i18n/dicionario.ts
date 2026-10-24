@@ -2155,6 +2155,10 @@ export const DICIONARIO: Traducoes = {
   "Conversa com o cliente": { es: "Conversa con el cliente" },
   "Organiza o sistema": { es: "Organiza el sistema" },
   "Confere antes de enviar": { es: "Revisa antes de enviar" },
+  "Em produção esta resposta não sairia agora": { es: "En producción esta respuesta no saldría ahora" },
+  "O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.": {
+    es: "La prueba muestra la respuesta igualmente; no se envió ningún mensaje.",
+  },
   "Quem é este agente": { es: "Quién es este agente" },
   "Ordem de preferência (0 a 1000)": { es: "Orden de preferencia (0 a 1000)" },
   "Quando mais de um agente puder atender a mesma conversa, o de número maior tenta primeiro. Se você só tem um agente, pode deixar como está.": {

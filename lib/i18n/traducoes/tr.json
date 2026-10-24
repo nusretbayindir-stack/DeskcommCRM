@@ -2111,6 +2111,8 @@
   "Conexões → Templates": "Bağlantılar → Şablonlar",
   "Confere a integridade dos bytes antes de qualquer instalação.": "Herhangi bir kurulumdan önce baytların bütünlüğünü kontrol eder.",
   "Confere antes de enviar": "Göndermeden önce kontrol eder",
+  "Em produção esta resposta não sairia agora": "Canlı kullanımda bu yanıt şu anda gönderilmezdi",
+  "O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.": "Test yanıtı yine de gösterir; hiçbir mesaj gönderilmedi.",
   "Confere que o arquivo não mudou antes de qualquer instalação.": "Herhangi bir kurulumdan önce dosyanın değişmediğini kontrol eder.",
   "Confere que um aviso de pagamento veio mesmo da Stripe. É criado sozinho quando você conecta a chave.": "Bir ödeme bildiriminin gerçekten Stripe'tan geldiğini doğrular. Anahtarı bağladığınızda otomatik oluşturulur.",
   "Confere que um aviso de pagamento veio mesmo do Asaas. É criado quando você conecta a chave; se o Asaas pedir o cadastro manual do aviso, a tela mostra o token uma única vez.": "Bir ödeme bildiriminin gerçekten Asaas'tan geldiğini doğrular. Anahtarı bağladığınızda oluşturulur; Asaas bildirimin elle kaydedilmesini isterse ekran token'ı yalnızca bir kez gösterir.",
