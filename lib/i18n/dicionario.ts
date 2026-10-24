@@ -2159,6 +2159,18 @@ export const DICIONARIO: Traducoes = {
   "O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.": {
     es: "La prueba muestra la respuesta igualmente; no se envió ningún mensaje.",
   },
+  "Fora da janela de envio permitida: a resposta ficaria agendada para a próxima abertura da janela.": {
+    es: "Fuera de la ventana de envío permitida: la respuesta quedaría programada para la próxima apertura de la ventana.",
+  },
+  "Este número ainda está em aquecimento e o limite diário de envios foi atingido. A resposta sairia amanhã.": {
+    es: "Este número aún está en calentamiento y se alcanzó el límite diario de envíos. La respuesta saldría mañana.",
+  },
+  "O limite diário de envios do número foi atingido. A resposta sairia amanhã.": {
+    es: "Se alcanzó el límite diario de envíos del número. La respuesta saldría mañana.",
+  },
+  "O produto {codigo} não tem fotos cadastradas: nenhuma imagem seria enviada no envio real, só o texto.": {
+    es: "El producto {codigo} no tiene fotos registradas: no se enviaría ninguna imagen en el envío real, solo el texto.",
+  },
   "Quem é este agente": { es: "Quién es este agente" },
   "Ordem de preferência (0 a 1000)": { es: "Orden de preferencia (0 a 1000)" },
   "Quando mais de um agente puder atender a mesma conversa, o de número maior tenta primeiro. Se você só tem um agente, pode deixar como está.": {

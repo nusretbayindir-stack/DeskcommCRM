@@ -22,7 +22,7 @@ import { ApiError } from "@/lib/api/types";
 import { agentRunsKey } from "@/hooks/ai/useAgentRuns";
 import { useT } from "@/hooks/i18n/useT";
 import { useTelefoneExemplo } from "@/hooks/contacts/useTelefoneExemplo";
-import { textoDoAviso, textoDoImpedimento } from "@/lib/agent-engine/agent/texto-do-teste";
+import { textoDoAviso, textoDoImpedimento, type AvisoDoTeste } from "@/lib/agent-engine/agent/texto-do-teste";
 import type { AgentRow } from "@/hooks/ai/useAgent";
 import type { AgentVersionRow } from "@/hooks/ai/useAgentVersions";
 
@@ -54,7 +54,7 @@ interface TestResponse {
      * Não bloqueiam o teste: dizem o que impediria o ENVIO real agora (ex.: fora
      * do horário). Ver `gatesDoSandbox` em lib/agent-engine/agent/preview.ts.
      */
-    warnings?: Array<{ code: string; message: string; reason?: string }>;
+    warnings?: AvisoDoTeste[];
     restrictions?: string[];
     /** Ver lib/ai/agents/avaliar-resposta-de-teste.ts. */
     guardrails?: {

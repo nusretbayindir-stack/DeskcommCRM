@@ -52,17 +52,38 @@ describe("textoDoAviso", () => {
     expect(texto).toContain(tr[motivoDoVeto("promise_semantic")!.texto as keyof typeof tr]);
   });
 
-  it("código desconhecido: traduz o padrão e mantém o motivo dinâmico", () => {
+  it.each(["outside_window", "warmup_cap", "daily_cap", "factual_claim_contradicted"])(
+    "%s em tr: nenhum português escapa (nem o motivo dinâmico do motor)",
+    (code) => {
+      const texto = textoDoAviso(
+        { code, message: "x", reason: "fora da janela de resposta (9h-18h, America/Sao_Paulo)" },
+        tTurco,
+      );
+      expect(texto).not.toMatch(/Em produção|O teste mostra|fora da janela|janela|limite|resposta/);
+      expect(texto).not.toBe("");
+    },
+  );
+
+  it("código realmente desconhecido: traduz o padrão e mantém o motivo do motor", () => {
     const texto = textoDoAviso(
-      { code: "outside_window", message: "x", reason: "fora da janela de resposta (9h-18h)" },
+      { code: "codigo_inventado", message: "x", reason: "motivo cru do motor" },
       tTurco,
     );
     expect(texto).not.toContain("Em produção");
-    expect(texto).toContain("fora da janela de resposta (9h-18h)");
+    expect(texto).toContain("motivo cru do motor");
   });
 
-  it("aviso sem reason (ex.: midia_sem_fotos): devolve o message", () => {
-    expect(textoDoAviso({ code: "midia_sem_fotos", message: "sem fotos" }, tTurco)).toBe(
+  it("midia_sem_fotos em tr: texto turco com o código do produto", () => {
+    const texto = textoDoAviso(
+      { code: "midia_sem_fotos", message: "O produto ... não tem fotos", produto: "PROD-7" },
+      tTurco,
+    );
+    expect(texto).toContain("PROD-7");
+    expect(texto).not.toMatch(/não tem fotos|nenhuma imagem|produto/);
+  });
+
+  it("aviso sem reason nem produto: devolve o message", () => {
+    expect(textoDoAviso({ code: "outro", message: "sem fotos" }, tTurco)).toBe(
       "sem fotos",
     );
   });

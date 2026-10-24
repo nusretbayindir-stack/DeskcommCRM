@@ -3,6 +3,35 @@ import { motivoDoVeto } from "./sugestao-de-resposta";
 type Traduzir = (texto: string) => string;
 
 /**
+ * Aviso da prévia (não bloqueia o teste). `reason` é o motivo cru do gate e
+ * `produto` o código citado por `midia_sem_fotos`: vão à parte do `message` para
+ * a tela traduzir o texto. `message` segue como o motor o escreveu.
+ */
+export type AvisoDoTeste = { code: string; message: string; reason?: string; produto?: string };
+
+/**
+ * Códigos de pacing (`decidePacing`): o `reason` do motor é texto dinâmico em
+ * português (janela, fuso, data). Na aba Teste vale o texto fixo, sem números.
+ * Literais em cada ramo: `t()` não aceita chave montada em variável.
+ */
+function motivoDePacing(code: string, t: Traduzir): string | null {
+  switch (code) {
+    case "outside_window":
+      return t(
+        "Fora da janela de envio permitida: a resposta ficaria agendada para a próxima abertura da janela.",
+      );
+    case "warmup_cap":
+      return t(
+        "Este número ainda está em aquecimento e o limite diário de envios foi atingido. A resposta sairia amanhã.",
+      );
+    case "daily_cap":
+      return t("O limite diário de envios do número foi atingido. A resposta sairia amanhã.");
+    default:
+      return null;
+  }
+}
+
+/**
  * Textos da aba Teste no idioma do operador.
  *
  * `message` do veto é `verdict.reason`: texto de ENSINO para o modelo, em
@@ -20,17 +49,18 @@ export function textoDoImpedimento(
 
 /**
  * O aviso do sandbox ("Em produção esta resposta não sairia agora (…)") em duas
- * partes traduzíveis. Sem `reason` (avisos que não vêm de um gate) devolve o
- * `message`. O motivo dinâmico de pacing (horário, limites) segue como o motor o
- * escreveu.
+ * partes traduzíveis. Motivo: `motivoDoVeto`, depois o texto fixo de pacing e,
+ * por último (código novo), o `reason` do motor. Sem `reason` devolve o
+ * `message`, salvo `midia_sem_fotos`, que é montado a partir do produto.
  */
-export function textoDoAviso(
-  aviso: { code: string; message: string; reason?: string },
-  t: Traduzir,
-): string {
+export function textoDoAviso(aviso: AvisoDoTeste, t: Traduzir): string {
+  if (aviso.code === "midia_sem_fotos" && aviso.produto !== undefined)
+    return t(
+      "O produto {codigo} não tem fotos cadastradas: nenhuma imagem seria enviada no envio real, só o texto.",
+    ).replace("{codigo}", aviso.produto);
   if (aviso.reason === undefined) return aviso.message;
   const motivo = motivoDoVeto(aviso.code);
-  const detalhe = motivo ? t(motivo.texto) : aviso.reason;
+  const detalhe = motivo ? t(motivo.texto) : (motivoDePacing(aviso.code, t) ?? aviso.reason);
   return (
     `${t("Em produção esta resposta não sairia agora")} (${detalhe}). ` +
     t("O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.")

@@ -1,4 +1,5 @@
 /** Preview is an execution policy of the real turn, never a simulated queue job. */
+import type { AvisoDoTeste } from './texto-do-teste';
 import type pg from 'pg';
 import { hasOpenCaseForContact } from './human-cases';
 import type { ToolSet } from '../edge/llm/run-model-call';
@@ -57,7 +58,7 @@ export interface PreviewResult {
    * assistido trata o mesmo veto como impedimento; o de produto sem fotos
    * (`midia_sem_fotos`) sai nos dois.
    */
-  warnings: Array<{ code: string; message: string; reason?: string }>;
+  warnings: AvisoDoTeste[];
   restrictions: string[];
   /**
    * A mídia que a resposta USARIA, preparada pelo MESMO caminho do envio real
@@ -199,7 +200,7 @@ export const SCENARIO_READS = new Set([
  * `pacingGate.name` no topo do arquivo derrubaria todos eles no import. Aqui a
  * leitura acontece só quando o Teste de fato avalia a cadeia.
  */
-function gatesDoSandbox(avisos: Array<{ code: string; message: string; reason?: string }>): readonly Gate[] {
+function gatesDoSandbox(avisos: AvisoDoTeste[]): readonly Gate[] {
   return BEFORE_SEND_GATES.map((gate) =>
     gate.name !== pacingGate.name && gate.name !== factualClaimGate.name
       ? gate
@@ -352,12 +353,13 @@ export function applyPreviewPolicy(
                 if (midia.fotosCadastradas === 0 && !p.result.warnings.some((w) => w.code === 'midia_sem_fotos'))
                   p.result.warnings.push({
                     code: 'midia_sem_fotos',
+                    produto: midia.codigo,
                     message:
                       `O produto ${JSON.stringify(midia.codigo)} não tem fotos cadastradas: ` +
                       'nenhuma imagem seria enviada no envio real — só o texto.',
                   });
               }
-              const avisos: Array<{ code: string; message: string; reason?: string }> = [];
+              const avisos: AvisoDoTeste[] = [];
               // #2923 — as duas perguntas ao Jev da cadeia (promessa semântica,
               // F4-02, e conferência de fato, 6.3) saem juntas, como em
               // `runBeforeSend`: em série a prévia pagaria as duas idas-e-voltas
