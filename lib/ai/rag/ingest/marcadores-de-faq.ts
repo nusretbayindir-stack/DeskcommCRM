@@ -73,3 +73,26 @@ export function preencherMarcadores(frase: string, idioma: Idioma): string {
   const { pergunta, resposta } = marcadoresDaTela(idioma);
   return frase.replaceAll("{pergunta}", pergunta).replaceAll("{resposta}", resposta);
 }
+
+/**
+ * Os rótulos de sistema de um trecho de FAQ (`Pergunta: X\nResposta: Y`, gravado
+ * por `workers/rag-indexer.ts` para o modelo ler) no idioma de quem olha.
+ *
+ * SÓ na exibição: o trecho guardado e o embedding não mudam. Troca apenas o
+ * `Pergunta: ` do começo do trecho e o primeiro `Resposta: ` que abre linha; o
+ * que a pessoa escreveu dentro da pergunta ou da resposta fica como está. Só
+ * vale para trecho de FAQ (`source_type: "faq"` no metadata do trecho).
+ */
+export function rotulosDoTrechoNoIdioma(
+  conteudo: string,
+  idioma: Idioma,
+  tipoDeFonte: unknown,
+): string {
+  if (tipoDeFonte !== "faq" || idioma === "pt-BR") return conteudo;
+  const m = MARCADORES_DE_FAQ[idioma];
+  if (!conteudo.startsWith("Pergunta: ")) return conteudo;
+  return `${m.pergunta[0]}: ${conteudo.slice("Pergunta: ".length)}`.replace(
+    "\nResposta: ",
+    `\n${m.resposta[0]}: `,
+  );
+}

@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { apiClient } from "@/lib/api/client";
+import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/marcadores-de-faq";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 
 interface Trecho {
   id: string;
@@ -46,6 +48,7 @@ interface Props {
 
 export function TrechosDoMaterialDialog({ sourceId, nome, aberto, onFechar }: Props) {
   const t = useT();
+  const idioma = useIdioma();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["ai", "knowledge", "trechos", sourceId],
     queryFn: async () => {
@@ -94,7 +97,7 @@ export function TrechosDoMaterialDialog({ sourceId, nome, aberto, onFechar }: Pr
                   {trecho.token_count} {t("tokens")}
                 </span>
               </div>
-              <p className="whitespace-pre-wrap break-words text-sm">{trecho.content}</p>
+              <p className="whitespace-pre-wrap break-words text-sm">{rotulosDoTrechoNoIdioma(trecho.content, idioma, trecho.metadata?.source_type)}</p>
             </div>
           ))}
           {data?.truncado ? (
