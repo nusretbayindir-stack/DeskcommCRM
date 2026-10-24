@@ -42,12 +42,19 @@
  * a política — quem tem o poder de silenciar alguém para sempre é a pessoa.
  */
 
-/** minúsculas, sem acento — a forma sobre a qual todos os padrões daqui rodam. */
+/**
+ * minúsculas, sem acento — a forma sobre a qual todos os padrões daqui rodam.
+ *
+ * O `ı` turco (i sem ponto) não se decompõe no NFD e vira `i`: "ATMAYIN" chega
+ * como `atmayin` pelo `toLowerCase`, "atmayın" chegaria como `atmayın`, e os
+ * padrões turcos escrevem só `i`.
+ */
 export function normalizarTexto(texto: string): string {
   return texto
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/gu, "");
+    .replace(/[\u0300-\u036f]/gu, "")
+    .replace(/ı/gu, "i");
 }
 
 /**
@@ -103,6 +110,11 @@ export const PALAVRAS_DE_OPT_OUT: ReadonlySet<string> = new Set([
   "salir",
   "desuscribir",
   "desuscribirme",
+  // ── turco ──────────────────────────────────────────────────────────────────
+  //
+  // `ret` é a palavra que todo SMS comercial turco ensina (İYS: "RET yazıp …
+  // gönderin"): o STOP do turco, e o cliente a digita por reflexo.
+  "ret",
 ]);
 
 /**
@@ -284,6 +296,53 @@ const SUJEITO_EXPLICITO_DE_TERCEIRA_PESSOA =
   `(?:${PRONOMES_DE_SUJEITO})\\b\\s*(?:(?!(?:${NAO_ABRIM_SUJEITO})\\b)[a-z]+\\s+){0,2}|` +
   `(?:${DETERMINANTES_DE_SUJEITO})\\b\\s*(?:(?!(?:${NAO_ABRIM_SUJEITO})\\b)[a-z]+\\s+){1,2}` +
   `)nao\\s+me\\s+)`;
+
+// ── turco: as peças das frases de `FRASES_DE_OPT_OUT` e das ambíguas ──────
+//
+// Texto já normalizado: ş→s, ç→c, ğ→g, ö→o, ü→u, ı→i. Corpus em
+// tests/unit/opt-out-em-turco.test.ts; a calibração veio de uma revisão que
+// mediu cada frase com estas funções (review-turkce-demo-oncesi).
+
+/**
+ * O que vem ANTES de `mesaj` e diz que a pessoa fala de UM TIPO de mensagem,
+ * não da conversa. A FORMA e a HORA ("sesli mesaj atmayın", "gece mesaj
+ * atmayın", "pazar günü mesaj atmayın") são de quem segue comprando: nem
+ * bloqueiam nem escalam. "bundan sonra", "bu günden sonra" e "daha önce" NÃO
+ * são hora: são "de agora em diante" e "já disse antes" — e bloqueiam.
+ */
+const TR_MENSAGEM_DE_FORMA_OU_HORA =
+  "sesli|uzun|video|resimli|fotografli|" +
+  "gece|geceleri|yarisi|aksam|aksamlari|sabah|sabahlari|erken|oglen|ogle|sonu|sonlari|saatte|saatlerde|disinda|bitince|" +
+  "(?<!\\b(?:daha)\\s+)once|(?<!\\b(?:bundan|bugunden|gunden|simdiden)\\s+)sonra|" +
+  "gunu|gunleri|ici|hafta|pazar|pazartesi|sali|carsamba|persembe|cuma|cumartesi|tatil|tatilde|bayram|bayramda|yarin|bugun";
+/**
+ * A mensagem AUTOMÁTICA e o LEMBRETE: quem não quer o robô quer uma pessoa, e
+ * quem não quer o lembrete não pediu para sumir — escalam, não bloqueiam.
+ * Contra um agente de IA, "yapay zeka mesajı istemiyorum" é a forma mais provável.
+ */
+const TR_MENSAGEM_AUTOMATICA =
+  "otomatik|hazir|robot|bot|ayni|hatirlatma|hatirlatici|randevu|bilgilendirme|yapay|zeka|makine|sistem|asistan|ai";
+/** `mesaj` em qualquer flexão MENOS o instrumental (mesajla, mesajlarla): o canal de um anexo. */
+const TR_MESAJ = `\\bmesaj(?!\\w*l[ae]\\b)\\w*`;
+/** A mensagem da conversa: nenhum dos dois qualificadores logo antes. */
+const TR_MESAJ_DA_CONVERSA = `(?<!\\b(?:${TR_MENSAGEM_DE_FORMA_OU_HORA}|${TR_MENSAGEM_AUTOMATICA})\\s+)${TR_MESAJ}`;
+/** Para o espelho ambíguo: só a forma e a hora ficam de fora. */
+const TR_MESAJ_NAO_DE_FORMA = `(?<!\\b(?:${TR_MENSAGEM_DE_FORMA_OU_HORA})\\s+)${TR_MESAJ}`;
+const TR_NAO_ENVIE = "gondermeyin|gondermeyiniz|atmayin|atmayiniz|yollamayin|yollamayiniz|cekmeyin|cekmeyiniz";
+/**
+ * A mensagem inteira não pede OUTRO canal ("arayın", "mail atın", "sesli mesaj
+ * atın"). "Mesaj atmayın, arayın" é lead pedindo ligação: bloquear fecharia o
+ * negócio como perdido; o espelho ambíguo faz alguém ligar.
+ */
+const TR_SEM_OUTRO_CANAL =
+  `^(?![\\s\\S]*\\b(?:arayin|arayiniz|arasin|arar\\s+misiniz|arayabilir\\s+misiniz|` +
+  `(?:mail|maile|e-?posta|e-?postaya)\\s+(?:atin|gonderin|yazin|yollayin)|sesli\\s+mesaj\\s+(?:atin|gonderin))\\b)[\\s\\S]*?`;
+/**
+ * A mensagem não fala de OUTRA lista ("bekleme listesi"). Em turco o
+ * qualificador vem ANTES da lista, e um "listeden" solto depois é dela — o
+ * mesmo cuidado de "sair da lista de espera" (#1806) no português.
+ */
+const TR_SEM_OUTRA_LISTA = `^(?![\\s\\S]*\\b(?:bekleme|sira|randevu|fiyat|urun|siparis|davetli|alisveris)\\s+listes)[\\s\\S]*?`;
 
 /**
  * Pedidos INEQUÍVOCOS de descadastro escritos por extenso. Todos exigem o objeto
@@ -505,6 +564,58 @@ const FRASES_DE_OPT_OUT: readonly RegExp[] = [
   // E o espelho da forma com objeto: "cancelar la suscripción a los mensajes"
   // bloqueia na hora; "cancelar la suscripción" sozinha só escala.
   /\bcancelar\s+(?:la\s+|mi\s+)?suscripcion\s+(?:a|de)\s+(?:los|estos|tus|sus)\s+(?:mensajes|promociones|ofertas)\b/u,
+  // ── turco ─────────────────────────────────────────────────────────────────
+  //
+  // A mesma régua: o verbo de cessação só bloqueia com o OBJETO de comunicação
+  // — `mesaj` da conversa, `sms`, `reklam`, "bana/bize yazmak" — ou a PESSOA
+  // saindo da lista. As peças (TR_*) estão logo acima desta lista.
+  //
+  // "mesaj göndermeyin", "mesaj atmayın", "mesaj da atmayın", "SMS atmayın".
+  new RegExp(`${TR_SEM_OUTRO_CANAL}(?:${TR_MESAJ_DA_CONVERSA}|\\bsms\\w*)\\s+(?:da\\s+|de\\s+)?(?:${TR_NAO_ENVIE})\\b`, "u"),
+  // O singular informal ("bana mesaj atma") só no fim ou antes de bana/artık:
+  // "mesaj atma imkanı var mı?" é pergunta.
+  new RegExp(
+    `${TR_SEM_OUTRO_CANAL}(?:${TR_MESAJ_DA_CONVERSA}|\\bsms\\w*)\\s+(?:atma|gonderme|yollama|cekme)` +
+      `(?=\\s*(?:$|[.!,;]|(?:bana|bize|artik|bir\\s+daha|lutfen)\\b))`,
+    "u",
+  ),
+  // "bana yazmayın", "artık yazmayın", "WhatsApp'tan yazmayın". NÃO "beni
+  // aramayın": quem pede para não LIGAR quer seguir recebendo aqui — o espelho
+  // de "não quero receber ligação, só whatsapp". Nem "bunu yazmayın" (a fatura).
+  new RegExp(
+    `${TR_SEM_OUTRO_CANAL}(?:\\b(?:bana|bize)\\s+(?:bir\\s+daha\\s+|artik\\s+)?|(?:^|[.!?,;:]\\s*)(?:lutfen\\s+)?(?:artik|bir\\s+daha)\\s+|` +
+      `\\bwhatsapp\\w*(?:['’]\\w+)?\\s+(?:bana\\s+|bize\\s+)?)(?:yazmayin|yazmayiniz)\\b`,
+    "u",
+  ),
+  // "mesaj istemiyorum", "reklam istemiyorum". Sem o objeto, não: "kampanya
+  // istemiyorum, normal fiyat" é objeção de preço.
+  new RegExp(`${TR_SEM_OUTRO_CANAL}(?:${TR_MESAJ_DA_CONVERSA}|\\breklam\\w*)\\s+(?:almak\\s+)?istemiyor(?:um|uz)\\b`, "u"),
+  new RegExp(`\\breklam\\w*\\s+(?:${TR_NAO_ENVIE})\\b`, "u"),
+  new RegExp(`${TR_MESAJ_DA_CONVERSA}\\s+gelmesin\\b`, "u"),
+  // "beni listeden çıkarın", "numaramı listenizden silin", "beni yayın
+  // listesinden çıkarın" (a lista de transmissão do WhatsApp). Quem sai é a
+  // PESSOA ou o NÚMERO: "bu parçayı listeden çıkarın" é o orçamento.
+  new RegExp(
+    `${TR_SEM_OUTRA_LISTA}\\b(?:beni|bizi|numarami|numaramizi|telefonumu)\\s+(?:bu\\s+|mesaj\\s+|yayin\\s+|whatsapp\\s+)?` +
+      `(?:listeden|listenizden|listenden|listesinden)\\s+(?:cikarin|cikariniz|cikartin|cikartiniz|cikar|cikart|cikarir\\s+misiniz|` +
+      `cikartir\\s+misiniz|cikarabilir\\s+misiniz|cikartabilir\\s+misiniz|silin|siliniz|sil|siler\\s+misiniz|silebilir\\s+misiniz)\\b`,
+    "u",
+  ),
+  // "Listeden çıkar beni" — a lista no INÍCIO da frase, sem outro objeto.
+  new RegExp(
+    `${TR_SEM_OUTRA_LISTA}(?:^|[.!?,;:]\\s*)(?:lutfen\\s+)?(?:listeden|listenizden)\\s+(?:cikarin|cikariniz|cikartin|cikar|cikart|silin|sil)` +
+      `(?:\\s+(?:beni|bizi|lutfen))?\\s*(?:$|[.!?,;:])`,
+    "u",
+  ),
+  new RegExp(`${TR_SEM_OUTRA_LISTA}\\b(?:listeden|listenizden|listenden)\\s+cikmak\\s+istiyor(?:um|uz)\\b`, "u"),
+  // "mesajlarınızı durdurun", "mesaj gönderimini durdurun", "mesaj atmayı
+  // bırak". `kesin` sozinho não: "mesaj kesin geldi mi?" é "chegou mesmo?".
+  new RegExp(`${TR_MESAJ_DA_CONVERSA}\\s+(?:(?:gonderimini|gonderimi|gonderilmesini)\\s+)?(?:durdurun|durdurunuz)\\b`, "u"),
+  new RegExp(
+    `${TR_MESAJ_DA_CONVERSA}\\s+(?:gondermeyi|atmayi|yollamayi|gonderimini)\\s+(?:birakin|birakiniz|birak|kesin|durdurun)\\b`,
+    "u",
+  ),
+  /\bmesaj\w*\s+(?:ile\s+)?rahatsiz\s+etmeyin(?:iz)?\b/u,
 ];
 
 /**
@@ -567,6 +678,50 @@ const FRASES_AMBIGUAS_DE_OPT_OUT: readonly RegExp[] = [
   // e "quiero dar de baja la suscripcion" continuam em `FRASES_DE_OPT_OUT`.
   /\bcancelar\s+(?:la\s+|mi\s+)?suscripcion\b/u,
   /\bno\s+me\s+molest(?:e|en|es)\b/u,
+  // ── turco ─────────────────────────────────────────────────────────────────
+  //
+  // O espelho de "me deixa em paz" e "chega" — o PEDIDO, não a descrição:
+  // "bu ses beni rahat bırakmıyor" é o barulho do carro, e "komşuları rahatsız
+  // etmeyin" é a obra.
+  /\bbeni\s+(?:artik\s+)?rahat\s+birak(?:in|iniz|sana|ir\s+misiniz|sin|sinlar)?\b/u,
+  /(?:^|[.!?,;:]\s*|\b(?:beni|bizi|lutfen|artik|bir\s+daha)\s+)rahatsiz\s+(?:etmeyin(?:iz)?\b|etme(?=\s*(?:$|[.!?,;:]))|ediyorsunuz\b)/u,
+  /\b(?:yeter\s+artik|artik\s+yeter)\b(?!\s+mi\b)/u,
+  // A marca de REPETIÇÃO, como no espanhol: "ilgilenmiyorum" sozinho é a
+  // objeção comercial. E o item no comitativo ("o evle artık ilgilenmiyorum,
+  // başka ilan var mı?") é o "no me interesa ese plan, pero sí el otro".
+  /(?<!\b\w+l[ae]\s+)\b(?:artik\s+ilgilenmiyorum|ilgilenmiyorum\s+artik)\b/u,
+  /\b(?:zaten|daha\s+once)\s+(?:ilgilenmedigimi|istemedigimi)\s+(?:soyledim|yazdim|belirttim)\b/u,
+  // `abonelik` é o plano da academia, da revista ou do SaaS tanto quanto a
+  // lista — a mesma decisão de "cancelar a assinatura" (#2886): escala. Menos
+  // o contrato de gás, água e luz, que o encanador ouve todo dia.
+  /(?<!\b(?:dogalgaz|dogal\s+gaz|gaz|su|elektrik|internet|telefon|hat|tv|kablo)\s+)\babonel(?:ik|ig)\w*\s+(?:iptal|sonlandir)\w*/u,
+  /\babonelikten\s+cik\w*/u,
+  // "bildirim" também é o lembrete da consulta: quem não quer o lembrete não
+  // pediu para sumir da conversa. Um humano decide.
+  /\bbildirim\w*\s+(?:almak\s+)?istemiyor(?:um|uz)\b/u,
+  // A palavra SOZINHA. "İptal" é também a resposta ao lembrete ("Evet / İptal")
+  // e "Durdur" pode ser o pedido de pausa: escala, não bloqueia. "Dur" fica de
+  // fora: sozinho, é "espera" ("Dur, yanlış yazdım").
+  /^[^a-z]*(?:iptal|durdur|durdurun|yazmayin)[^a-z]*$/u,
+  // Os ESPELHOS do bloqueio: o que ele recusou por ser mensagem automática ou
+  // lembrete, ou por pedir outro canal, ainda chama uma pessoa. A forma e a
+  // hora ("sesli mesaj", "gece mesaj") ficam de fora daqui também.
+  new RegExp(`(?:${TR_MESAJ_NAO_DE_FORMA}|\\bsms\\w*)\\s+(?:da\\s+|de\\s+)?(?:${TR_NAO_ENVIE})\\b`, "u"),
+  new RegExp(
+    `(?:${TR_MESAJ_NAO_DE_FORMA}|\\bsms\\w*)\\s+(?:atma|gonderme|yollama|cekme)` +
+      `(?=\\s*(?:$|[.!,;]|(?:bana|bize|artik|bir\\s+daha|lutfen)\\b))`,
+    "u",
+  ),
+  new RegExp(`${TR_MESAJ_NAO_DE_FORMA}\\s+(?:almak\\s+)?istemiyor(?:um|uz)\\b`, "u"),
+  new RegExp(`${TR_MESAJ_NAO_DE_FORMA}\\s+(?:durdurun|durdurunuz)\\b`, "u"),
+  /\b(?:bana|bize)\s+(?:bir\s+daha\s+|artik\s+)?(?:yazmayin|yazmayiniz)\b/u,
+  /\bwhatsapp\w*(?:['’]\w+)?\s+(?:bana\s+)?(?:yazmayin|yazmayiniz)\b/u,
+  // Apagar os dados (KVKK/GDPR): um humano atende — "eski numaramı silin" é
+  // só a troca de número.
+  /(?<!\b(?:eski|diger|yanlis|ikinci|is)\s+)\b(?:numarami|numaramizi|telefonumu|bilgilerimi|verilerimi|kaydimi)\s+(?:\w+\s+)?(?:silin|siliniz|siler\s+misiniz|silebilir\s+misiniz)\b/u,
+  /\b(?:biktim\s+(?:artik\s+)?mesaj\w*|mesaj\w*\s+biktim)\b/u,
+  /\bmesaj\w*\s+(?:atip|gonderip)\s+rahatsiz\s+ediyor\w*/u,
+  /\bengelleyecegim\b/u,
 ];
 
 /** A mensagem inteira é a palavra-chave (ignorando pontuação e emoji de borda). */

@@ -33,6 +33,8 @@ import {
 import { TokenCounter } from "@/lib/ui/TokenCounter";
 import { Info } from "@/lib/ui/icons";
 import { useT } from "@/hooks/i18n/useT";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
 import Link from "next/link";
 
 import { TETO_TOOLS_POR_AGENTE } from "@/lib/mcp/tools/selecao-por-pacote";
@@ -43,6 +45,7 @@ import { CHAVE_DA_INSTALACAO, CredentialPicker, STATUS_LABEL, findCredential } f
 import { rotuloDoEstadoDoCanal } from "@/lib/channels/estado";
 import { bloqueioDePublicacao } from "@/lib/ai/agents/bloqueio-de-publicacao";
 import { mesmoRascunho } from "@/lib/ai/agents/mesmo-rascunho";
+import { palavrasDePassagemPadrao } from "@/lib/ai/agents/palavras-de-passagem";
 import { ToolPicker } from "./ToolPicker";
 import { TriggerEditor, type TriggerValue } from "./TriggerEditor";
 import { HandoffKeywordsInput } from "./HandoffKeywordsInput";
@@ -273,8 +276,10 @@ export function buildState(args: {
    */
   provedorPadrao?: string;
   provedoresOferecidos?: readonly string[];
+  /** O idioma da tela: escolhe as palavras que chamam uma pessoa num agente novo. */
+  idioma?: Idioma;
 }): FormState {
-  const { agent, version, t, provedorPadrao, provedoresOferecidos } = args;
+  const { agent, version, t, provedorPadrao, provedoresOferecidos, idioma } = args;
   return {
     name: agent?.name ?? "",
     description: agent?.description ?? "",
@@ -298,11 +303,9 @@ export function buildState(args: {
     cost_budget_cents: version?.cost_budget_cents ?? 50,
     history_message_window: version?.history_message_window ?? 20,
     history_token_window: version?.history_token_window ?? 8_000,
-    handoff_keywords: version?.handoff_keywords ?? [
-      "falar com humano",
-      "atendente",
-      "pessoa real",
-    ],
+    // Como o prompt acima: o default vira a configuração real se ninguém editar,
+    // e são palavras do CLIENTE — no idioma da tela, não sempre em português.
+    handoff_keywords: version?.handoff_keywords ?? [...palavrasDePassagemPadrao(idioma ?? IDIOMA_PADRAO)],
     handoff_tool_enabled: version?.handoff_tool_enabled ?? true,
     handoff_legal_enabled: version?.handoff_legal_enabled ?? true,
     proposal_ai_draft_enabled: version?.proposal_ai_draft_enabled ?? true,
@@ -388,6 +391,7 @@ function toVersionPayload(s: FormState) {
 
 export function AgentForm(props: Props) {
   const t = useT();
+  const idioma = useIdioma();
   const funis = props.funis ?? [];
   const materiais = props.materiais ?? [];
   const router = useRouter();
@@ -400,15 +404,16 @@ export function AgentForm(props: Props) {
       // O fallback existe para chamadores que ainda não a passam; sem ele, um
       // agente pausado abriria no texto padrão e o prompt "sumiria".
       const ref = props.base ?? props.draft ?? props.published;
-      return buildState({ agent: props.agent, version: ref, t });
+      return buildState({ agent: props.agent, version: ref, t, idioma });
     }
     return buildState({
       version: null,
       t,
       provedorPadrao: props.provedorPadrao,
       provedoresOferecidos: props.provedoresOferecidos,
+      idioma,
     });
-  }, [isEdit, props, t]);
+  }, [isEdit, props, t, idioma]);
 
   const [form, setForm] = React.useState<FormState>(baseline);
   const [saving, setSaving] = React.useState(false);
