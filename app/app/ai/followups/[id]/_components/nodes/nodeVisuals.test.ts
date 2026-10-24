@@ -169,3 +169,26 @@ describe("paleta do follow-up (roteiro de atendimento, #1130)", () => {
     expect(tipos).toContain("action");
   });
 });
+
+describe("padrões de nó novo no idioma do operador", () => {
+  const tr = (texto: string) => `tr:${texto}`;
+
+  it("a regra e a pergunta que nascem dentro do nó saem traduzidas", () => {
+    const regra = NODE_VISUALS.match_reply.defaultConfig(tr) as { branches: { label: string }[] };
+    expect(regra.branches[0]!.label).toBe("tr:Sim");
+    const pergunta = NODE_VISUALS.collect.defaultConfig(tr) as { label: string };
+    expect(pergunta.label).toBe("tr:Nova pergunta");
+  });
+
+  it("sem tradutor (pt-BR) nada muda", () => {
+    const regra = NODE_VISUALS.match_reply.defaultConfig() as { branches: { label: string }[] };
+    expect(regra.branches[0]!.label).toBe("Sim");
+    const pergunta = NODE_VISUALS.collect.defaultConfig() as { label: string };
+    expect(pergunta.label).toBe("Nova pergunta");
+  });
+
+  it("'Nova regra' tem espanhol e turco no dicionário", () => {
+    expect(traduzir("Nova regra", "es")).not.toBe("Nova regra");
+    expect(traduzir("Nova regra", "tr")).not.toBe("Nova regra");
+  });
+});

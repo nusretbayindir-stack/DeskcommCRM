@@ -113,6 +113,30 @@ describe("POST /api/v1/ai/followup-flows/from-model", () => {
     expect(capturado.payload).not.toHaveProperty("active_version_id");
   });
 
+  it("instala em turco: nome, nós, ramos e nota saem no idioma de quem instalou; o texto do paciente não muda", async () => {
+    deps.role.mockResolvedValue({
+      ok: true,
+      user: { id: EU, idioma: "tr" },
+      org: { orgId: ORG, role: "manager" },
+    });
+    const { capturado, client } = clientFake();
+    deps.client.mockResolvedValue(client);
+
+    const res = await POST(req({ model_id: "clinica-consulta-retomada" }));
+    expect(res.status).toBe(201);
+
+    const modelo = modeloPorId("clinica-consulta-retomada")!;
+    const gravado = capturado.payload as { name: string; draft_graph: typeof modelo.grafo };
+    expect(gravado.name).not.toBe(modelo.nome);
+    const rotulos = gravado.draft_graph.nodes.map((n) => n.label);
+    expect(rotulos).not.toContain("Início");
+    expect(rotulos).not.toContain("Fim: respondeu");
+    expect(rotulos.some((r) => r.startsWith("Espera"))).toBe(false);
+    expect(gravado.draft_graph.nodes.map((n) => (n.config as { body?: string }).body)).toEqual(
+      modelo.grafo.nodes.map((n) => (n.config as { body?: string }).body),
+    );
+  });
+
   it("audita a instalação dizendo QUAL modelo — sem isso ninguém sabe de onde o fluxo veio", async () => {
     const { client } = clientFake();
     deps.client.mockResolvedValue(client);

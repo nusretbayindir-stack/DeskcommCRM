@@ -22,7 +22,12 @@ export interface NodeVisual {
   /** Left accent border on the node card. */
   borderClassName: string;
   defaultLabel: string;
-  defaultConfig: () => FlowNode["config"];
+  /**
+   * `t` traduz o texto que o nó leva DENTRO do config ("Sim", "Nova pergunta"):
+   * é rótulo gravado no grafo, então precisa nascer no idioma de quem o criou.
+   * Sem `t` (pt-BR, testes) sai em português, como sempre saiu.
+   */
+  defaultConfig: (t?: (texto: string) => string) => FlowNode["config"];
 }
 
 type RegraDeCondicao = Extract<FlowNode, { type: "condition" }>["config"]["checks"][number];
@@ -110,8 +115,8 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-info-bg text-info-fg",
     borderClassName: "border-l-info",
     defaultLabel: "Casar resposta",
-    defaultConfig: () => ({
-      branches: [{ id: "br_sim", label: "Sim", op: "contains", pattern: "sim" }],
+    defaultConfig: (t = (texto) => texto) => ({
+      branches: [{ id: "br_sim", label: t("Sim"), op: "contains", pattern: "sim" }],
       grace_timeout_ms: 900_000,
     }),
   },
@@ -131,7 +136,7 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-info-bg text-info-fg",
     borderClassName: "border-l-info",
     defaultLabel: "Nova pergunta",
-    defaultConfig: () => ({ key: "novo_campo", label: "Nova pergunta", type: "text", required: true, permite_correcao: true }),
+    defaultConfig: (t = (texto) => texto) => ({ key: "novo_campo", label: t("Nova pergunta"), type: "text", required: true, permite_correcao: true }),
   },
   skill: {
     type: "skill",

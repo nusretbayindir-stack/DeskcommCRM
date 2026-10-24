@@ -17644,6 +17644,38 @@ export const DICIONARIO: Traducoes = {
   "Escolha até {max} campos do negócio para aparecerem em cada compra do contato. Sem escolha, a seção mostra a data do ganho, o título e o valor.": {
     es: "Elige hasta {max} campos del negocio para que aparezcan en cada compra del contacto. Sin elección, la sección muestra la fecha en que se ganó, el título y el valor.",
   },
+  // Fluxos de follow-up instalados a partir de um modelo (lib/followup/modelos/):
+  // nome do modelo, rótulos dos nós e dos ramos e a nota do fim são gravados no
+  // idioma de quem instala. A espera leva o número pelo molde {n}.
+  "Espera a resposta": { es: "Espera la respuesta" },
+  "Fim: quis marcar": { es: "Fin: quiso agendar" },
+  "Fim: respondeu": { es: "Fin: respondió" },
+  "Fim: sem resposta": { es: "Fin: sin respuesta" },
+  "Espera 1 dia": { es: "Espera 1 día" },
+  "Espera {n} dias": { es: "Espera {n} días" },
+  "Espera 1 hora": { es: "Espera 1 hora" },
+  "Espera {n} horas": { es: "Espera {n} horas" },
+  "Nova regra": { es: "Nueva regla" },
+  "Consulta · retomar quem sumiu na marcação": { es: "Consulta · retomar a quien desapareció al agendar" },
+  "Exame · marcar o exame que foi pedido": { es: "Examen · agendar el examen que se pidió" },
+  "Cirurgia · acompanhar a decisão": { es: "Cirugía · acompañar la decisión" },
+  "Falta · remarcar quem não veio": { es: "Inasistencia · reagendar a quien no vino" },
+  "Retoma a marcação": { es: "Retoma el agendamiento" },
+  "Pergunta o período": { es: "Pregunta el horario" },
+  "Último toque": { es: "Último contacto" },
+  "Oferece marcar": { es: "Ofrece agendar" },
+  "Encerra e libera": { es: "Cierra y libera" },
+  "Abre para dúvidas": { es: "Abre a dudas" },
+  "Oferece rever condições": { es: "Ofrece revisar condiciones" },
+  "Convida a retomar": { es: "Invita a retomar" },
+  "Deixa a porta aberta": { es: "Deja la puerta abierta" },
+  "Oferece outra data": { es: "Ofrece otra fecha" },
+  "Pede dia e período": { es: "Pide día y horario" },
+  "Encerra o assunto": { es: "Cierra el asunto" },
+  "Quer marcar": { es: "Quiere agendar" },
+  "Quer retomar": { es: "Quiere retomar" },
+  "Quer remarcar": { es: "Quiere reagendar" },
+  "O paciente respondeu — quem segue a conversa é o atendimento.": { es: "El paciente respondió: quien sigue la conversación es el equipo de atención." },
 };
 
 /**
