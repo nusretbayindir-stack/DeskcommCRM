@@ -18,6 +18,11 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { codigoDoEscopo, mensagemDoEscopo, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import {
+  enviouPalavrasDePassagem,
+  palavrasDePassagemPadrao,
+} from "@/lib/ai/agents/palavras-de-passagem";
 import { versionCreateSchema } from "@/lib/ai/agents/validation";
 import { lerAmbiente } from "@/lib/instalacao/ambiente";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -117,6 +122,13 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const admin = createAdminClient();
 
+  // O zod preenche o que o corpo omite com o default PORTUGUÊS. Esta rota não
+  // herda da versão anterior: omitido, o agente nasce com as palavras do idioma
+  // da ORGANIZAÇÃO. Mandado (até `[]`), fica como foi mandado.
+  const handoffKeywords = enviouPalavrasDePassagem(raw)
+    ? v.handoff_keywords
+    : [...palavrasDePassagemPadrao(await idiomaDaOrgPeloSupabase(admin, organizationId))];
+
   // Ordering: insert with retry on 23505 (race com unique(agent_id,version_number)).
   for (let attempt = 0; attempt < 3; attempt++) {
     const { data: maxRow } = await admin
@@ -177,7 +189,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         cost_budget_cents: v.cost_budget_cents,
         history_message_window: v.history_message_window,
         history_token_window: v.history_token_window,
-        handoff_keywords: v.handoff_keywords,
+        handoff_keywords: handoffKeywords,
         handoff_tool_enabled: v.handoff_tool_enabled,
         handoff_legal_enabled: v.handoff_legal_enabled,
         proposal_ai_draft_enabled: v.proposal_ai_draft_enabled,

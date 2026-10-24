@@ -20,6 +20,7 @@ import {
   validarNomeDeFunil,
   type FunilEditavel,
 } from "@/lib/pipelines/pipeline-editing";
+import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
 import { createClient } from "@/lib/supabase/server";
 import { conflitoDoBanco, corpo, lerFunis } from "./_funis";
 import { listPipelinesHandler } from "./_handler";
@@ -116,10 +117,18 @@ export async function POST(req: NextRequest): Promise<Response> {
   const veredito = validarNomeDeFunil(name, funis, null);
   if (!veredito.ok) return fail("unprocessable_entity", veredito.erro, 422, { requestId });
 
+  // O idioma da ORGANIZAÇÃO, e não o de quem clicou: o vocabulário e as etapas
+  // são dado da empresa, e todo mundo dela vê as mesmas palavras.
+  const idiomaDaOrg = normalizarIdioma(
+    authz.user.organizations.find((o) => o.organization_id === orgId)?.locale ?? null,
+  );
+
   const row = {
     organization_id: orgId,
     name,
     description,
+    // O default do banco é português. Em português isto escreve EXATAMENTE ele.
+    vocabulary: vocabularioDoFunilPadrao(idiomaDaOrg),
     // Arquivados entram na conta do slug: `uniq_crm_pipelines_org_slug` não é parcial.
     slug: slugDeFunil(name, funis.map((f) => f.slug)),
     // No fim da lista: funil novo aparecendo no meio seria a tela decidindo por
@@ -144,10 +153,6 @@ export async function POST(req: NextRequest): Promise<Response> {
     return fail("internal_error", error.message, 500, { requestId });
   }
   const pipelineId = (criado as { id: string }).id;
-  const idiomaDaOrg = normalizarIdioma(
-    authz.user.organizations.find((o) => o.organization_id === orgId)?.locale ?? null,
-  );
-
   const { error: etapasErr } = await supabase
     .from("crm_stages")
     .insert(etapasIniciais(orgId, pipelineId, idiomaDaOrg));

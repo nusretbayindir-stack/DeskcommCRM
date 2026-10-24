@@ -108,6 +108,46 @@ describe("POST /api/v1/pipelines", () => {
     expect(etapas.map((e) => e.name)).toEqual(["Novo", "Em andamento", "Ganho", "Perdido"]);
   });
 
+  it("o vocabulário do funil novo nasce no idioma da organização", async () => {
+    // O default do banco é português («Cliente», «Pedido», «Pago»…). Org turca
+    // abria o editor do funil novo e lia isso.
+    authOk("manager", { localeDaOrg: "tr" });
+    const db = makeDb({ pipelines: umFunil() });
+    const { POST } = await import("./route");
+    await POST(reqPost({ name: "Klinik" }));
+
+    const funil = db.escritas.find((e) => e.table === "crm_pipelines")?.patch as Record<string, unknown>;
+    expect(funil.vocabulary).toEqual({
+      lead: "Müşteri",
+      lead_plural: "Müşteriler",
+      deal: "Sipariş",
+      deal_plural: "Siparişler",
+      won: "Ödendi",
+      lost: "İptal edildi",
+      stage: "Aşama",
+      stage_plural: "Aşamalar",
+    });
+  });
+
+  it("em português o vocabulário é EXATAMENTE o default do banco (baseline.sql)", async () => {
+    authOk("manager", { localeDaOrg: "pt-BR" });
+    const db = makeDb({ pipelines: umFunil() });
+    const { POST } = await import("./route");
+    await POST(reqPost({ name: "Clínica" }));
+
+    const funil = db.escritas.find((e) => e.table === "crm_pipelines")?.patch as Record<string, unknown>;
+    expect(funil.vocabulary).toEqual({
+      lead: "Cliente",
+      lead_plural: "Clientes",
+      deal: "Pedido",
+      deal_plural: "Pedidos",
+      won: "Pago",
+      lost: "Cancelado",
+      stage: "Etapa",
+      stage_plural: "Etapas",
+    });
+  });
+
   it("as etapas entram DEPOIS do funil — antes não haveria pipeline_id para elas", async () => {
     authOk();
     const db = makeDb({ pipelines: umFunil() });

@@ -10,9 +10,11 @@
  * palavras aqui. A detecção determinística (`HUMAN_HANDOFF_PATTERNS`) roda de
  * qualquer jeito; estas somam a ela.
  *
- * Só o formulário lê daqui. Agente criado pela API, pelo MCP ou pelo caminho
- * legado ainda nasce com o default português do zod (`validation.ts`) e da
- * coluna — quem cria por lá manda `handoff_keywords` explícito.
+ * Lê daqui o formulário e as três entradas que não passam por ele: a rota de
+ * versão, a criação pelo MCP e o rascunho canônico (`create-draft.ts`). Elas
+ * usam o idioma da ORGANIZAÇÃO, e só quando o corpo NÃO trouxe a chave: o
+ * default do zod (`validation.ts`) e o da coluna continuam em português, e
+ * quem manda `handoff_keywords` (até `[]`) é obedecido como mandou.
  */
 import type { Idioma } from "@/lib/i18n/idiomas";
 
@@ -31,4 +33,17 @@ const PALAVRAS_DE_PASSAGEM_PADRAO: Record<Idioma, readonly string[]> = {
 
 export function palavrasDePassagemPadrao(idioma: Idioma): readonly string[] {
   return PALAVRAS_DE_PASSAGEM_PADRAO[idioma];
+}
+
+/**
+ * O corpo CRU (antes do zod) trouxe `handoff_keywords`? O zod preenche o que
+ * falta com o default português, então depois do `parse` já não dá para
+ * distinguir "não mandou" de "mandou isto". `[]` explícito é uma escolha.
+ */
+export function enviouPalavrasDePassagem(versaoBruta: unknown): boolean {
+  return (
+    typeof versaoBruta === "object" &&
+    versaoBruta !== null &&
+    (versaoBruta as { handoff_keywords?: unknown }).handoff_keywords !== undefined
+  );
 }

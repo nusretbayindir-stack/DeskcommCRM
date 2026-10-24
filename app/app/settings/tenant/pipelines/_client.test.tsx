@@ -846,3 +846,51 @@ describe("organização sem nenhum funil", () => {
     expect(link.textContent).toContain(funis!.label);
   });
 });
+
+/**
+ * O CAMPO VAZIO DO VOCABULÁRIO NÃO FALA PORTUGUÊS NEM INGLÊS EM DURO.
+ *
+ * Funil sem `vocabulary` abria o editor com «Lead», «Deal», «Ganho» e «Perdido»
+ * escritos no código — duas línguas que a empresa não escolheu. Agora o campo
+ * vazio vem do mesmo vocabulário padrão por idioma que a rota grava no funil
+ * novo, e o que o funil já tem continua valendo.
+ */
+describe("vocabulário do funil sem valor salvo", () => {
+  const SEM_VOCABULARIO: PipelineRow = {
+    id: "55555555-5555-4555-8555-555555555555",
+    name: "Novo",
+    slug: "novo",
+    vocabulary: null,
+    settings: {},
+  };
+
+  async function valoresDoEditor(locale: string): Promise<string[]> {
+    const { IdiomaProvider } = await import("@/lib/i18n/IdiomaProvider");
+    render(
+      <IdiomaProvider locale={locale}>
+        <PipelinesClient pipelines={[SEM_VOCABULARIO]} podeEditarConfig />
+      </IdiomaProvider>,
+    );
+    // O botão também fala o idioma da tela: abre pelo nome que ele tem nela.
+    fireEvent.click(
+      screen.getByRole("button", {
+        name:
+          locale === "tr"
+            ? "Bu satış hunisinin sözlüğünü ve alanlarını düzenle"
+            : /Editar vocabulário e campos deste funil/i,
+      }),
+    );
+    const editor = screen.getByTestId(`editor-${SEM_VOCABULARIO.id}`);
+    return Array.from(editor.querySelectorAll("input"))
+      .slice(0, 4)
+      .map((i) => (i as HTMLInputElement).value);
+  }
+
+  it("em turco, o campo vazio vem em turco", async () => {
+    expect(await valoresDoEditor("tr")).toEqual(["Müşteri", "Sipariş", "Ödendi", "İptal edildi"]);
+  });
+
+  it("em português, o campo vazio é o default do banco", async () => {
+    expect(await valoresDoEditor("pt-BR")).toEqual(["Cliente", "Pedido", "Pago", "Cancelado"]);
+  });
+});

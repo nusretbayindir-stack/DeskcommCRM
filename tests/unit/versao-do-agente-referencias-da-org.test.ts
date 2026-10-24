@@ -30,7 +30,7 @@ vi.mock("@/lib/ai/agents/legacy-notice", () => ({
   legacyRecoveryMessage: () => "",
 }));
 vi.mock("@/lib/auth/server", () => ({
-  loadAuthUser: vi.fn(async () => ({ id: USER, email: "u@example.com" })),
+  loadAuthUser: vi.fn(async () => ({ id: USER, email: "u@example.com", organizations: [] })),
   resolveActiveOrg: vi.fn(async () => ({ orgId: ORG, name: "Org", role: "admin" })),
 }));
 

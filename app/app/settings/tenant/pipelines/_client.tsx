@@ -1,6 +1,8 @@
 "use client";
 
 import { useT } from "@/hooks/i18n/useT";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
+import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -658,11 +660,14 @@ function PipelineEditor({
   const t = useT();
   // O tipo moeda diz a moeda da organização (« Moeda (EUR) »), não « (BRL) » em duro.
   const moeda = useMoedaDaOrgAtiva() ?? MOEDA_PADRAO;
+  // Campo sem valor salvo abre com o vocabulário padrão do idioma — o MESMO que
+  // a rota grava no funil novo —, não com palavras escritas em duro.
+  const padrao = vocabularioDoFunilPadrao(useIdioma());
   const v = pipeline.vocabulary ?? {};
-  const [lead, setLead] = useState(v.lead ?? "Lead");
-  const [deal, setDeal] = useState(v.deal ?? "Deal");
-  const [won, setWon] = useState(v.won ?? "Ganho");
-  const [lost, setLost] = useState(v.lost ?? "Perdido");
+  const [lead, setLead] = useState(v.lead ?? padrao.lead);
+  const [deal, setDeal] = useState(v.deal ?? padrao.deal);
+  const [won, setWon] = useState(v.won ?? padrao.won);
+  const [lost, setLost] = useState(v.lost ?? padrao.lost);
   const [reasonsText, setReasonsText] = useState(readLostReasons(pipeline.settings).join(", "));
   const [wonReasonsText, setWonReasonsText] = useState(readWonReasons(pipeline.settings).join(", "));
   const [categorias, setCategorias] = useState<Record<string, string>>(() =>
