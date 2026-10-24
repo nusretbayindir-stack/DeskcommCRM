@@ -114,6 +114,11 @@ const NAO_PEDE = [
   "Fatura gerçek bir kişi adına mı kesilecek",
   // A representação comercial (ser revendedor), não o atendente.
   "Temsilcilik istiyorum, bayi olmak istiyorum",
+  // "insanla" é prefixo de "insanlar"; e quem diz que É humano não pede um (re-revisão r2).
+  "Görüşmek istiyorum insanlar çok memnun",
+  "Fiyatı konuşmak istiyorum insanlar pahalı demiş",
+  "Bot değilim, insanım",
+  "Robot değilsiniz insan gibi yazıyorsunuz",
 ];
 
 describe("pedido de pessoa em turco", () => {

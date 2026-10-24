@@ -307,13 +307,13 @@ const SUJEITO_EXPLICITO_DE_TERCEIRA_PESSOA =
  * O que vem ANTES de `mesaj` e diz que a pessoa fala de UM TIPO de mensagem,
  * não da conversa. A FORMA e a HORA ("sesli mesaj atmayın", "gece mesaj
  * atmayın", "pazar günü mesaj atmayın") são de quem segue comprando: nem
- * bloqueiam nem escalam. "bundan sonra" e "daha önce" NÃO são hora: são "de
- * agora em diante" e "já disse antes" — e bloqueiam.
+ * bloqueiam nem escalam. "bundan sonra", "bu günden sonra" e "daha önce" NÃO
+ * são hora: são "de agora em diante" e "já disse antes" — e bloqueiam.
  */
 const TR_MENSAGEM_DE_FORMA_OU_HORA =
   "sesli|uzun|video|resimli|fotografli|" +
   "gece|geceleri|yarisi|aksam|aksamlari|sabah|sabahlari|erken|oglen|ogle|sonu|sonlari|saatte|saatlerde|disinda|bitince|" +
-  "(?<!\\b(?:daha)\\s+)once|(?<!\\b(?:bundan|bugunden|simdiden)\\s+)sonra|" +
+  "(?<!\\b(?:daha)\\s+)once|(?<!\\b(?:bundan|bugunden|gunden|simdiden)\\s+)sonra|" +
   "gunu|gunleri|ici|hafta|pazar|pazartesi|sali|carsamba|persembe|cuma|cumartesi|tatil|tatilde|bayram|bayramda|yarin|bugun";
 /**
  * A mensagem AUTOMÁTICA e o LEMBRETE: quem não quer o robô quer uma pessoa, e

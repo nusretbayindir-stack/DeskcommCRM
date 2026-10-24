@@ -71,6 +71,7 @@ const TURCO_PEDE_PARA_SAIR = [
   "Bugünden sonra mesaj göndermeyin",
   "Teşekkürler ama bundan sonra mesaj atmayın lütfen",
   "Daha önce mesaj atmayın demiştim, yine attınız",
+  "Bu günden sonra mesaj atmayın",
   // "RET" é a palavra que todo SMS comercial turco ensina (İYS: "RET yazıp
   // … gönderin"): o STOP do turco, sozinho.
   "RET",

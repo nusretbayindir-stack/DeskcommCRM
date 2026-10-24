@@ -113,9 +113,10 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   // ── turco (ş→s, ç→c, ğ→g, ö→o, ü→u, ı→i) ─────────────────────────────────
   // Alvo humano + verbo de contato no modo de PEDIDO (TR_ALVO, TR_PEDIDO acima),
   // com até duas palavras no meio ("yetkiliyle acil/lütfen görüşmek istiyorum")
-  // e na ordem invertida ("görüşmek istiyorum yetkiliyle").
+  // e na ordem invertida ("görüşmek istiyorum yetkiliyle") — o alvo no fim da
+  // palavra: "insanla" é prefixo de "insanlar".
   new RegExp(`\\b${TR_ALVO}\\s+(?:\\w+\\s+){0,2}${TR_PEDIDO}`),
-  new RegExp(`\\b(?:gorusmek|konusmak)\\s+ist(?!em)\\w*\\s+(?:\\w+\\s+){0,2}${TR_ALVO}`),
+  new RegExp(`\\b(?:gorusmek|konusmak)\\s+ist(?!em)\\w*\\s+(?:\\w+\\s+){0,2}${TR_ALVO}(?!\\w)`),
   // "yetkili birine ulaşmak istiyorum", "yetkili biri beni arasın" — o pedido
   // sem görüşmek/konuşmak. "Yetkili servise ulaşmak" não casa.
   /\b(?:yetkili|temsilci)\w*\s+(?:biri(?:si)?ne\s+|kisiye\s+)?ulas(?:mak\s+(?:ist(?!em)|lazim\b|gerek(?:iyor|ir)?\b)|abil(?:ir|ece)\w*|ayim\b)/,
@@ -123,7 +124,10 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   // "temsilci istiyorum", "müşteri temsilcisi istiyorum" — e não "temsilcilik"
   // (ser revendedor).
   /\b(?:temsilci(?:si)?|yetkili)\s+istiyorum\b/,
-  /\b(?:robot|bot|yapay\s+zeka|makine)\s+degil\w*\s*,?\s*(?:bir\s+|gercek\s+(?:bir\s+)?)?insan/,
+  // "robot değil insan istiyorum" — e não "bot değilim, insanım" nem "robot
+  // değilsiniz, insan gibi yazıyorsunuz": quem diz que é (ou que o agente parece)
+  // humano não pede um.
+  /\b(?:robot|bot|yapay\s+zeka|makine)\s+degil(?!(?:im|iz|sin|siniz)\b)\w*\s*,?\s*(?:bir\s+|gercek\s+(?:bir\s+)?)?insan/,
   // "beni bir yetkiliye bağlar mısınız", "operatöre bağlayın": o alvo humano seguido
   // JÁ do verbo de transferir, no imperativo ou na pergunta — "yetkili servise
   // yönlendirin" não casa, nem o substantivo ("yetkililer bağlantıyı kesti").
