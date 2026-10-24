@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { EntrarComGoogle } from "@/components/auth/EntrarComGoogle";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { botaoGoogleVisivel } from "@/lib/auth/botao-google";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
@@ -30,6 +31,8 @@ export default async function LoginPage({
   );
   const t = (texto: string) => traduzir(texto, idioma);
   const marca = await marcaDaSaida(null);
+  // Só um provedor Google LIDO como desligado esconde o botão (`botao-google.ts`).
+  const mostrarGoogle = await botaoGoogleVisivel();
 
   return (
     <div className="space-y-6">
@@ -142,7 +145,7 @@ export default async function LoginPage({
         </div>
       )}
       <LoginForm next={next} />
-      <EntrarComGoogle next={next} />
+      {mostrarGoogle && <EntrarComGoogle next={next} />}
       <div className="space-y-2 text-center text-sm">
         <p>
           <Link

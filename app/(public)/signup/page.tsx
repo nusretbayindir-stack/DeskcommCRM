@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { EntrarComGoogle } from "@/components/auth/EntrarComGoogle";
 import { SignupForm } from "@/components/auth/SignupForm";
+import { botaoGoogleVisivel } from "@/lib/auth/botao-google";
 import { Button } from "@/components/ui/button";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { verifyInviteToken } from "@/lib/auth/invite-token";
@@ -72,6 +73,8 @@ export default async function SignupPage({
   // Convite VÁLIDO passa em qualquer modo — é o ponto inteiro do convite.
   const modo = convite ? null : await modoDeCadastro();
   const soPorConvite = modo === "so_convite";
+  // Só um provedor Google LIDO como desligado esconde o botão (`botao-google.ts`).
+  const mostrarGoogle = await botaoGoogleVisivel();
 
   if (soPorConvite) {
     return (
@@ -129,14 +132,14 @@ export default async function SignupPage({
           convidado e cria a conta com Google ganharia uma empresa própria. */}
       {googleSemPlano ? (
         <p className="text-center text-xs text-muted-foreground">{t("Para garantir que o plano selecionado seja contratado, conclua o cadastro com e-mail e senha.")}</p>
-      ) : (
+      ) : mostrarGoogle ? (
         <>
           <EntrarComGoogle convite={convite?.token} />
           {planos.length > 0 && (
             <p className="text-center text-xs text-muted-foreground">{t("Com o Google, a empresa começa no plano padrão. Para escolher outro, use e-mail e senha.")}</p>
           )}
         </>
-      )}
+      ) : null}
 
       <p className="text-center text-sm text-muted-foreground">
         {t("Já tem conta?")}{" "}
