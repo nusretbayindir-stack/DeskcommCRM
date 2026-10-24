@@ -108,6 +108,10 @@ export function KnowledgeSourceCard({
   const meta = TIPO_DE_FONTE_POR_ID.get(tipo);
   const Icon = ICONE_POR_TIPO[tipo] ?? BookOpen;
 
+  // O nome que o sistema deu sozinho ("Conversas anteriores") segue o idioma de
+  // quem olha; o que a pessoa digitou aparece como foi digitado.
+  const nomeExibido = source.source_metadata?.criada_automaticamente === true ? t(source.name) : source.name;
+
   const derived = deriveBadgeStatus(source);
   const arquivado = derived === "archived";
   const mostraErro =
@@ -129,10 +133,10 @@ export function KnowledgeSourceCard({
                   className="hover:text-accent focus-visible:underline"
                   data-testid={`material-abrir-nome-${source.id}`}
                 >
-                  {source.name}
+                  {nomeExibido}
                 </Link>
               ) : (
-                source.name
+                nomeExibido
               )}
             </CardTitle>
           </div>
@@ -219,7 +223,7 @@ export function KnowledgeSourceCard({
             {vendoTrechos ? (
               <TrechosDoMaterialDialog
                 sourceId={source.id}
-                nome={source.name}
+                nome={nomeExibido}
                 aberto
                 onFechar={() => setVendoTrechos(false)}
               />
@@ -242,7 +246,7 @@ export function KnowledgeSourceCard({
             {editando ? (
               <EditarFaqDialog
                 sourceId={source.id}
-                nome={source.name}
+                nome={nomeExibido}
                 aberto
                 onFechar={() => setEditando(false)}
                 onSalvo={onMudou}

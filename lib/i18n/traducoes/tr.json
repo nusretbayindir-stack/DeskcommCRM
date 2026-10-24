@@ -5898,7 +5898,7 @@
   "Nome do funil — ex.: Consultas, Obras, Matrículas": "Satış hunisi adı — örn.: Muayeneler, İnşaat işleri, Kayıtlar",
   "Nome do lançamento": "Hareket adı",
   "Nome do lead": "Potansiyel müşteri adı",
-  "Nome do material": "Malzeme adı",
+  "Nome do material": "Materyal adı",
   "Nome do modelo": "Şablon adı",
   "Nome do negócio": "Fırsat adı",
   "Nome do novo funil": "Yeni satış hunisi adı",
@@ -11462,5 +11462,8 @@
   "Configure esta etapa.": "Bu adımı yapılandırın.",
   "Tipo desativado.": "Randevu türü devre dışı bırakıldı.",
   "Tipo reativado.": "Randevu türü yeniden etkinleştirildi.",
-  "Tipo alterado.": "Randevu türü güncellendi."
+  "Tipo alterado.": "Randevu türü güncellendi.",
+  "Não achei nenhum par pergunta/resposta. Use uma linha {pergunta} e uma {resposta} por item.": "Soru/cevap çifti bulamadım. Her öğe için bir {pergunta} satırı ve bir {resposta} satırı kullanın.",
+  "Não achei nenhum par pergunta/resposta no texto. Use uma linha {pergunta} e uma {resposta} por item.": "Metinde soru/cevap çifti bulamadım. Her öğe için bir {pergunta} satırı ve bir {resposta} satırı kullanın.",
+  "Uma linha {pergunta} e uma {resposta} por item, separados por uma linha em branco.": "Her öğe için bir {pergunta} satırı ve bir {resposta} satırı, aralarında boş bir satır olacak şekilde."
 }

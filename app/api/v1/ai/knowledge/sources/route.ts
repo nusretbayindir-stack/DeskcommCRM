@@ -21,6 +21,7 @@ import { orgAtivaDaApi, requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseFaqMarkdown } from "@/lib/ai/rag/ingest/faq";
+import { preencherMarcadores } from "@/lib/ai/rag/ingest/marcadores-de-faq";
 import { temChaveDeEmbedding } from "@/lib/ai/embeddings/chave";
 import {
   aceitaTextoColado,
@@ -194,7 +195,10 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (faqItems.length === 0) {
         return fail(
           "invalid_request",
-          t("Não achei nenhum par pergunta/resposta no texto. Use uma linha ## Pergunta: e uma ## Resposta: por item."),
+          preencherMarcadores(
+            t("Não achei nenhum par pergunta/resposta no texto. Use uma linha {pergunta} e uma {resposta} por item."),
+            authz.user.idioma,
+          ),
           400,
           { requestId },
         );

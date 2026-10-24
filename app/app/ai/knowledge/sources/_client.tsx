@@ -154,7 +154,7 @@ export function AcervoClient({ initialSources, initialChave, agentes }: Props) {
           <ul className="mt-3 space-y-1 text-sm">
             {arquivados.map((s) => (
               <li key={s.id} className="text-text-muted">
-                {s.name}
+                {s.source_metadata?.criada_automaticamente === true ? t(s.name) : s.name}
               </li>
             ))}
           </ul>
