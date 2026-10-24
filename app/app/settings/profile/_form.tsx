@@ -23,9 +23,6 @@ import {
 } from "@/lib/schemas/settings";
 import { FUSOS_OFERECIDOS } from "@/lib/tempo/fusos";
 
-// A mesma lista de toda tela de fuso — ver `lib/tempo/fusos.ts`.
-const TIMEZONES = FUSOS_OFERECIDOS.map((f) => f.codigo);
-
 interface Props {
   email: string;
   initialFullName: string | null;
@@ -116,9 +113,9 @@ export function ProfileForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
+                {FUSOS_OFERECIDOS.map(({ codigo, rotulo }) => (
+                  <SelectItem key={codigo} value={codigo}>
+                    {t(rotulo)}
                   </SelectItem>
                 ))}
               </SelectContent>
