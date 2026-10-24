@@ -35,4 +35,20 @@ describe("rotulosDoTrechoNoIdioma", () => {
   it("continuacao de trecho longo (sem rotulo no inicio) nao muda", () => {
     expect(rotulosDoTrechoNoIdioma("mais texto da resposta", "tr", "faq")).toBe("mais texto da resposta");
   });
+
+  describe("trecho de conversa (Cliente:/Atendente:)", () => {
+    const CONVERSA = "Cliente: oi\nAtendente: ola, Cliente: voce?\nCliente: sim";
+    it("tr: todo comeco de linha, inclusive continuacao", () => {
+      expect(rotulosDoTrechoNoIdioma(CONVERSA, "tr", "conversas")).toBe(
+        "Müşteri: oi\nTemsilci: ola, Cliente: voce?\nMüşteri: sim",
+      );
+    });
+    it("pt-BR: byte a byte igual", () => {
+      expect(rotulosDoTrechoNoIdioma(CONVERSA, "pt-BR", "conversas")).toBe(CONVERSA);
+    });
+    it("FAQ e outros trechos nao ganham essa troca", () => {
+      expect(rotulosDoTrechoNoIdioma(CONVERSA, "tr", "faq")).toBe(CONVERSA);
+      expect(rotulosDoTrechoNoIdioma(CONVERSA, "tr", "documento")).toBe(CONVERSA);
+    });
+  });
 });
