@@ -91,12 +91,14 @@ const TR_ALVO =
 /**
  * O verbo de contato no modo de PEDIDO — o espelho do infinitivo português
  * ("falar com", e não "falei com"): "görüşmek istiyorum", "görüşebilir miyim",
- * "görüşeyim", "görüşmem lazım", "görüştürür müsünüz". O relato ("görüştüm") e a
- * recusa ("görüşmek istemiyorum", "görüşmeme gerek yok") não passam.
+ * "görüşeyim", "görüşmem lazım", "görüştürür müsünüz". O relato ("görüştüm",
+ * "görüşebildim") e a recusa ("görüşmek istemiyorum", "görüşmem gerekmiyor",
+ * "görüşmeme gerek yok", "lazım değil") não passam.
  */
+const TR_PRECISO = 'lazim\\b(?!\\s+degil)|gerek(?:iyor|ir)?\\b(?!\\s+yok)';
 const TR_PEDIDO =
-  '(?:gorus|konus)(?:(?:mek|mak)\\s+(?:ist(?!em)|lazim|gerek(?!\\s+yok)|icin)|(?:ebil|abil)\\w*|(?:eyim|ayim|elim|alim)\\b|' +
-  '(?:mem|mam|memiz|mamiz)\\s+(?:lazim|gerek(?!\\s+yok)|gerekiyor)|tur\\w*)';
+  `(?:gorus|konus)(?:(?:mek|mak)\\s+(?:ist(?!em)|${TR_PRECISO})|(?:ebil|abil)(?:ir|ece|eyim|ayim)\\w*|(?:eyim|ayim|elim|alim)\\b|` +
+  `(?:mem|mam|memiz|mamiz)\\s+(?:${TR_PRECISO})|tur\\w*)`;
 
 /**
  * Padrões PT-BR e turcos CONSERVADORES de pedido explícito de atendimento humano (evita
@@ -109,16 +111,28 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   /\batendimento\s+humano\b/,
   /\b(?:atendente|humano|pessoa)\s+de\s+verdade\b/,
   // ── turco (ş→s, ç→c, ğ→g, ö→o, ü→u, ı→i) ─────────────────────────────────
-  // Alvo humano + verbo de contato no modo de PEDIDO (TR_ALVO, TR_PEDIDO acima).
-  new RegExp(`\\b${TR_ALVO}\\s+${TR_PEDIDO}`),
+  // Alvo humano + verbo de contato no modo de PEDIDO (TR_ALVO, TR_PEDIDO acima),
+  // com até duas palavras no meio ("yetkiliyle acil/lütfen görüşmek istiyorum")
+  // e na ordem invertida ("görüşmek istiyorum yetkiliyle").
+  new RegExp(`\\b${TR_ALVO}\\s+(?:\\w+\\s+){0,2}${TR_PEDIDO}`),
+  new RegExp(`\\b(?:gorusmek|konusmak)\\s+ist(?!em)\\w*\\s+(?:\\w+\\s+){0,2}${TR_ALVO}`),
+  // "yetkili birine ulaşmak istiyorum", "yetkili biri beni arasın" — o pedido
+  // sem görüşmek/konuşmak. "Yetkili servise ulaşmak" não casa.
+  /\b(?:yetkili|temsilci)\w*\s+(?:biri(?:si)?ne\s+|kisiye\s+)?ulas(?:mak\s+(?:ist(?!em)|lazim\b|gerek(?:iyor|ir)?\b)|abil(?:ir|ece)\w*|ayim\b)/,
+  /\byetkili\s+(?:biri(?:si)?|kisi)\s+(?:beni\s+)?ara(?:sin|r\s+mi|yabilir\s+mi)\w*/,
+  // "temsilci istiyorum", "müşteri temsilcisi istiyorum" — e não "temsilcilik"
+  // (ser revendedor).
+  /\b(?:temsilci(?:si)?|yetkili)\s+istiyorum\b/,
+  /\b(?:robot|bot|yapay\s+zeka|makine)\s+degil\w*\s*,?\s*(?:bir\s+|gercek\s+(?:bir\s+)?)?insan/,
   // "beni bir yetkiliye bağlar mısınız", "operatöre bağlayın": o alvo humano seguido
   // JÁ do verbo de transferir, no imperativo ou na pergunta — "yetkili servise
   // yönlendirin" não casa, nem o substantivo ("yetkililer bağlantıyı kesti").
   /\b(?:yetkili|temsilci|operator|insan|musteri\s+hizmetleri)\w*\s+(?:bagla|aktar|yonlendir)(?:yin|yiniz|in|iniz|r\s+misiniz|ir\s+misiniz|ar\s+misiniz|yabilir\s+misiniz|abilir\s+misiniz|ebilir\s+misiniz)\b/,
   /\bcanli\s+destek\b/,
   // "gerçek bir insan" — e NÃO "gerçek kişi", a pessoa física da fatura e da
-  // escritura ("faturayı gerçek kişi adına mı keseceksiniz?"), que nunca leva "bir".
-  /\bgercek\s+(?:bir\s+(?:insan|kisi)|insan)\b/,
+  // escritura ("faturayı gerçek kişi adına mı keseceksiniz?"), nem "gerçek bir
+  // kişi adına", a mesma pessoa física com o artigo.
+  /\bgercek\s+(?:bir\s+(?:insan|kisi(?!\s+adin))|insan)\b/,
 ];
 
 /** True se a mensagem do lead é um pedido explícito de atendimento humano (determinístico). */

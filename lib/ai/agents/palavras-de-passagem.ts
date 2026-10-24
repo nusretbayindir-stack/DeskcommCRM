@@ -22,9 +22,11 @@ const PALAVRAS_DE_PASSAGEM_PADRAO: Record<Idioma, readonly string[]> = {
   // Só frases que JÁ são pedido. O substring não distingue o pedido do relato
   // e da recusa: "yetkiliyle" casaria "yetkiliyle görüştüm" e "yetkiliyle
   // görüşmek istemiyorum", "insanla" casaria "insanlar", "operatör" o operador
-  // da escavadeira e "gerçek kişi" a pessoa física da fatura. O pedido turco
-  // em si a detecção determinística (`HUMAN_HANDOFF_PATTERNS`) já reconhece.
-  tr: ["canlı destek", "gerçek bir kişi", "gerçek bir insan", "yetkiliye bağla", "temsilciye bağla", "operatöre bağla"],
+  // da escavadeira, "gerçek kişi" a pessoa física da fatura e "operatöre bağla"
+  // o "operatöre bağlanamıyorum" do cliente sem internet. A frase inteira é o
+  // exemplo que a tela mostra; o pedido turco em si a detecção determinística
+  // (`HUMAN_HANDOFF_PATTERNS`) já reconhece, com as variações.
+  tr: ["canlı destek", "gerçek bir insan", "yetkiliyle görüşmek istiyorum", "temsilciyle görüşmek istiyorum"],
 };
 
 export function palavrasDePassagemPadrao(idioma: Idioma): readonly string[] {

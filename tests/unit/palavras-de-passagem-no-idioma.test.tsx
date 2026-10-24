@@ -47,7 +47,7 @@ describe("as palavras padrão seguem o idioma", () => {
   it("o pedido turco casa com as palavras turcas, e nenhuma é portuguesa", () => {
     const turcas = palavrasDePassagem(palavrasDePassagemPadrao("tr"));
     expect(matchesHandoffKeyword("Canlı destek istiyorum", turcas)).toBe(true);
-    expect(matchesHandoffKeyword("Beni bir yetkiliye bağlayın", turcas)).toBe(true);
+    expect(matchesHandoffKeyword("Bir yetkiliyle görüşmek istiyorum", turcas)).toBe(true);
     expect(turcas).not.toContain("atendente");
   });
 

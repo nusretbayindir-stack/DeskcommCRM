@@ -49,6 +49,21 @@ const PEDE_PESSOA = [
   "Müdürle görüşmek istiyorum",
   "Müdürünüzle görüşmek istiyorum",
   "Sorumlu kişiyle görüşmek istiyorum",
+  // Uma palavra no meio, a ordem invertida e o pedido sem verbo de contato
+  // (re-revisão N3).
+  "Yetkiliyle acil görüşmek istiyorum",
+  "Yetkiliyle acilen görüşebilir miyim?",
+  "Yetkiliyle lütfen görüşmek istiyorum",
+  "Yetkili biriyle bir görüşebilir miyim",
+  "Yetkili biriyle telefonda konuşabilir miyim",
+  "Görüşmek istiyorum yetkiliyle",
+  "Konuşmak istiyorum bir insanla",
+  "Yetkili birine ulaşmak istiyorum",
+  "Yetkiliye ulaşmak istiyorum",
+  "Yetkili biri beni arasın",
+  "Temsilci istiyorum",
+  "Müşteri temsilcisi istiyorum",
+  "Robot değil insan istiyorum",
 ];
 
 /** Nem a regex nem as palavras padrão do agente turco passam. */
@@ -87,6 +102,18 @@ const NAO_PEDE = [
   "Yetkiliyle konuşmak istemiyorum, siz cevap verin",
   "Yetkiliyle görüşmeme gerek yok, siz yardımcı olun",
   "Yetkiliyle görüşmedim henüz",
+  "Yetkiliyle görüşebildim, sorun çözüldü",
+  "Yetkiliyle görüşmem gerekmiyor",
+  "Yetkiliyle görüşmek gerekmez",
+  "Yetkiliyle görüşmem lazım değil",
+  "Yetkiliyle görüşmek için randevu aldım",
+  // "bağla" das palavras padrão casava "bağlantı" e "bağlanamıyorum" (N5).
+  "Operatöre bağlanamıyorum, internet yok",
+  "Operatöre bağlantı sorunu var",
+  "Yetkiliye bağlantı kurduk",
+  "Fatura gerçek bir kişi adına mı kesilecek",
+  // A representação comercial (ser revendedor), não o atendente.
+  "Temsilcilik istiyorum, bayi olmak istiyorum",
 ];
 
 describe("pedido de pessoa em turco", () => {
