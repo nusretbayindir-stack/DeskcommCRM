@@ -63,8 +63,11 @@ describe("o catálogo turco", () => {
  * moeda (BRL) do Brasil, e o inglês que o português deixou ("tenant"). Quem lê
  * é uma empresa na Bélgica ou na Turquia: a lei dela é a GDPR, e a empresa
  * cliente é "şirket".
+ *
+ * Procon é o órgão de defesa do consumidor do Brasil: a chave de assunto
+ * jurídico dos agentes o citava como exemplo em turco, para quem não tem Procon.
  */
-const DO_BRASIL = /\bLGPD\b|\bCNPJ\b|\bBRL\b|R\$/;
+const DO_BRASIL = /\bLGPD\b|\bCNPJ\b|\bBRL\b|R\$|\bProcon\b/;
 
 /** Valores que citam o Brasil de propósito, um a um, com o motivo. Só encolhe. */
 const BRASIL_DE_PROPOSITO: Record<string, string> = {
@@ -90,7 +93,7 @@ describe("o catálogo turco fala com quem vende na Europa", () => {
     const brasil = Object.entries(CATALOGO)
       .filter(([chave, valor]) => DO_BRASIL.test(valor) && !(chave in BRASIL_DE_PROPOSITO))
       .map(([chave, valor]) => `${JSON.stringify(chave)} → ${JSON.stringify(valor)}`);
-    expect(brasil, `${brasil.length} valor(es) com LGPD, CNPJ, BRL ou R$`).toEqual([]);
+    expect(brasil, `${brasil.length} valor(es) com LGPD, CNPJ, BRL, R$ ou Procon`).toEqual([]);
   });
 
   it("a exceção do Brasil só lista frase que existe e ainda cita o Brasil", () => {
