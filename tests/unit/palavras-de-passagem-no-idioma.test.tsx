@@ -15,7 +15,7 @@
  * O casamento passa a dobrar caixa e acento dos dois lados, como a detecção
  * determinística do engine (`normalize` em human-handoff.ts) já faz.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,8 @@ describe("as palavras padrão seguem o idioma", () => {
 
   it("o pedido turco casa com as palavras turcas, e nenhuma é portuguesa", () => {
     const turcas = palavrasDePassagem(palavrasDePassagemPadrao("tr"));
-    expect(matchesHandoffKeyword("Bir yetkiliyle görüşmek istiyorum", turcas)).toBe(true);
+    expect(matchesHandoffKeyword("Canlı destek istiyorum", turcas)).toBe(true);
+    expect(matchesHandoffKeyword("Beni bir yetkiliye bağlayın", turcas)).toBe(true);
     expect(turcas).not.toContain("atendente");
   });
 
@@ -66,8 +67,26 @@ describe("as palavras padrão seguem o idioma", () => {
         <HandoffKeywordsInput value={[]} onChange={() => {}} />
       </IdiomaProvider>,
     );
-    expect(screen.getByRole("button", { name: "+ yetkiliyle" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ canlı destek" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "+ falar com humano" })).toBeNull();
+  });
+
+  it.each([
+    ["İnsanla", "insanla"],
+    ["CANLI DESTEK", "canlı destek"],
+  ])("a palavra digitada em turco vira minúscula turca: %s → %s", (digitado, gravado) => {
+    // `toLowerCase` fazia "İnsanla" virar i + ponto combinante: a sugestão
+    // "insanla" não reconhecia a repetida, e o chip mostrava um ponto solto.
+    const onChange = vi.fn();
+    render(
+      <IdiomaProvider locale="tr">
+        <HandoffKeywordsInput value={[]} onChange={onChange} />
+      </IdiomaProvider>,
+    );
+    const campo = screen.getByLabelText("Bir kişiyi hemen çağıran kelimeler");
+    fireEvent.change(campo, { target: { value: digitado } });
+    fireEvent.keyDown(campo, { key: "Enter" });
+    expect(onChange).toHaveBeenCalledWith([gravado]);
   });
 });
 

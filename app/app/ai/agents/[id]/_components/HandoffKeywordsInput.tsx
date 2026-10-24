@@ -15,12 +15,15 @@ interface Props {
 
 export function HandoffKeywordsInput({ value, onChange, disabled }: Props) {
   const t = useT();
+  const idioma = useIdioma();
   // As sugestões "+ …" são palavras do cliente, no idioma da tela.
-  const sugestoes = palavrasDePassagemPadrao(useIdioma());
+  const sugestoes = palavrasDePassagemPadrao(idioma);
   const [draft, setDraft] = React.useState("");
 
   function add(kw: string) {
-    const trimmed = kw.trim().toLowerCase();
+    // A minúscula do idioma: em turco "İnsanla" → "insanla" e "CANLI" → "canlı".
+    // O `toLowerCase` sem idioma deixava i + ponto combinante na palavra gravada.
+    const trimmed = kw.trim().toLocaleLowerCase(idioma);
     if (!trimmed) return;
     if (value.includes(trimmed)) return;
     if (value.length >= 20) return;

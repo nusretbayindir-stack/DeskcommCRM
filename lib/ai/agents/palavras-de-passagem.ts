@@ -9,15 +9,22 @@
  * `Record<Idioma, …>`: idioma novo promovido no registro obriga a escolher as
  * palavras aqui. A detecção determinística (`HUMAN_HANDOFF_PATTERNS`) roda de
  * qualquer jeito; estas somam a ela.
+ *
+ * Só o formulário lê daqui. Agente criado pela API, pelo MCP ou pelo caminho
+ * legado ainda nasce com o default português do zod (`validation.ts`) e da
+ * coluna — quem cria por lá manda `handoff_keywords` explícito.
  */
 import type { Idioma } from "@/lib/i18n/idiomas";
 
 const PALAVRAS_DE_PASSAGEM_PADRAO: Record<Idioma, readonly string[]> = {
   "pt-BR": ["falar com humano", "atendente", "pessoa real"],
   es: ["hablar con un humano", "hablar con una persona", "persona real"],
-  // Radicais com o alvo humano já no comitativo: `yetkili` sozinho casaria
-  // "yetkili servis" (a assistência técnica autorizada).
-  tr: ["yetkiliyle", "yetkili biri", "temsilciyle", "insanla", "gerçek kişi", "canlı destek", "operatör"],
+  // Só frases que JÁ são pedido. O substring não distingue o pedido do relato
+  // e da recusa: "yetkiliyle" casaria "yetkiliyle görüştüm" e "yetkiliyle
+  // görüşmek istemiyorum", "insanla" casaria "insanlar", "operatör" o operador
+  // da escavadeira e "gerçek kişi" a pessoa física da fatura. O pedido turco
+  // em si a detecção determinística (`HUMAN_HANDOFF_PATTERNS`) já reconhece.
+  tr: ["canlı destek", "gerçek bir kişi", "gerçek bir insan", "yetkiliye bağla", "temsilciye bağla", "operatöre bağla"],
 };
 
 export function palavrasDePassagemPadrao(idioma: Idioma): readonly string[] {
