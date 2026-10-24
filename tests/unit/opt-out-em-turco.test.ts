@@ -66,6 +66,11 @@ const TURCO_PEDE_PARA_SAIR = [
   "Mesaj gönderimini durdurun",
   "Mesaj atmayı bırak",
   "Gece de gündüz de mesaj atmayın",
+  // "bundan sonra" é "de agora em diante", não uma hora (re-revisão N1).
+  "Bundan sonra mesaj atmayın",
+  "Bugünden sonra mesaj göndermeyin",
+  "Teşekkürler ama bundan sonra mesaj atmayın lütfen",
+  "Daha önce mesaj atmayın demiştim, yine attınız",
   // "RET" é a palavra que todo SMS comercial turco ensina (İYS: "RET yazıp
   // … gönderin"): o STOP do turco, sozinho.
   "RET",
@@ -97,6 +102,11 @@ const TURCO_AMBIGUO = [
   "Hatırlatma mesajı istemiyorum",
   "Randevu hatırlatma mesajlarını durdurun",
   "Hatırlatma mesajı göndermeyin, ben unutmam",
+  "Yapay zeka mesajı istemiyorum, insanla konuşmak istiyorum",
+  "Yapay zekâ mesajı atmayın, gerçek bir insan yazsın",
+  "Makine mesajı istemiyorum",
+  "Hatırlatıcı mesaj istemiyorum",
+  "Otomatik mesaj gönderme bana",
   // Troca para o TELEFONE: lead quente que pede ligação. Bloquear fecharia o
   // negócio como perdido; escalar faz alguém ligar.
   "Mesaj atmayın, arayın",
@@ -156,6 +166,18 @@ const TURCO_NAO_PEDE = [
   "Sesli mesaj göndermeyin lütfen, okuyorum sadece",
   "Sesli mesaj istemiyorum, yazılı cevap verin",
   "Uzun mesaj atmayın, kısa yazın",
+  "Pazar günü mesaj atmayın",
+  "Cumartesi mesaj atmayın",
+  "Hafta içi mesaj atmayın, hafta sonu yazın",
+  "Salı günleri mesaj atmayın",
+  "Bayramda mesaj atmayın",
+  "Tatilde mesaj atmayın",
+  "Öğlen mesaj atmayın, namazdayım",
+  "Yarın mesaj atmayın, şehir dışındayım",
+  "Bu hafta mesaj atmayın",
+  "Mesai bitince mesaj atmayın",
+  "Video mesaj atmayın, internetim yavaş",
+  "Resimli mesaj atmayın",
   // O instrumental (`mesajla`) é o CANAL de um anexo — o "manda por email"
   // que o espanhol já corrigiu.
   "Faturayı mesajla göndermeyin, mail atın",

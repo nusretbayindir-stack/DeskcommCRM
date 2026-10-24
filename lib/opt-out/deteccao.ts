@@ -306,15 +306,22 @@ const SUJEITO_EXPLICITO_DE_TERCEIRA_PESSOA =
 /**
  * O que vem ANTES de `mesaj` e diz que a pessoa fala de UM TIPO de mensagem,
  * não da conversa. A FORMA e a HORA ("sesli mesaj atmayın", "gece mesaj
- * atmayın") são de quem segue comprando: nem bloqueiam nem escalam.
+ * atmayın", "pazar günü mesaj atmayın") são de quem segue comprando: nem
+ * bloqueiam nem escalam. "bundan sonra" e "daha önce" NÃO são hora: são "de
+ * agora em diante" e "já disse antes" — e bloqueiam.
  */
 const TR_MENSAGEM_DE_FORMA_OU_HORA =
-  "sesli|uzun|gece|geceleri|yarisi|aksam|aksamlari|sabah|sabahlari|erken|sonu|sonlari|saatte|saatlerde|disinda|once|sonra";
+  "sesli|uzun|video|resimli|fotografli|" +
+  "gece|geceleri|yarisi|aksam|aksamlari|sabah|sabahlari|erken|oglen|ogle|sonu|sonlari|saatte|saatlerde|disinda|bitince|" +
+  "(?<!\\b(?:daha)\\s+)once|(?<!\\b(?:bundan|bugunden|simdiden)\\s+)sonra|" +
+  "gunu|gunleri|ici|hafta|pazar|pazartesi|sali|carsamba|persembe|cuma|cumartesi|tatil|tatilde|bayram|bayramda|yarin|bugun";
 /**
  * A mensagem AUTOMÁTICA e o LEMBRETE: quem não quer o robô quer uma pessoa, e
  * quem não quer o lembrete não pediu para sumir — escalam, não bloqueiam.
+ * Contra um agente de IA, "yapay zeka mesajı istemiyorum" é a forma mais provável.
  */
-const TR_MENSAGEM_AUTOMATICA = "otomatik|hazir|robot|bot|ayni|hatirlatma|randevu|bilgilendirme";
+const TR_MENSAGEM_AUTOMATICA =
+  "otomatik|hazir|robot|bot|ayni|hatirlatma|hatirlatici|randevu|bilgilendirme|yapay|zeka|makine|sistem|asistan|ai";
 /** `mesaj` em qualquer flexão MENOS o instrumental (mesajla, mesajlarla): o canal de um anexo. */
 const TR_MESAJ = `\\bmesaj(?!\\w*l[ae]\\b)\\w*`;
 /** A mensagem da conversa: nenhum dos dois qualificadores logo antes. */
@@ -700,6 +707,11 @@ const FRASES_AMBIGUAS_DE_OPT_OUT: readonly RegExp[] = [
   // lembrete, ou por pedir outro canal, ainda chama uma pessoa. A forma e a
   // hora ("sesli mesaj", "gece mesaj") ficam de fora daqui também.
   new RegExp(`(?:${TR_MESAJ_NAO_DE_FORMA}|\\bsms\\w*)\\s+(?:da\\s+|de\\s+)?(?:${TR_NAO_ENVIE})\\b`, "u"),
+  new RegExp(
+    `(?:${TR_MESAJ_NAO_DE_FORMA}|\\bsms\\w*)\\s+(?:atma|gonderme|yollama|cekme)` +
+      `(?=\\s*(?:$|[.!,;]|(?:bana|bize|artik|bir\\s+daha|lutfen)\\b))`,
+    "u",
+  ),
   new RegExp(`${TR_MESAJ_NAO_DE_FORMA}\\s+(?:almak\\s+)?istemiyor(?:um|uz)\\b`, "u"),
   new RegExp(`${TR_MESAJ_NAO_DE_FORMA}\\s+(?:durdurun|durdurunuz)\\b`, "u"),
   /\b(?:bana|bize)\s+(?:bir\s+daha\s+|artik\s+)?(?:yazmayin|yazmayiniz)\b/u,
