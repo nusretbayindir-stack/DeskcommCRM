@@ -11459,5 +11459,8 @@
   "Aceitar: {url}": "Kabul edin: {url}",
   "Expira em {data}.": "Geçerlilik sonu: {data}.",
   "Configure esta mensagem.": "Bu mesajı yapılandırın.",
-  "Configure esta etapa.": "Bu adımı yapılandırın."
+  "Configure esta etapa.": "Bu adımı yapılandırın.",
+  "Tipo desativado.": "Randevu türü devre dışı bırakıldı.",
+  "Tipo reativado.": "Randevu türü yeniden etkinleştirildi.",
+  "Tipo alterado.": "Randevu türü güncellendi."
 }

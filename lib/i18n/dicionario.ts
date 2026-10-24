@@ -17687,6 +17687,9 @@ export const DICIONARIO: Traducoes = {
   "Expira em {data}.": { es: "Vence el {data}." },
   "Configure esta mensagem.": { es: "Configura este mensaje." },
   "Configure esta etapa.": { es: "Configura esta etapa." },
+  "Tipo desativado.": { es: "Tipo desactivado." },
+  "Tipo reativado.": { es: "Tipo reactivado." },
+  "Tipo alterado.": { es: "Tipo modificado." },
 };
 
 /**
