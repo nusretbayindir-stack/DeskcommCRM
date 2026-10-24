@@ -42,12 +42,19 @@
  * a política — quem tem o poder de silenciar alguém para sempre é a pessoa.
  */
 
-/** minúsculas, sem acento — a forma sobre a qual todos os padrões daqui rodam. */
+/**
+ * minúsculas, sem acento — a forma sobre a qual todos os padrões daqui rodam.
+ *
+ * O `ı` turco (i sem ponto) não se decompõe no NFD e vira `i`: "ATMAYIN" chega
+ * como `atmayin` pelo `toLowerCase`, "atmayın" chegaria como `atmayın`, e os
+ * padrões turcos escrevem só `i`.
+ */
 export function normalizarTexto(texto: string): string {
   return texto
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/gu, "");
+    .replace(/[\u0300-\u036f]/gu, "")
+    .replace(/ı/gu, "i");
 }
 
 /**
@@ -505,6 +512,30 @@ const FRASES_DE_OPT_OUT: readonly RegExp[] = [
   // E o espelho da forma com objeto: "cancelar la suscripción a los mensajes"
   // bloqueia na hora; "cancelar la suscripción" sozinha só escala.
   /\bcancelar\s+(?:la\s+|mi\s+)?suscripcion\s+(?:a|de)\s+(?:los|estos|tus|sus)\s+(?:mensajes|promociones|ofertas)\b/u,
+  // ── turco ─────────────────────────────────────────────────────────────────
+  //
+  // A mesma régua: o verbo de cessação só bloqueia com o OBJETO de comunicação
+  // — `mesaj` (mensagem, em qualquer flexão: mesajı, mesajları, mesajlarınızı)
+  // ou "bana yazmak" (escrever para mim). Texto já normalizado: ş→s, ç→c, ğ→g,
+  // ö→o, ü→u, ı→i. Corpus em tests/unit/opt-out-em-turco.test.ts.
+  //
+  // "mesaj göndermeyin", "mesaj atmayın", "mesaj da atmayın".
+  /\bmesaj\w*\s+(?:da\s+|de\s+)?(?:gondermeyin|gondermeyiniz|atmayin|atmayiniz|yollamayin|yollamayiniz)\b/u,
+  // "bana yazmayın". NÃO "beni aramayın": quem pede para não LIGAR quer seguir
+  // recebendo aqui ("beni aramayın, buradan yazın") — o espelho de "não quero
+  // receber ligação, só whatsapp".
+  /\bbana\s+(?:bir\s+daha\s+|artik\s+)?(?:yazmayin|yazmayiniz)\b/u,
+  // "mesaj istemiyorum", "mesaj almak istemiyorum", "reklam mesajı istemiyorum".
+  // Sem `mesaj`, não: "kampanya istemiyorum, normal fiyat" é objeção de preço.
+  /\bmesaj\w*\s+(?:almak\s+)?istemiyor(?:um|uz)\b/u,
+  // "beni listeden çıkarın", "numaramı listenizden silin". Quem sai da lista é
+  // a PESSOA ou o NÚMERO: "bu parçayı listeden çıkarın" é o orçamento.
+  /\b(?:beni|numarami|numaramizi|telefonumu)\s+(?:listeden|listenizden|listenden)\s+(?:cikarin|cikariniz|cikar|cikarir\s+misiniz|cikarabilir\s+misiniz|silin|siliniz|sil|silebilir\s+misiniz)\b/u,
+  /\b(?:listeden|listenizden|listenden)\s+cikmak\s+istiyor(?:um|uz)\b/u,
+  // "mesajlarınızı durdurun", "mesaj göndermeyi bırakın". `kesin` sozinho não:
+  // "mesaj kesin geldi mi?" é "chegou mesmo?".
+  /\bmesaj\w*\s+(?:durdurun|durdurunuz)\b/u,
+  /\bmesaj\w*\s+(?:gondermeyi|atmayi|yollamayi)\s+(?:birakin|birakiniz|kesin|durdurun)\b/u,
 ];
 
 /**
@@ -567,6 +598,27 @@ const FRASES_AMBIGUAS_DE_OPT_OUT: readonly RegExp[] = [
   // e "quiero dar de baja la suscripcion" continuam em `FRASES_DE_OPT_OUT`.
   /\bcancelar\s+(?:la\s+|mi\s+)?suscripcion\b/u,
   /\bno\s+me\s+molest(?:e|en|es)\b/u,
+  // ── turco ─────────────────────────────────────────────────────────────────
+  //
+  // O espelho de "me deixa em paz", "já disse que não quero" e "chega".
+  /\bbeni\s+rahat\s+birak\w*/u,
+  /\brahatsiz\s+etmeyin(?:iz)?\b/u,
+  /\b(?:yeter\s+artik|artik\s+yeter)\b/u,
+  // A marca de REPETIÇÃO, como no espanhol: "ilgilenmiyorum" sozinho é a
+  // objeção comercial, e o agente segue vendendo ali.
+  /\b(?:artik\s+ilgilenmiyorum|ilgilenmiyorum\s+artik)\b/u,
+  /\b(?:zaten|daha\s+once)\s+(?:ilgilenmedigimi|istemedigimi)\s+(?:soyledim|yazdim|belirttim)\b/u,
+  // `abonelik` é o plano da academia, da revista ou do SaaS tanto quanto a
+  // lista — a mesma decisão de "cancelar a assinatura" (#2886): escala.
+  /\babonel(?:ik|ig)\w*\s+(?:iptal|sonlandir)\w*/u,
+  /\babonelikten\s+cik\w*/u,
+  // "bildirim" também é o lembrete da consulta: quem não quer o lembrete não
+  // pediu para sumir da conversa. Um humano decide.
+  /\bbildirim\w*\s+(?:almak\s+)?istemiyor(?:um|uz)\b/u,
+  // A palavra SOZINHA. "İptal" é também a resposta ao lembrete ("Evet / İptal")
+  // e "Durdur" pode ser o pedido de pausa: escala, não bloqueia. "Dur" fica de
+  // fora: sozinho, é "espera" ("Dur, yanlış yazdım").
+  /^[^a-z]*(?:iptal|durdur|durdurun)[^a-z]*$/u,
 ];
 
 /** A mensagem inteira é a palavra-chave (ignorando pontuação e emoji de borda). */
