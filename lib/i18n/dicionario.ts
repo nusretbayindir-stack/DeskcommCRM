@@ -17685,6 +17685,8 @@ export const DICIONARIO: Traducoes = {
   "Você foi convidado para a {empresa} como {papel} no {marca}.": { es: "Te invitaron a {empresa} como {papel} en {marca}." },
   "Aceitar: {url}": { es: "Aceptar: {url}" },
   "Expira em {data}.": { es: "Vence el {data}." },
+  "Configure esta mensagem.": { es: "Configura este mensaje." },
+  "Configure esta etapa.": { es: "Configura esta etapa." },
 };
 
 /**

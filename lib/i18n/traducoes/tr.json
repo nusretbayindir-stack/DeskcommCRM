@@ -11457,5 +11457,7 @@
   "Este link expira em {data}. Se você não esperava este convite, pode ignorá-lo.": "Bu bağlantı {data} tarihinde sona erer. Bu daveti beklemiyorsanız dikkate almayabilirsiniz.",
   "Você foi convidado para a {empresa} como {papel} no {marca}.": "{empresa} şirketine {marca} üzerinde {papel} olarak davet edildiniz.",
   "Aceitar: {url}": "Kabul edin: {url}",
-  "Expira em {data}.": "Geçerlilik sonu: {data}."
+  "Expira em {data}.": "Geçerlilik sonu: {data}.",
+  "Configure esta mensagem.": "Bu mesajı yapılandırın.",
+  "Configure esta etapa.": "Bu adımı yapılandırın."
 }

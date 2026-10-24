@@ -54,11 +54,14 @@ export function regraEmBranco(): RegraDeCondicao {
  * fixo, porque a saudação de quem voltou não pede o LLM (e duas vozes
  * nasceriam se o default fosse `ai_message` + o turno inbound).
  */
-export function configPadraoDaAcao(triggerKind?: string): FlowNode["config"] {
+export function configPadraoDaAcao(
+  triggerKind?: string,
+  t: (texto: string) => string = (texto) => texto,
+): FlowNode["config"] {
   if (triggerKind === "inbound_after_silence") {
-    return { mode: "text", body: "Configure esta mensagem." };
+    return { mode: "text", body: t("Configure esta mensagem.") };
   }
-  return { mode: "ai_message", prompt_hint: "Configure esta etapa." };
+  return { mode: "ai_message", prompt_hint: t("Configure esta etapa.") };
 }
 
 export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
@@ -154,7 +157,7 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-success-bg text-success-fg",
     borderClassName: "border-l-success",
     defaultLabel: "Enviar mensagem",
-    defaultConfig: () => configPadraoDaAcao(),
+    defaultConfig: (t) => configPadraoDaAcao(undefined, t),
   },
   internal_task: {
     type: "internal_task",

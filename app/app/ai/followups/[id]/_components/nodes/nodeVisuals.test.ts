@@ -192,3 +192,30 @@ describe("padrões de nó novo no idioma do operador", () => {
     expect(traduzir("Nova regra", "tr")).not.toBe("Nova regra");
   });
 });
+
+describe("configPadraoDaAcao no idioma do operador", () => {
+  it("com o tradutor turco, os dois padrões saem em turco e não em português", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+    const texto = configPadraoDaAcao("inbound_after_silence", tr) as { mode: string; body: string };
+    expect(texto.mode).toBe("text");
+    expect(texto.body).not.toBe("Configure esta mensagem.");
+    expect(texto.body).toMatch(/[ıİşŞğĞüÜöÖçÇ]|mesaj/i);
+
+    const ia = configPadraoDaAcao(undefined, tr) as { mode: string; prompt_hint: string };
+    expect(ia.mode).toBe("ai_message");
+    expect(ia.prompt_hint).not.toBe("Configure esta etapa.");
+    expect(ia.prompt_hint).toMatch(/[ıİşŞğĞüÜöÖçÇ]|adım/i);
+  });
+
+  it("sem tradutor ficam os textos de hoje", () => {
+    expect(configPadraoDaAcao("inbound_after_silence")).toEqual({ mode: "text", body: "Configure esta mensagem." });
+    expect(configPadraoDaAcao("outro")).toEqual({ mode: "ai_message", prompt_hint: "Configure esta etapa." });
+  });
+
+  it("tem espanhol e turco no dicionário", () => {
+    for (const chave of ["Configure esta mensagem.", "Configure esta etapa."]) {
+      expect(traduzir(chave, "es")).not.toBe(chave);
+      expect(traduzir(chave, "tr")).not.toBe(chave);
+    }
+  });
+});
