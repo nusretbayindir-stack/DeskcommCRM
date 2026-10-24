@@ -346,13 +346,24 @@ export function palavrasDePassagem(brutas: readonly string[] | null | undefined)
 
 /**
  * Detecção de handoff por keywords CONFIGURADAS na tela (soma-se à detecção
- * determinística regex do engine — nunca a substitui). Case-insensitive,
- * substring simples: a semântica do EPIC-13 (sentinel de handoff_keywords).
+ * determinística regex do engine — nunca a substitui). Substring simples (a
+ * semântica do EPIC-13, sentinel de handoff_keywords), sem caixa e sem acento
+ * dos DOIS lados, como o `normalize` da detecção determinística: "İnsanla"
+ * ganha um ponto combinante depois do `i` no `toLowerCase`, "CANLI" vira
+ * `canli`, e nenhum dos dois casava a palavra escrita em turco.
  */
 export function matchesHandoffKeyword(signal: string, keywords: readonly string[]): boolean {
   if (keywords.length === 0) return false;
-  const lower = signal.toLowerCase();
-  return keywords.some((k) => lower.includes(k));
+  const dobrado = semCaixaNemAcento(signal);
+  return keywords.some((k) => dobrado.includes(semCaixaNemAcento(k)));
+}
+
+function semCaixaNemAcento(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .replace(/ı/gu, 'i');
 }
 
 /** Exact authenticated version, including a draft: uses the production projection. */
