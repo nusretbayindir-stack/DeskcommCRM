@@ -41,6 +41,35 @@ const TURCO_PEDE_PARA_SAIR = [
   "Numaramı listenizden silin",
   "Mesajlarınızı durdurun",
   "Mesaj göndermeyi bırakın",
+  // Revisão (review-turkce-demo-oncesi): flexões e ordens que escapavam.
+  "Bana mesaj atma",
+  "Mesaj atma bana!",
+  "Mesaj gönderme artık",
+  "Bana bir daha mesaj çekmeyin",
+  "SMS atmayın",
+  "SMS göndermeyin",
+  "WhatsApp'tan yazmayın",
+  "Bir daha yazmayın",
+  "Artık yazmayın",
+  "Bize yazmayın",
+  "İstemiyorum, artık yazmayın",
+  "Bana bir daha mesaj gelmesin",
+  "Reklam göndermeyin",
+  "Reklam istemiyorum",
+  "Mesajlarınızla rahatsız etmeyin",
+  "Listeden çıkar beni",
+  "Listeden çıkarın lütfen",
+  "Beni listenizden çıkartın",
+  "Beni listeden siler misiniz",
+  "Beni bu listeden çıkarın",
+  "Beni yayın listesinden çıkarın",
+  "Mesaj gönderimini durdurun",
+  "Mesaj atmayı bırak",
+  "Gece de gündüz de mesaj atmayın",
+  // "RET" é a palavra que todo SMS comercial turco ensina (İYS: "RET yazıp
+  // … gönderin"): o STOP do turco, sozinho.
+  "RET",
+  "Ret",
 ];
 
 /** O sinal que escala para um humano e NÃO bloqueia sozinho. */
@@ -57,6 +86,34 @@ const TURCO_AMBIGUO = [
   "Bildirim istemiyorum",
   "İptal",
   "Durdur",
+  // A mensagem AUTOMÁTICA ou o LEMBRETE: quem não quer o robô quer uma
+  // pessoa, e quem não quer o lembrete não pediu para sumir. Um humano decide.
+  "Otomatik mesaj istemiyorum, yetkiliyle görüşmek istiyorum",
+  "Robot mesajı istemiyorum, gerçek bir insanla konuşmak istiyorum",
+  "Bot mesajı istemiyorum",
+  "Hazır mesaj istemiyorum, soruma cevap verin",
+  "Otomatik mesaj atmayın, biri beni arasın",
+  "Otomatik mesajları durdurun, bir yetkili yazsın",
+  "Hatırlatma mesajı istemiyorum",
+  "Randevu hatırlatma mesajlarını durdurun",
+  "Hatırlatma mesajı göndermeyin, ben unutmam",
+  // Troca para o TELEFONE: lead quente que pede ligação. Bloquear fecharia o
+  // negócio como perdido; escalar faz alguém ligar.
+  "Mesaj atmayın, arayın",
+  "Mesaj atmayın direkt arayın lütfen",
+  "Arayın, mesaj atmayın",
+  "Bana yazmayın, arayın",
+  "Bana yazmayın, sesli mesaj atın, araba kullanıyorum",
+  "WhatsApp'tan yazmayın, arayın",
+  // Apagar os dados (KVKK/GDPR) e o incômodo dito sem o verbo de cessação.
+  "Numaramı silin",
+  "Bilgilerimi silin",
+  "Yazmayın",
+  "Rahatsız etme",
+  "Rahatsız ediyorsunuz",
+  "Bıktım mesajlarınızdan",
+  "Sürekli mesaj atıp rahatsız ediyorsunuz",
+  "Engelleyeceğim",
 ];
 
 /** Fala de cliente: não bloqueia e não escala. */
@@ -85,6 +142,43 @@ const TURCO_NAO_PEDE = [
   "İlgilenmiyorum",
   "Yeterli olur, teşekkürler",
   "Kombi durdu, servis lazım",
+  // QUANDO e COMO a mensagem chega — o cliente segue comprando, e escalar
+  // calaria o agente na conversa. Nada.
+  "Gece mesaj atmayın lütfen",
+  "GECE MESAJ ATMAYIN",
+  "Gece yarısı mesaj atmayın, sabah yazın",
+  "Hafta sonu mesaj atmayın, pazartesi görüşürüz",
+  "Mesai saatleri dışında mesaj göndermeyin",
+  "Sabah 9'dan önce mesaj atmayın",
+  "Bu saatte mesaj atmayın, yarın konuşalım",
+  "Akşamları mesaj göndermeyin, işteyim",
+  "Sesli mesaj atmayın, yazarak yazın",
+  "Sesli mesaj göndermeyin lütfen, okuyorum sadece",
+  "Sesli mesaj istemiyorum, yazılı cevap verin",
+  "Uzun mesaj atmayın, kısa yazın",
+  // O instrumental (`mesajla`) é o CANAL de um anexo — o "manda por email"
+  // que o espanhol já corrigiu.
+  "Faturayı mesajla göndermeyin, mail atın",
+  "Fotoğrafları mesajla göndermeyin, e-postaya atın",
+  // `abonelik` de serviço público: o contrato de gás, água e luz.
+  "Doğalgaz aboneliğimi iptal ettim, sayacı sökmeniz lazım",
+  "Doğalgaz aboneliğini iptal ettirdim, kombi sökümü yapar mısınız?",
+  "Elektrik aboneliğini iptal ettirmem gerekiyor mu?",
+  "Su aboneliği iptal edildi, ev sahibi ne yapmalı?",
+  // Descrição, pergunta e o item específico — não pedido.
+  "Arabadaki tıkırtı beni rahat bırakmıyor, ne zaman bakabilirsiniz?",
+  "Bu ses beni rahat bırakmadı",
+  "Komşuları rahatsız etmeyin, sessiz çalışın",
+  "Lütfen sabah erken gelip komşuları rahatsız etmeyin",
+  "2 kat boya yaptık, artık yeter mi?",
+  "Artık yeter mi bu kadar parça?",
+  "O evle artık ilgilenmiyorum, başka ilan var mı?",
+  "O araçla artık ilgilenmiyorum, diğerini görebilir miyim?",
+  // A lista de ESPERA vem antes, e o "listeden" de depois é dela.
+  "Bekleme listesindeyim ama listeden çıkmak istiyorum, aracı başka yerden aldım",
+  "Bekleme listesine yazmıştınız, beni listeden çıkarın, aracı aldım",
+  "Eski numaramı silin, yenisi bu",
+  "Mesaj atma imkanı var mı?",
 ];
 
 describe("turco — o pedido inequívoco bloqueia", () => {
