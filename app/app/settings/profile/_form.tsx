@@ -113,9 +113,9 @@ export function ProfileForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {FUSOS_OFERECIDOS.map(({ codigo, rotulo }) => (
-                  <SelectItem key={codigo} value={codigo}>
-                    {t(rotulo)}
+                {FUSOS_OFERECIDOS.map((f) => (
+                  <SelectItem key={f.codigo} value={f.codigo}>
+                    {t(f.rotulo)}
                   </SelectItem>
                 ))}
               </SelectContent>
