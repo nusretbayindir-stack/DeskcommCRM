@@ -19,21 +19,32 @@ type LeitorSupabase = {
   from(tabela: string): {
     select(colunas: string): {
       eq(coluna: string, valor: string): {
-        maybeSingle(): PromiseLike<{ data: unknown }>;
+        maybeSingle(): PromiseLike<{ data: unknown; error?: { message?: string } | null }>;
       };
     };
   };
 };
 
+/** Uma linha só no log: o agente vai nascer no idioma do produto, e quem investiga precisa saber por quê. */
+function avisarLeituraFalha(onde: string, orgId: string, motivo: unknown): void {
+  const texto = motivo instanceof Error ? motivo.message : String(motivo);
+  console.warn(`[idioma-da-org] leitura do idioma falhou (${onde}, org ${orgId}); usando o padrão:`, texto);
+}
+
 export async function idiomaDaOrgPeloSupabase(admin: unknown, orgId: string): Promise<Idioma> {
   try {
-    const { data } = await (admin as LeitorSupabase)
+    const { data, error } = await (admin as LeitorSupabase)
       .from("organizations")
       .select("locale")
       .eq("id", orgId)
       .maybeSingle();
+    if (error) {
+      avisarLeituraFalha("supabase", orgId, error.message ?? error);
+      return IDIOMA_PADRAO;
+    }
     return normalizarIdioma((data as { locale?: string | null } | null)?.locale ?? null);
-  } catch {
+  } catch (err) {
+    avisarLeituraFalha("supabase", orgId, err);
     return IDIOMA_PADRAO;
   }
 }
@@ -48,7 +59,8 @@ export async function idiomaDaOrgPeloPg(
       [orgId],
     );
     return normalizarIdioma(rows?.[0]?.locale ?? null);
-  } catch {
+  } catch (err) {
+    avisarLeituraFalha("pg", orgId, err);
     return IDIOMA_PADRAO;
   }
 }
@@ -72,7 +84,8 @@ export async function idiomaEFusoDaOrg(
       .maybeSingle();
     const linha = data as { locale?: string | null; timezone?: string | null } | null;
     return { idioma: normalizarIdioma(linha?.locale ?? null), fuso: linha?.timezone || null };
-  } catch {
+  } catch (err) {
+    avisarLeituraFalha("idioma e fuso", orgId, err);
     return { idioma: IDIOMA_PADRAO, fuso: null };
   }
 }

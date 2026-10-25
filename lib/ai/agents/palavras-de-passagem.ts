@@ -10,9 +10,10 @@
  * palavras aqui. A detecção determinística (`HUMAN_HANDOFF_PATTERNS`) roda de
  * qualquer jeito; estas somam a ela.
  *
- * Lê daqui o formulário e as três entradas que não passam por ele: a rota de
- * versão, a criação pelo MCP e o rascunho canônico (`create-draft.ts`). Elas
- * usam o idioma da ORGANIZAÇÃO, e só quando o corpo NÃO trouxe a chave: o
+ * Lê daqui o formulário e as cinco entradas que não passam por ele: a rota de
+ * versões, a ação do MCP, o criador de rascunho canônico (`create-draft.ts`), o
+ * `POST /ai/agents` e o agente da Prospecção. Elas usam o idioma da
+ * ORGANIZAÇÃO, e só quando o corpo NÃO trouxe a chave: o
  * default do zod (`validation.ts`) e o da coluna continuam em português, e
  * quem manda `handoff_keywords` (até `[]`) é obedecido como mandou.
  */
