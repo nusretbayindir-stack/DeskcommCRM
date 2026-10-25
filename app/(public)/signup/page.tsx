@@ -73,8 +73,6 @@ export default async function SignupPage({
   // Convite VÁLIDO passa em qualquer modo — é o ponto inteiro do convite.
   const modo = convite ? null : await modoDeCadastro();
   const soPorConvite = modo === "so_convite";
-  // Só um provedor Google LIDO como desligado esconde o botão (`botao-google.ts`).
-  const mostrarGoogle = await botaoGoogleVisivel();
 
   if (soPorConvite) {
     return (
@@ -99,6 +97,11 @@ export default async function SignupPage({
       </div>
     );
   }
+
+  // Só um provedor Google LIDO como desligado esconde o botão (`botao-google.ts`).
+  // Depois do portão de convite: a tela "só por convite" não tem botão, e não
+  // paga a leitura.
+  const mostrarGoogle = await botaoGoogleVisivel();
 
   return (
     <div className="space-y-6">
@@ -131,7 +134,11 @@ export default async function SignupPage({
       {/* O convite atravessa o Google na URL de retorno: sem ele, quem foi
           convidado e cria a conta com Google ganharia uma empresa própria. */}
       {googleSemPlano ? (
-        <p className="text-center text-xs text-muted-foreground">{t("Para garantir que o plano selecionado seja contratado, conclua o cadastro com e-mail e senha.")}</p>
+        // O aviso explica por que o botão não está aqui: com o Google desligado
+        // não há botão a explicar.
+        mostrarGoogle ? (
+          <p className="text-center text-xs text-muted-foreground">{t("Para garantir que o plano selecionado seja contratado, conclua o cadastro com e-mail e senha.")}</p>
+        ) : null
       ) : mostrarGoogle ? (
         <>
           <EntrarComGoogle convite={convite?.token} />
