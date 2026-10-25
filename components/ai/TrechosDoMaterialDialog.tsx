@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { apiClient } from "@/lib/api/client";
-import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/marcadores-de-faq";
+import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/rotulos-de-trecho";
 import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 
 interface Trecho {

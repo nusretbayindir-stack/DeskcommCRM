@@ -35,6 +35,8 @@
 
 import { ErroDeExtracao, extrairTextoDoArquivo } from "@/lib/ai/rag/ingest/documento";
 import { canonizarTipoDeFonte, type TipoDeFonteId } from "@/lib/ai/rag/tipos-de-fonte";
+import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/rotulos-de-trecho";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import type { createClient } from "@/lib/supabase/server";
 
 /** O cliente com sessão (RLS) — o mesmo tipo que a rota e a página já usam. */
@@ -57,6 +59,12 @@ export type OrigemDoConteudo =
 
 export interface ConteudoLegivel {
   nome: string;
+  /**
+   * O sistema criou este material (`source_metadata.criada_automaticamente`):
+   * só então o nome é texto do produto e a tela o traduz. Nome que a pessoa
+   * digitou fica como está.
+   */
+  criadaAutomaticamente: boolean;
   /** Tipo canônico do material (`lib/ai/rag/tipos-de-fonte`). */
   tipo: TipoDeFonteId;
   origem: OrigemDoConteudo;
@@ -102,7 +110,7 @@ interface FonteRow {
 
 export async function lerConteudoDoMaterial(
   supabase: ClienteComSessao,
-  p: { orgId: string; sourceId: string },
+  p: { orgId: string; sourceId: string; idioma?: Idioma },
 ): Promise<LeituraDoMaterial> {
   const { data, error } = await supabase
     .from("ai_knowledge_sources")
@@ -137,6 +145,7 @@ export async function lerConteudoDoMaterial(
     ok: true,
     material: {
       nome,
+      criadaAutomaticamente: fonte.source_metadata?.criada_automaticamente === true,
       tipo,
       origem: parcial.origem,
       itens: parcial.itens ?? null,
@@ -185,7 +194,7 @@ export async function lerConteudoDoMaterial(
 
   // 3. O que sobrou: o material automático (conversas, catálogo) e o arquivo que
   //    não pôde ser lido agora. É o que o agente já sabe deste material.
-  const trechos = await lerTrechosIndexados(supabase, p, versaoAtiva);
+  const trechos = await lerTrechosIndexados(supabase, p, versaoAtiva, p.idioma);
   if (trechos.length > 0) {
     // O total é o do material (`chunks_count`), como em `trechos/route.ts`.
     const total = fonte.chunks_count ?? trechos.length;
@@ -231,12 +240,13 @@ async function lerTrechosIndexados(
   supabase: ClienteComSessao,
   p: { orgId: string; sourceId: string },
   versaoAtiva: string | null,
+  idioma?: Idioma,
 ): Promise<string[]> {
   if (!versaoAtiva) return [];
 
   const { data, error } = await supabase
     .from("ai_chunks")
-    .select("content")
+    .select("content, metadata")
     .eq("organization_id", p.orgId)
     .eq("knowledge_source_id", p.sourceId)
     .eq("kb_version_id", versaoAtiva)
@@ -247,5 +257,10 @@ async function lerTrechosIndexados(
     console.error("[conhecimento-conteudo] leitura dos trechos falhou:", error.message);
     return [];
   }
-  return ((data ?? []) as unknown as { content: string }[]).map((t) => t.content);
+  // Os rótulos de sistema (`Cliente:`, `Pergunta:`…) trocam de idioma trecho a
+  // trecho, cada um pelo seu próprio tipo de fonte, ANTES de juntar. Sem idioma
+  // (a rota de API) o texto sai como está guardado.
+  return ((data ?? []) as unknown as { content: string; metadata: Record<string, unknown> | null }[]).map(
+    (t) => (idioma ? rotulosDoTrechoNoIdioma(t.content, idioma, t.metadata?.source_type) : t.content),
+  );
 }

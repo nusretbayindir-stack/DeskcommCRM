@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/marcadores-de-faq";
+import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/rotulos-de-trecho";
 
 const TRECHO = "Pergunta: Qual o prazo?\nResposta: Dois dias.";
 

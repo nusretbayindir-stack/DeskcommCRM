@@ -137,7 +137,7 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
       // no primeiro render diria isso por engano.
       supabase
         .from("ai_knowledge_sources")
-        .select("id, name, source_type, chunks_count, last_index_status, is_active")
+        .select("id, name, source_type, chunks_count, last_index_status, is_active, source_metadata")
         .eq("organization_id", activeOrg.orgId)
         .eq("is_active", true)
         .order("created_at", { ascending: true }),
@@ -211,7 +211,7 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
   const arquivadosMarcadosRes = idsMarcadosForaDaLista.length
     ? await supabase
         .from("ai_knowledge_sources")
-        .select("id, name, source_type, chunks_count, last_index_status, is_active")
+        .select("id, name, source_type, chunks_count, last_index_status, is_active, source_metadata")
         .eq("organization_id", activeOrg.orgId)
         .in("id", idsMarcadosForaDaLista)
     : null;
