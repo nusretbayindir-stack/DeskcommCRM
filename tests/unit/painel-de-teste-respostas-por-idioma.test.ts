@@ -88,3 +88,34 @@ describe("textoDoAviso", () => {
     );
   });
 });
+
+describe("pt-BR mantem o texto detalhado do motor (v1.88.3 F5)", () => {
+  const MENSAGEM_DO_AVISO = `Em produção esta resposta não sairia agora (${REASON_PT}). O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.`;
+  const tIdentidade = (texto: string): string => texto;
+
+  it("impedimento: pt-BR devolve a mensagem original (com a frase citada)", () => {
+    expect(
+      textoDoImpedimento({ code: "promise_semantic", message: REASON_PT }, tIdentidade, "pt-BR"),
+    ).toBe(REASON_PT);
+  });
+
+  it("aviso: pt-BR devolve a mensagem original (janela e fuso inclusos)", () => {
+    const message = "Em produção esta resposta não sairia agora (fora da janela de resposta (9h-18h, America/Sao_Paulo)).";
+    expect(
+      textoDoAviso(
+        { code: "outside_window", message, reason: "fora da janela de resposta (9h-18h, America/Sao_Paulo)" },
+        tIdentidade,
+        "pt-BR",
+      ),
+    ).toBe(message);
+    expect(
+      textoDoAviso({ code: "promise_semantic", message: MENSAGEM_DO_AVISO, reason: REASON_PT }, tIdentidade, "pt-BR"),
+    ).toBe(MENSAGEM_DO_AVISO);
+  });
+
+  it("tr continua como na Task 1", () => {
+    const texto = textoDoImpedimento({ code: "promise_semantic", message: REASON_PT }, tTurco, "tr");
+    expect(texto).not.toContain("frase suspeita");
+    expect(texto).toBe(textoDoImpedimento({ code: "promise_semantic", message: REASON_PT }, tTurco));
+  });
+});

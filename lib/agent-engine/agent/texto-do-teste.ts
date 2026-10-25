@@ -1,3 +1,5 @@
+import type { Idioma } from "@/lib/i18n/idiomas";
+
 import { motivoDoVeto } from "./sugestao-de-resposta";
 
 type Traduzir = (texto: string) => string;
@@ -38,11 +40,16 @@ function motivoDePacing(code: string, t: Traduzir): string | null {
  * português e fixado por `semantic.test.ts`. O operador vê o texto de
  * `motivoDoVeto` (o mesmo do painel de revisão), que tem tradução. Código
  * desconhecido mantém o `message`, que continua verdadeiro.
+ *
+ * Em pt-BR o `message` já está no idioma de quem olha e traz o detalhe (a frase
+ * suspeita citada): fica como o motor o escreveu.
  */
 export function textoDoImpedimento(
   impedimento: { code: string; message: string },
   t: Traduzir,
+  idioma?: Idioma,
 ): string {
+  if (idioma === "pt-BR") return impedimento.message;
   const motivo = motivoDoVeto(impedimento.code);
   return motivo ? t(motivo.texto) : impedimento.message;
 }
@@ -52,8 +59,11 @@ export function textoDoImpedimento(
  * partes traduzíveis. Motivo: `motivoDoVeto`, depois o texto fixo de pacing e,
  * por último (código novo), o `reason` do motor. Sem `reason` devolve o
  * `message`, salvo `midia_sem_fotos`, que é montado a partir do produto.
+ *
+ * Em pt-BR vale o `message` do motor, com o detalhe (janela de envio, fuso).
  */
-export function textoDoAviso(aviso: AvisoDoTeste, t: Traduzir): string {
+export function textoDoAviso(aviso: AvisoDoTeste, t: Traduzir, idioma?: Idioma): string {
+  if (idioma === "pt-BR") return aviso.message;
   if (aviso.code === "midia_sem_fotos" && aviso.produto !== undefined)
     return t(
       "O produto {codigo} não tem fotos cadastradas: nenhuma imagem seria enviada no envio real, só o texto.",
