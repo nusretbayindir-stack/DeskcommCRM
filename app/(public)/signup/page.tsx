@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { EntrarComGoogle } from "@/components/auth/EntrarComGoogle";
 import { SignupForm } from "@/components/auth/SignupForm";
+import { botaoGoogleVisivel } from "@/lib/auth/botao-google";
 import { Button } from "@/components/ui/button";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { verifyInviteToken } from "@/lib/auth/invite-token";
@@ -97,6 +98,11 @@ export default async function SignupPage({
     );
   }
 
+  // Só um provedor Google LIDO como desligado esconde o botão (`botao-google.ts`).
+  // Depois do portão de convite: a tela "só por convite" não tem botão, e não
+  // paga a leitura.
+  const mostrarGoogle = await botaoGoogleVisivel();
+
   return (
     <div className="space-y-6">
       <div className="space-y-1.5 text-center">
@@ -128,15 +134,19 @@ export default async function SignupPage({
       {/* O convite atravessa o Google na URL de retorno: sem ele, quem foi
           convidado e cria a conta com Google ganharia uma empresa própria. */}
       {googleSemPlano ? (
-        <p className="text-center text-xs text-muted-foreground">{t("Para garantir que o plano selecionado seja contratado, conclua o cadastro com e-mail e senha.")}</p>
-      ) : (
+        // O aviso explica por que o botão não está aqui: com o Google desligado
+        // não há botão a explicar.
+        mostrarGoogle ? (
+          <p className="text-center text-xs text-muted-foreground">{t("Para garantir que o plano selecionado seja contratado, conclua o cadastro com e-mail e senha.")}</p>
+        ) : null
+      ) : mostrarGoogle ? (
         <>
           <EntrarComGoogle convite={convite?.token} />
           {planos.length > 0 && (
             <p className="text-center text-xs text-muted-foreground">{t("Com o Google, a empresa começa no plano padrão. Para escolher outro, use e-mail e senha.")}</p>
           )}
         </>
-      )}
+      ) : null}
 
       <p className="text-center text-sm text-muted-foreground">
         {t("Já tem conta?")}{" "}

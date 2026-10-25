@@ -172,12 +172,18 @@ function aresta(
 const DIA_MS = 86_400_000;
 const HORA_MS = 3_600_000;
 
-/** O rótulo do nó de espera, em dias ou horas — é o que a pessoa lê no canvas. */
-export function rotuloDaEspera(ms: number): string {
+/**
+ * O rótulo do nó de espera, em dias ou horas — é o que a pessoa lê no canvas.
+ *
+ * O número entra pelo molde `{n}` e não por uma frase montada: `traduzir()` casa
+ * a string EXATA, e "Espera 3 dias" não existe em dicionário nenhum. Sem `t`
+ * (o grafo do catálogo, em português) o texto sai como sempre saiu.
+ */
+export function rotuloDaEspera(ms: number, t: (texto: string) => string = (texto) => texto): string {
   if (ms >= DIA_MS) {
     const dias = Math.round(ms / DIA_MS);
-    return dias === 1 ? "Espera 1 dia" : `Espera ${dias} dias`;
+    return dias === 1 ? t("Espera 1 dia") : t("Espera {n} dias").replace("{n}", String(dias));
   }
   const horas = Math.max(1, Math.round(ms / HORA_MS));
-  return horas === 1 ? "Espera 1 hora" : `Espera ${horas} horas`;
+  return horas === 1 ? t("Espera 1 hora") : t("Espera {n} horas").replace("{n}", String(horas));
 }

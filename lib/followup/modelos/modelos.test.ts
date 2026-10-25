@@ -107,10 +107,11 @@ describe("catálogo de modelos de follow-up", () => {
     // `t(modelo.resumo)` é chave DINÂMICA: o varredor de AST de
     // `i18n-espanhol-cobre-a-tela` só enxerga literal, então um modelo novo
     // entraria na tela em português para quem escolheu espanhol, sem nada
-    // reprovar. O nome do modelo fica de fora de propósito — ele vira o `name`
-    // do ponteiro no banco, e nome de registro não se traduz.
+    // reprovar. O nome do modelo entra: a rota o traduz ao instalar (o que a
+    // pessoa digita no campo "nome" vale como veio). Os rótulos do grafo têm a
+    // guarda própria em `traduzir-grafo.test.ts`.
     const semEspanhol = MODELOS_DE_FOLLOWUP.flatMap((m) =>
-      [m.jornada, m.resumo, m.oQueDispara].filter((texto) => !DICIONARIO[texto]?.es),
+      [m.nome, m.jornada, m.resumo, m.oQueDispara].filter((texto) => !DICIONARIO[texto]?.es),
     );
     expect(semEspanhol).toEqual([]);
   });

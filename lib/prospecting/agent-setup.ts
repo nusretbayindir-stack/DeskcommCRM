@@ -3,6 +3,8 @@ import type pg from "pg";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { audit } from "@/lib/audit";
 import { createMcpAgentDraft } from "@/lib/ai/agents/create-draft";
+import { idiomaDaOrgPeloPg } from "@/lib/ai/agents/idioma-da-org";
+import { palavrasDePassagemPadrao } from "@/lib/ai/agents/palavras-de-passagem";
 import { publishAgentVersion } from "@/lib/ai/agents/publish";
 import { escolherModeloDoProvedor } from "@/lib/ai/agents/escolher-modelo";
 import { listarModelosDaAssinaturaOuVazio } from "@/lib/ai/catalogo/modelos-da-assinatura";
@@ -362,6 +364,15 @@ export async function setupProspectingAgent(
       );
       const version = versionCreateSchema.parse({
         system_prompt: prospectingAgentPrompt(input),
+        // Explícito: o `versionCreateSchema` preencheria o default português, e
+        // o rascunho canônico (que recebe a versão já parseada) o trataria como
+        // "mandado". O agente da Prospecção fala o idioma da organização.
+        // `db` está DENTRO da transação do setup. A leitura do idioma nunca lança:
+        // se ela falhar, o agente cairia no idioma do produto, mas o Postgres
+        // deixa a transação abortada e o próximo comando falha com erro claro,
+        // revertendo tudo. Por isso uma falha aqui é segura: ninguém fica com um
+        // agente gravado em idioma errado.
+        handoff_keywords: [...palavrasDePassagemPadrao(await idiomaDaOrgPeloPg(db, context.orgId))],
         provider: model.provider,
         model: model.model,
         credential_id: model.credential_id,

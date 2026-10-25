@@ -1,9 +1,11 @@
 /**
  * FAQ markdown ingestion helpers.
  *
- * Supports two section marker styles (case-insensitive):
- *   ## Pergunta: / ## Resposta:
- *   ## P: / ## R:
+ * Section markers (case-insensitive, `:` or full-width `：`) come from
+ * `marcadores-de-faq.ts`, for every UI language at once: `## Pergunta:` /
+ * `## Resposta:` (and `## P:` / `## R:`), `## Pregunta:` / `## Respuesta:`,
+ * `## Soru:` / `## Yanıt:` (or `## Cevap:`). No language detection: mixed text
+ * works.
  *
  * Optional YAML frontmatter (---) applies locale/tags defaults to all items
  * that do not specify their own.
@@ -17,6 +19,8 @@
  *   ## Resposta: Entregamos em até 7 dias úteis.
  */
 
+import { tipoDeMarcador } from "@/lib/ai/rag/ingest/marcadores-de-faq";
+
 export interface FaqItem {
   question: string;
   answer: string;
@@ -26,10 +30,16 @@ export interface FaqItem {
 
 const DEFAULT_LOCALE = "pt-BR";
 
-/** Regex matching both `## Pergunta:` and `## P:` (case-insensitive). */
-const QUESTION_RE = /^##\s+(?:pergunta|p)\s*:/i;
-/** Regex matching both `## Resposta:` and `## R:` (case-insensitive). */
-const ANSWER_RE = /^##\s+(?:resposta|r)\s*:/i;
+/** `## <palavra>:` — a palavra é julgada por `tipoDeMarcador`, não pela regex. */
+const MARCADOR_RE = /^##\s+([^\s:：]+)\s*[:：]/u;
+
+/** O marcador da linha: de que tipo é e onde termina (depois dos dois pontos). */
+function marcadorDaLinha(line: string): { tipo: "pergunta" | "resposta"; fim: number } | null {
+  const m = MARCADOR_RE.exec(line);
+  if (!m) return null;
+  const tipo = tipoDeMarcador(m[1] ?? "");
+  return tipo ? { tipo, fim: m[0].length } : null;
+}
 
 interface Frontmatter {
   locale: string;
@@ -111,15 +121,14 @@ export function parseFaqMarkdown(md: string): FaqItem[] {
   };
 
   for (const line of lines) {
-    if (QUESTION_RE.test(line)) {
+    const marcador = marcadorDaLinha(line);
+    if (marcador?.tipo === "pergunta") {
       flushItem();
       // Extract the question text after the marker (e.g. "## Pergunta: text here")
-      const colonIdx = line.indexOf(":");
-      currentQuestion = line.slice(colonIdx + 1).trim();
+      currentQuestion = line.slice(marcador.fim).trim();
       inAnswer = false;
-    } else if (ANSWER_RE.test(line)) {
-      const colonIdx = line.indexOf(":");
-      const firstLine = line.slice(colonIdx + 1).trim();
+    } else if (marcador?.tipo === "resposta") {
+      const firstLine = line.slice(marcador.fim).trim();
       currentAnswerLines = firstLine ? [firstLine] : [];
       inAnswer = true;
     } else if (inAnswer) {

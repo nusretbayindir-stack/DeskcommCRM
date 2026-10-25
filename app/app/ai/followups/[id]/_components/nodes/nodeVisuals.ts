@@ -22,7 +22,12 @@ export interface NodeVisual {
   /** Left accent border on the node card. */
   borderClassName: string;
   defaultLabel: string;
-  defaultConfig: () => FlowNode["config"];
+  /**
+   * `t` traduz o texto que o nó leva DENTRO do config ("Sim", "Nova pergunta"):
+   * é rótulo gravado no grafo, então precisa nascer no idioma de quem o criou.
+   * Sem `t` (pt-BR, testes) sai em português, como sempre saiu.
+   */
+  defaultConfig: (t?: (texto: string) => string) => FlowNode["config"];
 }
 
 type RegraDeCondicao = Extract<FlowNode, { type: "condition" }>["config"]["checks"][number];
@@ -49,11 +54,14 @@ export function regraEmBranco(): RegraDeCondicao {
  * fixo, porque a saudação de quem voltou não pede o LLM (e duas vozes
  * nasceriam se o default fosse `ai_message` + o turno inbound).
  */
-export function configPadraoDaAcao(triggerKind?: string): FlowNode["config"] {
+export function configPadraoDaAcao(
+  triggerKind?: string,
+  t: (texto: string) => string = (texto) => texto,
+): FlowNode["config"] {
   if (triggerKind === "inbound_after_silence") {
-    return { mode: "text", body: "Configure esta mensagem." };
+    return { mode: "text", body: t("Configure esta mensagem.") };
   }
-  return { mode: "ai_message", prompt_hint: "Configure esta etapa." };
+  return { mode: "ai_message", prompt_hint: t("Configure esta etapa.") };
 }
 
 export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
@@ -91,14 +99,16 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-accent text-accent-foreground",
     borderClassName: "border-l-accent-700",
     defaultLabel: "Classificar resposta",
-    defaultConfig: () => ({
-      // Em português, e dizendo o CRITÉRIO: estes nomes são a definição inteira
-      // que o modelo recebe para classificar a resposta (`followup-flow-classify`),
-      // e aparecem crus na saída do card, na aresta e no dossiê. "hot"/"cold"
-      // pedia ao dono da loja que adivinhasse o critério — e ao modelo também.
-      // Fora do dicionário de propósito: são DADO do usuário, e uma chave faria
-      // o card traduzir o que o motor compara ao pé da letra.
-      classes: ["Interessado", "Sem interesse"],
+    defaultConfig: (t = (texto) => texto) => ({
+      // Dizendo o CRITÉRIO: estes nomes são a definição inteira que o modelo
+      // recebe para classificar a resposta (`followup-flow-classify`), e aparecem
+      // crus na saída do card, na aresta e no dossiê. "hot"/"cold" pedia ao dono
+      // da loja que adivinhasse o critério — e ao modelo também.
+      // Nascem no idioma do operador: o nó é NOVO, então nenhuma aresta aponta
+      // para estes textos ainda (no formato sem `branches`, o texto da classe é o
+      // próprio id do ramo, criado a partir deste mesmo valor). Depois de gravada,
+      // a classe é dado do usuário: nenhuma tela a traduz na exibição.
+      classes: [t("Interessado"), t("Sem interesse")],
       grace_timeout_ms: 900_000,
       target: "last_reply",
     }),
@@ -110,8 +120,11 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-info-bg text-info-fg",
     borderClassName: "border-l-info",
     defaultLabel: "Casar resposta",
-    defaultConfig: () => ({
-      branches: [{ id: "br_sim", label: "Sim", op: "contains", pattern: "sim" }],
+    defaultConfig: (t = (texto) => texto) => ({
+      // O padrão acompanha o rótulo: "contains" compara em minúsculas, sem
+      // ignorar acento. Em espanhol vale "si" (quem digita no celular quase nunca
+      // põe o acento); o operador ajusta a regra se o público for outro.
+      branches: [{ id: "br_sim", label: t("Sim"), op: "contains", pattern: t("sim") }],
       grace_timeout_ms: 900_000,
     }),
   },
@@ -131,7 +144,7 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-info-bg text-info-fg",
     borderClassName: "border-l-info",
     defaultLabel: "Nova pergunta",
-    defaultConfig: () => ({ key: "novo_campo", label: "Nova pergunta", type: "text", required: true, permite_correcao: true }),
+    defaultConfig: (t = (texto) => texto) => ({ key: "novo_campo", label: t("Nova pergunta"), type: "text", required: true, permite_correcao: true }),
   },
   skill: {
     type: "skill",
@@ -149,7 +162,7 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-success-bg text-success-fg",
     borderClassName: "border-l-success",
     defaultLabel: "Enviar mensagem",
-    defaultConfig: () => configPadraoDaAcao(),
+    defaultConfig: (t) => configPadraoDaAcao(undefined, t),
   },
   internal_task: {
     type: "internal_task",

@@ -32,6 +32,8 @@ import {
   markVersionReady,
 } from "@/lib/ai/rag/version";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 const CONV_MAX_CHARS = 1600;
 const CONV_OVERLAP_CHARS = 200;
@@ -86,6 +88,11 @@ async function ensureConversationsSource(
   const primeira = (existentes ?? [])[0] as { id: string } | undefined;
   if (primeira) return primeira.id;
 
+  // O nome nasce no idioma da empresa (a fonte é dado dela, não de quem rodou o
+  // lote). Fontes que já existem não mudam; o cartão traduz o nome na hora de
+  // mostrar (`criada_automaticamente`).
+  const idioma = await idiomaDaOrgPeloSupabase(admin, organizationId);
+
   const { data: inserted, error } = await admin
     .from("ai_knowledge_sources")
     .insert({
@@ -93,7 +100,7 @@ async function ensureConversationsSource(
       // Histórico: de qual assistente partiu o primeiro lote. Não é dono.
       agent_id: agentId,
       source_type: "conversas",
-      name: "Conversas anteriores",
+      name: traduzir("Conversas anteriores", idioma),
       status: "ready",
       source_metadata: { criada_automaticamente: true, origem: "conversas_anonimizadas" },
       is_active: true,

@@ -35,6 +35,7 @@ import { instalarModeloSchema, triggerConfigSchema } from "@/lib/followup/api-sc
 import { flowGraphSchema } from "@/lib/followup/graph-schema";
 import { validateFlowForPublish } from "@/lib/followup/validate-publish";
 import { modeloPorId } from "@/lib/followup/modelos";
+import { traduzirGrafoDoModelo } from "@/lib/followup/modelos/traduzir-grafo";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     scope: "mcp:write",
   });
   if (!authz.ok) return authz.response;
-  const t = (texto: string) => traduzir(texto, authz.idioma ?? "pt-BR");
+  const idioma = authz.idioma ?? "pt-BR";
+  const t = (texto: string) => traduzir(texto, idioma);
   const { organizationId, actor, apiTokenId, supabase } = authz;
 
   const teto = await tetoDeEscritaDoToken(authz, "followup_flows", requestId);
@@ -128,13 +130,18 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
-  const nome = parsed.data.name ?? modelo.nome;
+  // O nome e os rótulos do grafo saem no idioma de quem instala (o `texto` que o
+  // paciente lê, não). O nome que a pessoa digitou vale como veio. A tradução
+  // vem DEPOIS da validação: o schema e o publish rodam sobre o grafo do
+  // catálogo, e o teste do catálogo prova que o traduzido também passa neles.
+  const nome = parsed.data.name ?? t(modelo.nome);
+  const grafoGravado = traduzirGrafoDoModelo(grafo.data, idioma);
   const { data: criado, error: insErr } = await supabase
     .from("followup_flow_pointers")
     .insert({
       organization_id: organizationId,
       name: nome,
-      draft_graph: grafo.data,
+      draft_graph: grafoGravado,
       trigger_config: gatilho.data,
       handoff_policy: modelo.handoffPolicy,
     })
@@ -149,7 +156,10 @@ export async function POST(req: NextRequest): Promise<Response> {
     if (insErr?.code === "23505") {
       return fail(
         "conflict",
-        `Você já tem um fluxo chamado «${nome}». Abra esse ou instale com outro nome.`,
+        t("Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.").replace(
+          "{nome}",
+          nome,
+        ),
         409,
         { requestId },
       );

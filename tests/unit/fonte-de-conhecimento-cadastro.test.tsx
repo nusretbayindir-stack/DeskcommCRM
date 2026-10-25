@@ -440,3 +440,34 @@ describe("ChaveDeConhecimento — quem prepara a base", () => {
     );
   });
 });
+
+describe("KnowledgeSourceCard × nome criado sozinho", () => {
+  it("criada_automaticamente: o nome segue o idioma; o nome digitado fica como foi digitado", async () => {
+    const { IdiomaProvider } = await import("@/lib/i18n/IdiomaProvider");
+    const desenhar = (s: SourceRow) =>
+      render(
+        <IdiomaProvider locale="tr">
+          <KnowledgeSourceCard
+            source={s}
+            usadoPor={[]}
+            onReindex={() => {}}
+            onArquivar={() => {}}
+            onMudou={() => {}}
+          />
+        </IdiomaProvider>,
+      );
+    const auto = desenhar(
+      material({
+        name: "Conversas anteriores",
+        source_type: "conversas",
+        source_metadata: { criada_automaticamente: true },
+      }),
+    );
+    expect(screen.getAllByText("Önceki konuşmalar").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Conversas anteriores")).toBeNull();
+    auto.unmount();
+    desenhar(material({ name: "Conversas anteriores", source_metadata: {} }));
+    expect(screen.getAllByText("Conversas anteriores").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Önceki konuşmalar")).toBeNull();
+  });
+});

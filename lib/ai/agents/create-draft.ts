@@ -1,10 +1,37 @@
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { idiomaDaOrgPeloPg } from "./idioma-da-org";
+import { enviouPalavrasDePassagem, palavrasDePassagemPadrao } from "./palavras-de-passagem";
 import { agentMcpCreateSchema, type VersionInput } from "./validation";
 
-/** One record recipe for the REST/Supabase adapter and transactional setup. */
+/**
+ * As palavras de passagem da versão: as do corpo CRU quando ele as trouxe (até
+ * `[]`), senão as do idioma da organização. O zod preenche o omitido com o
+ * default português, e depois do `parse` não dá mais para distinguir — por isso
+ * quem chama passa o corpo cru. Sem `idioma`, vale o que o zod pôs.
+ */
+function palavrasDaVersao(
+  rawVersion: unknown,
+  doZod: string[],
+  idioma: Idioma | undefined,
+): string[] {
+  if (enviouPalavrasDePassagem(rawVersion) || idioma === undefined) return doZod;
+  return [...palavrasDePassagemPadrao(idioma)];
+}
+
+function versaoCrua(raw: unknown): unknown {
+  return typeof raw === "object" && raw !== null ? (raw as { version?: unknown }).version : undefined;
+}
+
+/**
+ * One record recipe for the REST/Supabase adapter and transactional setup.
+ *
+ * `raw` é o corpo ANTES do zod (esta função faz o `parse`). `context.idioma`, o
+ * da organização, só entra no que o corpo omitiu.
+ */
 export function mcpAgentDraftRecords(
-  context: { orgId: string; userId: string },
+  context: { orgId: string; userId: string; idioma?: Idioma },
   raw: unknown,
   ids: { agentId?: string; versionId?: string } = {},
 ) {
@@ -27,6 +54,11 @@ export function mcpAgentDraftRecords(
     },
     version: {
       ...input.version,
+      handoff_keywords: palavrasDaVersao(
+        versaoCrua(raw),
+        input.version.handoff_keywords,
+        context.idioma,
+      ),
       id: versionId,
       organization_id: context.orgId,
       agent_id: agentId,
@@ -40,7 +72,7 @@ export function mcpAgentDraftRecords(
 /** Canonical MCP creation, within the caller's transaction. No publication or routing. */
 export async function createMcpAgentDraft(
   db: pg.PoolClient,
-  context: { orgId: string; userId: string },
+  context: { orgId: string; userId: string; idioma?: Idioma },
   raw: unknown,
   options: {
     agentId?: string;
@@ -50,8 +82,12 @@ export async function createMcpAgentDraft(
   } = {},
 ) {
   const input = agentMcpCreateSchema.parse(raw);
-  const v = input.version;
-  const records = mcpAgentDraftRecords(context, input, options);
+  // O idioma só é lido quando o corpo omitiu as palavras de passagem.
+  const idioma =
+    context.idioma ??
+    (enviouPalavrasDePassagem(versaoCrua(raw)) ? undefined : await idiomaDaOrgPeloPg(db, context.orgId));
+  const records = mcpAgentDraftRecords({ ...context, idioma }, raw, options);
+  const v = { ...input.version, handoff_keywords: records.version.handoff_keywords };
   const pipelines = await db.query(
     "select id from crm_pipelines where organization_id=$1 and id=any($2::uuid[]) and not is_archived",
     [context.orgId, v.pipeline_ids],

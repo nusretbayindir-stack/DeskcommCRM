@@ -31,6 +31,11 @@ import {
   versionCreateSchema,
   versionPatchSchema,
 } from "@/lib/ai/agents/validation";
+import {
+  enviouPalavrasDePassagem,
+  palavrasDePassagemPadrao,
+} from "@/lib/ai/agents/palavras-de-passagem";
+import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { publishAgentVersion } from "@/lib/ai/agents/publish";
 import { escolherVersoesDaTela } from "@/lib/ai/agents/versoes-da-tela";
 import { toolIdAceito } from "@/lib/mcp/servidor-externo/ids";
@@ -749,6 +754,17 @@ export async function createMcpAgentAction(
   }
 
   const v = parsed.data.version;
+  // Omitido no corpo, o zod já pôs o default PORTUGUÊS: aqui vale o idioma da
+  // organização. Mandado (até `[]`), fica como foi mandado.
+  const handoffKeywords = enviouPalavrasDePassagem((payload as { version?: unknown }).version)
+    ? v.handoff_keywords
+    : [
+        ...palavrasDePassagemPadrao(
+          normalizarIdioma(
+            authUser.organizations.find((o) => o.organization_id === activeOrg.orgId)?.locale ?? null,
+          ),
+        ),
+      ];
   const { error: versionErr } = await admin.from("ai_agent_versions").insert({
     organization_id: activeOrg.orgId,
     agent_id: agentRow.id,
@@ -765,7 +781,7 @@ export async function createMcpAgentAction(
     cost_budget_cents: v.cost_budget_cents,
     history_message_window: v.history_message_window,
     history_token_window: v.history_token_window,
-    handoff_keywords: v.handoff_keywords,
+    handoff_keywords: handoffKeywords,
     handoff_tool_enabled: v.handoff_tool_enabled,
     handoff_legal_enabled: v.handoff_legal_enabled,
     proposal_ai_draft_enabled: v.proposal_ai_draft_enabled,

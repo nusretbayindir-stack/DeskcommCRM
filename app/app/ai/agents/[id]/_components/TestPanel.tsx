@@ -21,7 +21,9 @@ import { apiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
 import { agentRunsKey } from "@/hooks/ai/useAgentRuns";
 import { useT } from "@/hooks/i18n/useT";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 import { useTelefoneExemplo } from "@/hooks/contacts/useTelefoneExemplo";
+import { textoDoAviso, textoDoImpedimento, type AvisoDoTeste } from "@/lib/agent-engine/agent/texto-do-teste";
 import type { AgentRow } from "@/hooks/ai/useAgent";
 import type { AgentVersionRow } from "@/hooks/ai/useAgentVersions";
 
@@ -53,7 +55,7 @@ interface TestResponse {
      * Não bloqueiam o teste: dizem o que impediria o ENVIO real agora (ex.: fora
      * do horário). Ver `gatesDoSandbox` em lib/agent-engine/agent/preview.ts.
      */
-    warnings?: Array<{ code: string; message: string }>;
+    warnings?: AvisoDoTeste[];
     restrictions?: string[];
     /** Ver lib/ai/agents/avaliar-resposta-de-teste.ts. */
     guardrails?: {
@@ -126,6 +128,7 @@ function Verificacoes({ g }: { g: NonNullable<TestResponse["data"]["guardrails"]
 
 export function TestPanel({ agent, draft, published, readOnly }: Props) {
   const t = useT();
+  const idioma = useIdioma();
   const telefoneExemplo = useTelefoneExemplo();
   const target = draft ?? published;
   const qc = useQueryClient();
@@ -326,12 +329,12 @@ export function TestPanel({ agent, draft, published, readOnly }: Props) {
                     data-testid="teste-aviso-de-envio"
                     className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2"
                   >
-                    {x.message}
+                    {textoDoAviso(x, t, idioma)}
                   </p>
                 ))}
                 {result.impediments?.map((x, i) => (
                   <p role="status" key={i}>
-                    {x.message}
+                    {textoDoImpedimento(x, t, idioma)}
                   </p>
                 ))}
                 {!!result.proposals?.length && (

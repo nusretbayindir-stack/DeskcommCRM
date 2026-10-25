@@ -33,6 +33,7 @@ import {
 } from "@/lib/prospecting/agent-setup";
 import { prospectingAgentSetupSchema } from "@/lib/prospecting/agent-setup-schema";
 import { writeRouterMembers } from "@/lib/ai/agents/router-members";
+import { palavrasDePassagemPadrao } from "@/lib/ai/agents/palavras-de-passagem";
 
 const org = "10000000-0000-4000-8000-000000000001";
 const channel = "10000000-0000-4000-8000-000000000002";
@@ -70,6 +71,7 @@ type State = {
   incumbent: boolean;
   failAppend: boolean;
   members: string[];
+  locale: string;
 };
 function database() {
   const state: State = {
@@ -85,6 +87,7 @@ function database() {
     incumbent: false,
     failAppend: false,
     members: ["existing-agent"],
+    locale: "pt-BR",
   };
   let snapshot: string | null = null;
   const db = {
@@ -96,6 +99,8 @@ function database() {
         snapshot = null;
       }
       if (sql === "commit") snapshot = null;
+      if (sql.startsWith("select locale from organizations"))
+        return { rows: [{ locale: state.locale }] };
       if (sql.startsWith("select id,name,config,published_version_id"))
         return { rows: state.agent ? [state.agent] : [] };
       if (sql.startsWith("select id from prospecting_campaigns"))
@@ -172,6 +177,19 @@ beforeEach(() => {
 const admin = {} as SupabaseClient;
 
 describe("inline prospecting agent setup", () => {
+  it("o agente nasce com as palavras de passagem do idioma da organização", async () => {
+    const { state, pool } = database();
+    state.locale = "tr";
+    await setupProspectingAgent(pool, admin, context, input, { prepareOnly: true });
+    const version = mocks.create.mock.calls[0]![2].version as { handoff_keywords: string[] };
+    expect(version.handoff_keywords).toEqual([...palavrasDePassagemPadrao("tr")]);
+  });
+  it("em português segue o default português", async () => {
+    const { pool } = database();
+    await setupProspectingAgent(pool, admin, context, input, { prepareOnly: true });
+    const version = mocks.create.mock.calls[0]![2].version as { handoff_keywords: string[] };
+    expect(version.handoff_keywords).toEqual(["falar com humano", "atendente", "pessoa real"]);
+  });
   it("prepares a paused draft without publication or continuity changes, then publishes that exact draft after explicit choice", async () => {
     const { state, pool } = database();
     state.router!.config.sticky = false;

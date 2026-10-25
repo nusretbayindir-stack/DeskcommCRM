@@ -111,13 +111,21 @@ describe("nenhum card fala a língua do banco", () => {
   });
 });
 
-describe("o nó de classificação nasce falando português", () => {
-  it("as classes padrão dizem o critério, e ficam FORA do dicionário", () => {
+describe("o nó de classificação nasce no idioma do operador", () => {
+  it("pt-BR: as classes padrão dizem o critério, como sempre", () => {
     const { classes } = NODE_VISUALS.ai_classify.defaultConfig() as { classes: string[] };
     expect(classes).toEqual(["Interessado", "Sem interesse"]);
-    // Classe é dado do usuário: se virasse chave, o card mostraria uma palavra e
-    // o motor compararia outra para quem usa espanhol.
-    for (const classe of classes) expect(traduzir(classe, "es")).toBe(classe);
+  });
+
+  it("tr e es: as classes nascem traduzidas (o nó é novo, nenhuma aresta aponta para elas)", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+    const dele = NODE_VISUALS.ai_classify.defaultConfig(tr) as { classes: string[]; branches?: unknown };
+    expect(dele.classes).toHaveLength(2);
+    for (const classe of dele.classes) expect(["Interessado", "Sem interesse"]).not.toContain(classe);
+    // O limite do schema vale para o texto traduzido.
+    for (const classe of dele.classes) expect(classe.length).toBeLessThanOrEqual(40);
+    const emEs = NODE_VISUALS.ai_classify.defaultConfig(es) as { classes: string[] };
+    for (const classe of emEs.classes) expect(["Interessado", "Sem interesse"]).not.toContain(classe);
   });
 
   it("nenhum nome padrão colide com um ramo reservado do contrato", () => {
@@ -167,5 +175,66 @@ describe("paleta do follow-up (roteiro de atendimento, #1130)", () => {
     expect(tipos).not.toContain("collect");
     expect(tipos).not.toContain("skill");
     expect(tipos).toContain("action");
+  });
+});
+
+describe("padrões de nó novo no idioma do operador", () => {
+  const tr = (texto: string) => `tr:${texto}`;
+
+  it("a regra e a pergunta que nascem dentro do nó saem traduzidas", () => {
+    const regra = NODE_VISUALS.match_reply.defaultConfig(tr) as { branches: { label: string }[] };
+    expect(regra.branches[0]!.label).toBe("tr:Sim");
+    const pergunta = NODE_VISUALS.collect.defaultConfig(tr) as { label: string };
+    expect(pergunta.label).toBe("tr:Nova pergunta");
+  });
+
+  it("o padrão da regra acompanha o rótulo: evet em turco, si em espanhol, sim em pt-BR", () => {
+    const pat = (t: (s: string) => string) =>
+      (NODE_VISUALS.match_reply.defaultConfig(t) as { branches: { id: string; pattern: string }[] }).branches[0]!;
+    expect(pat((s) => traduzir(s, "tr")).pattern).toBe("evet");
+    expect(pat(es).pattern).toBe("si");
+    expect(pat(pt).pattern).toBe("sim");
+    // O id do ramo é estável e não depende do idioma.
+    expect(pat((s) => traduzir(s, "tr")).id).toBe("br_sim");
+  });
+
+  it("sem tradutor (pt-BR) nada muda", () => {
+    const regra = NODE_VISUALS.match_reply.defaultConfig() as { branches: { label: string; pattern: string }[] };
+    expect(regra.branches[0]!.pattern).toBe("sim");
+    expect(regra.branches[0]!.label).toBe("Sim");
+    const pergunta = NODE_VISUALS.collect.defaultConfig() as { label: string };
+    expect(pergunta.label).toBe("Nova pergunta");
+  });
+
+  it("'Nova regra' tem espanhol e turco no dicionário", () => {
+    expect(traduzir("Nova regra", "es")).not.toBe("Nova regra");
+    expect(traduzir("Nova regra", "tr")).not.toBe("Nova regra");
+  });
+});
+
+describe("configPadraoDaAcao no idioma do operador", () => {
+  it("com o tradutor turco, os dois padrões saem em turco e não em português", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+    const texto = configPadraoDaAcao("inbound_after_silence", tr) as { mode: string; body: string };
+    expect(texto.mode).toBe("text");
+    expect(texto.body).not.toBe("Configure esta mensagem.");
+    expect(texto.body).toMatch(/[ıİşŞğĞüÜöÖçÇ]|mesaj/i);
+
+    const ia = configPadraoDaAcao(undefined, tr) as { mode: string; prompt_hint: string };
+    expect(ia.mode).toBe("ai_message");
+    expect(ia.prompt_hint).not.toBe("Configure esta etapa.");
+    expect(ia.prompt_hint).toMatch(/[ıİşŞğĞüÜöÖçÇ]|adım/i);
+  });
+
+  it("sem tradutor ficam os textos de hoje", () => {
+    expect(configPadraoDaAcao("inbound_after_silence")).toEqual({ mode: "text", body: "Configure esta mensagem." });
+    expect(configPadraoDaAcao("outro")).toEqual({ mode: "ai_message", prompt_hint: "Configure esta etapa." });
+  });
+
+  it("tem espanhol e turco no dicionário", () => {
+    for (const chave of ["Configure esta mensagem.", "Configure esta etapa."]) {
+      expect(traduzir(chave, "es")).not.toBe(chave);
+      expect(traduzir(chave, "tr")).not.toBe(chave);
+    }
   });
 });

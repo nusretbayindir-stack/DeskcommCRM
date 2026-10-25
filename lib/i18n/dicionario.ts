@@ -2155,6 +2155,22 @@ export const DICIONARIO: Traducoes = {
   "Conversa com o cliente": { es: "Conversa con el cliente" },
   "Organiza o sistema": { es: "Organiza el sistema" },
   "Confere antes de enviar": { es: "Revisa antes de enviar" },
+  "Em produção esta resposta não sairia agora": { es: "En producción esta respuesta no saldría ahora" },
+  "O teste mostra a resposta mesmo assim; nenhuma mensagem foi enviada.": {
+    es: "La prueba muestra la respuesta igualmente; no se envió ningún mensaje.",
+  },
+  "Fora da janela de envio permitida: a resposta ficaria agendada para a próxima abertura da janela.": {
+    es: "Fuera de la ventana de envío permitida: la respuesta quedaría programada para la próxima apertura de la ventana.",
+  },
+  "Este número ainda está em aquecimento e o limite diário de envios foi atingido. A resposta sairia amanhã.": {
+    es: "Este número aún está en calentamiento y se alcanzó el límite diario de envíos. La respuesta saldría mañana.",
+  },
+  "O limite diário de envios do número foi atingido. A resposta sairia amanhã.": {
+    es: "Se alcanzó el límite diario de envíos del número. La respuesta saldría mañana.",
+  },
+  "O produto {codigo} não tem fotos cadastradas: nenhuma imagem seria enviada no envio real, só o texto.": {
+    es: "El producto {codigo} no tiene fotos registradas: no se enviaría ninguna imagen en el envío real, solo el texto.",
+  },
   "Quem é este agente": { es: "Quién es este agente" },
   "Ordem de preferência (0 a 1000)": { es: "Orden de preferencia (0 a 1000)" },
   "Quando mais de um agente puder atender a mesma conversa, o de número maior tenta primeiro. Se você só tem um agente, pode deixar como está.": {
@@ -17628,6 +17644,59 @@ export const DICIONARIO: Traducoes = {
   "Escolha até {max} campos do negócio para aparecerem em cada compra do contato. Sem escolha, a seção mostra a data do ganho, o título e o valor.": {
     es: "Elige hasta {max} campos del negocio para que aparezcan en cada compra del contacto. Sin elección, la sección muestra la fecha en que se ganó, el título y el valor.",
   },
+  // Fluxos de follow-up instalados a partir de um modelo (lib/followup/modelos/):
+  // nome do modelo, rótulos dos nós e dos ramos e a nota do fim são gravados no
+  // idioma de quem instala. A espera leva o número pelo molde {n}.
+  "Espera a resposta": { es: "Espera la respuesta" },
+  "Fim: quis marcar": { es: "Fin: quiso agendar" },
+  "Fim: respondeu": { es: "Fin: respondió" },
+  "Fim: sem resposta": { es: "Fin: sin respuesta" },
+  "Espera 1 dia": { es: "Espera 1 día" },
+  "Espera {n} dias": { es: "Espera {n} días" },
+  "Espera 1 hora": { es: "Espera 1 hora" },
+  "Espera {n} horas": { es: "Espera {n} horas" },
+  "Nova regra": { es: "Nueva regla" },
+  "Consulta · retomar quem sumiu na marcação": { es: "Consulta · retomar a quien desapareció al agendar" },
+  "Exame · marcar o exame que foi pedido": { es: "Examen · agendar el examen que se pidió" },
+  "Cirurgia · acompanhar a decisão": { es: "Cirugía · acompañar la decisión" },
+  "Falta · remarcar quem não veio": { es: "Inasistencia · reagendar a quien no vino" },
+  "Retoma a marcação": { es: "Retoma el agendamiento" },
+  "Pergunta o período": { es: "Pregunta el horario" },
+  "Último toque": { es: "Último contacto" },
+  "Oferece marcar": { es: "Ofrece agendar" },
+  "Encerra e libera": { es: "Cierra y libera" },
+  "Abre para dúvidas": { es: "Abre a dudas" },
+  "Oferece rever condições": { es: "Ofrece revisar condiciones" },
+  "Convida a retomar": { es: "Invita a retomar" },
+  "Deixa a porta aberta": { es: "Deja la puerta abierta" },
+  "Oferece outra data": { es: "Ofrece otra fecha" },
+  "Pede dia e período": { es: "Pide día y horario" },
+  "Encerra o assunto": { es: "Cierra el asunto" },
+  "Quer marcar": { es: "Quiere agendar" },
+  "Quer retomar": { es: "Quiere retomar" },
+  "Quer remarcar": { es: "Quiere reagendar" },
+  "O paciente respondeu — quem segue a conversa é o atendimento.": { es: "El paciente respondió: quien sigue la conversación es el equipo de atención." },
+  // Convite de time (`lib/email/templates/invite.ts`), no idioma da empresa.
+  "{convidador} convidou você para a {empresa} no {marca}": { es: "{convidador} te invitó a {empresa} en {marca}" },
+  "Você foi convidado para a {empresa}": { es: "Te invitaron a {empresa}" },
+  "{convidador} convidou você como {papel} no {marca}.": { es: "{convidador} te invitó como {papel} en {marca}." },
+  "Ou copie e cole este link no navegador:": { es: "O copia y pega este enlace en el navegador:" },
+  "Este link expira em {data}. Se você não esperava este convite, pode ignorá-lo.": { es: "Este enlace vence el {data}. Si no esperabas esta invitación, puedes ignorarla." },
+  "Você foi convidado para a {empresa} como {papel} no {marca}.": { es: "Te invitaron a {empresa} como {papel} en {marca}." },
+  "Aceitar: {url}": { es: "Aceptar: {url}" },
+  "Expira em {data}.": { es: "Vence el {data}." },
+  "Configure esta mensagem.": { es: "Configura este mensaje." },
+  "Configure esta etapa.": { es: "Configura esta etapa." },
+  "Tipo desativado.": { es: "Tipo desactivado." },
+  "Tipo reativado.": { es: "Tipo reactivado." },
+  "Tipo alterado.": { es: "Tipo modificado." },
+  "Não achei nenhum par pergunta/resposta. Use uma linha {pergunta} e uma {resposta} por item.": { es: "No encontré ningún par pregunta/respuesta. Usa una línea {pergunta} y otra {resposta} por elemento." },
+  "Não achei nenhum par pergunta/resposta no texto. Use uma linha {pergunta} e uma {resposta} por item.": { es: "No encontré ningún par pregunta/respuesta en el texto. Usa una línea {pergunta} y otra {resposta} por elemento." },
+  "Uma linha {pergunta} e uma {resposta} por item, separados por uma linha em branco.": { es: "Una línea {pergunta} y otra {resposta} por elemento, separados por una línea en blanco." },
+  "Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.": { es: "Ya tienes un flujo llamado «{nome}». Abre ese o instala con otro nombre." },
+  "Interessado": { es: "Interesado" },
+  "Sem interesse": { es: "Sin interés" },
+  "sim": { es: "si" },
 };
 
 /**

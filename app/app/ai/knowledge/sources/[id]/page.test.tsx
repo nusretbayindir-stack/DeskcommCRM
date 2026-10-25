@@ -95,7 +95,11 @@ describe("ler o material na tela (#3059)", () => {
     const html = await renderizar();
 
     expect(redirectMock).not.toHaveBeenCalled();
-    expect(lerMock).toHaveBeenCalledWith(expect.anything(), { orgId: ORG_ID, sourceId: FONTE });
+    expect(lerMock).toHaveBeenCalledWith(expect.anything(), {
+      orgId: ORG_ID,
+      sourceId: FONTE,
+      idioma: "pt",
+    });
     expect(html).toContain("Troca em até 7 dias.");
     expect(html).toContain("Política de troca");
     // A porta de volta para o acervo: sem ela, a página é um beco sem saída.
@@ -144,5 +148,42 @@ describe("ler o material na tela (#3059)", () => {
 
     expect(notFoundMock).toHaveBeenCalled();
     expect(redirectMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("o material no idioma da tela (v1.88.3 F1)", () => {
+  it("tr: o nome do material criado pelo sistema sai traduzido e o idioma vai para a leitura", async () => {
+    requireAuthMock.mockResolvedValue({
+      id: "user-1",
+      idioma: "tr",
+      is_platform_admin: false,
+      support: false,
+    });
+    lerMock.mockResolvedValue({
+      ok: true,
+      material: { ...MATERIAL_BASE, nome: "Conversas anteriores", criadaAutomaticamente: true },
+    });
+    const html = await renderizar();
+    expect(lerMock).toHaveBeenCalledWith(expect.anything(), {
+      orgId: ORG_ID,
+      sourceId: FONTE,
+      idioma: "tr",
+    });
+    expect(html).not.toContain("Conversas anteriores");
+  });
+
+  it("tr: nome digitado pela pessoa fica como esta", async () => {
+    requireAuthMock.mockResolvedValue({
+      id: "user-1",
+      idioma: "tr",
+      is_platform_admin: false,
+      support: false,
+    });
+    lerMock.mockResolvedValue({
+      ok: true,
+      material: { ...MATERIAL_BASE, nome: "Conversas anteriores", criadaAutomaticamente: false },
+    });
+    const html = await renderizar();
+    expect(html).toContain("Conversas anteriores");
   });
 });

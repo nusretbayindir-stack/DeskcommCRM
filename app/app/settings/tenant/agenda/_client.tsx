@@ -613,7 +613,7 @@ export function TiposDeAgendamentoClient({
               <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-muted">
                 {t(rotuloDe(CATEGORIAS, tipo.category))}
               </span>
-              <span className="text-xs tabular-nums text-text-muted">{tipo.duration_minutes} min</span>
+              <span className="text-xs tabular-nums text-text-muted">{tipo.duration_minutes} {t("min")}</span>
               <span className="text-xs text-text-muted">{t(rotuloDe(LOCAIS, tipo.location_kind))}</span>
               {tipo.service_enabled && <span className="text-xs text-text-muted">{tipo.booking_mode === "collective_limited" ? `${t("Coletivo com capacidade")} · ${tipo.service_capacity}` : tipo.booking_mode === "collective_unlimited" ? t("Coletivo sem limite automático") : t("Individual por profissional")}</span>}
               {!tipo.default_owner_user_id && !tipo.service_enabled ? (
@@ -656,7 +656,7 @@ export function TiposDeAgendamentoClient({
                   {[tipo.reminder_minutes_before, ...(tipo.reminder_extra_offsets_minutes ?? [])]
                     .sort((a, b) => b - a)
                     .join(", ")}{" "}
-                  min {t("antes")}
+                  {t("min")} {t("antes")}
                   {tipo.reminder_body || Object.keys(tipo.reminder_bodies ?? {}).length > 0
                     ? ` · ${t("texto próprio")}`
                     : ""}
@@ -683,11 +683,11 @@ export function TiposDeAgendamentoClient({
                       onClick={() =>
                         void comErro(
                           () => apiClient.delete("/api/v1/agenda/tipos", { id: tipo.id }),
-                          "Tipo desativado.",
+                          t("Tipo desativado."),
                         )
                       }
                     >
-                      Desativar
+                      {t("Desativar")}
                     </Button>
                   ) : tipo.service_enabled ? (
                     <Button variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => { setServicoId(tipo.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("Configurar")} {tipo.name}</Button>
@@ -708,11 +708,11 @@ export function TiposDeAgendamentoClient({
                           // resposta era 422 "Nenhum campo para alterar.". O
                           // cast era o que impedia o typecheck de acusar.
                           () => apiClient.post("/api/v1/agenda/tipos/reativar", { id: tipo.id }),
-                          "Tipo reativado.",
+                          t("Tipo reativado."),
                         )
                       }
                     >
-                      Reativar
+                      {t("Reativar")}
                     </Button>
                   )}
                 </span>
@@ -786,14 +786,14 @@ export function TiposDeAgendamentoClient({
                             })()
                           : {}),
                       }),
-                    "Tipo alterado.",
+                    t("Tipo alterado."),
                   );
                   if (feito) setEditandoId(null);
                 }}
               >
                 <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,18rem)]">
                   <label className="flex flex-col gap-1 text-xs text-text-muted">
-                    Nome
+                    {t("Nome")}
                     <input
                       name="name"
                       defaultValue={tipo.name}

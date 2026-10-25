@@ -68,15 +68,15 @@ describe("o seletor de país sugere o fuso do país escolhido", () => {
   it("Portugal sugere Europe/Lisbon", async () => {
     tela(null);
 
-    expect(await escolherPais("Portugal")).toContain("Europe/Lisbon");
+    expect(await escolherPais("Portugal")).toContain("Lisboa (Portugal)");
   });
 
   it("Brasil sugere São Paulo, e Lisboa não aparece", async () => {
     tela("PT");
 
     const mostrado = await escolherPais("Brasil");
-    expect(mostrado).toContain("America/Sao_Paulo");
-    expect(mostrado).not.toContain("Europe/Lisbon");
+    expect(mostrado).toContain("São Paulo (Brasil)");
+    expect(mostrado).not.toContain("Lisboa (Portugal)");
   });
 
   it("a sugestão pode ser recusada: trocar o fuso depois do país vale", async () => {
@@ -85,10 +85,10 @@ describe("o seletor de país sugere o fuso do país escolhido", () => {
 
     const user = userEvent.setup();
     await user.click(screen.getByLabelText("Fuso horário"));
-    await user.click(await screen.findByRole("option", { name: "Europe/Madrid" }));
+    await user.click(await screen.findByRole("option", { name: "Madri (Espanha)" }));
 
     const mostrado = screen.getByLabelText("Fuso horário").textContent ?? "";
-    expect(mostrado).toContain("Europe/Madrid");
-    expect(mostrado).not.toContain("Europe/Lisbon");
+    expect(mostrado).toContain("Madri (Espanha)");
+    expect(mostrado).not.toContain("Lisboa (Portugal)");
   });
 });

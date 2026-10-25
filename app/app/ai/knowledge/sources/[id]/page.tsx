@@ -42,7 +42,11 @@ export default async function MaterialPage({ params }: { params: Promise<{ id: s
   }
 
   const supabase = await createClient();
-  const leitura = await lerConteudoDoMaterial(supabase, { orgId: activeOrg.orgId, sourceId });
+  const leitura = await lerConteudoDoMaterial(supabase, {
+    orgId: activeOrg.orgId,
+    sourceId,
+    idioma: user.idioma,
+  });
 
   // Material de outra empresa e material inexistente são a MESMA resposta —
   // dizer "não encontrado" para o primeiro não confirmaria nada sobre ele.
@@ -67,7 +71,7 @@ export default async function MaterialPage({ params }: { params: Promise<{ id: s
       <header className="space-y-2">
         <VoltarAoAcervo rotulo={t("Voltar ao acervo")} />
         <h1 className="text-2xl font-semibold tracking-tight" data-testid="material-nome">
-          {material.nome}
+          {material.criadaAutomaticamente ? t(material.nome) : material.nome}
         </h1>
         <p className="text-sm text-text-muted">{meta ? t(meta.rotulo) : material.tipo}</p>
       </header>

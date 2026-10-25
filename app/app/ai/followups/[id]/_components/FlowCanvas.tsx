@@ -247,7 +247,7 @@ function FlowCanvasInner({ flowId, initialData }: Props) {
     (type: NodeType, position: { x: number; y: number }) => {
       const visual = NODE_VISUALS[type];
       const id = `${type}-${nextId.current++}`;
-      const config = type === "action" ? configPadraoDaAcao(triggerKind) : visual.defaultConfig();
+      const config = type === "action" ? configPadraoDaAcao(triggerKind, t) : visual.defaultConfig(t);
       const newNode: RFNode = {
         id,
         type,

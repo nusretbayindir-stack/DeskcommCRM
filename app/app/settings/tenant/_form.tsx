@@ -34,9 +34,6 @@ interface Props {
   onSaved?: () => void;
 }
 
-// A mesma lista de toda tela de fuso — ver `lib/tempo/fusos.ts`.
-const TIMEZONES = FUSOS_OFERECIDOS.map((f) => f.codigo);
-
 export function TenantForm({ initial, onSave, onSaved }: Props) {
   const t = useT();
   const [form, setForm] = useState<TenantInput>(initial);
@@ -114,9 +111,9 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
+                {FUSOS_OFERECIDOS.map((f) => (
+                  <SelectItem key={f.codigo} value={f.codigo}>
+                    {t(f.rotulo)}
                   </SelectItem>
                 ))}
               </SelectContent>

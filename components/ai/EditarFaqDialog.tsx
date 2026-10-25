@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/hooks/i18n/useT";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 /**
  * EDITAR O CONTEÚDO DE UM MATERIAL.
  *
@@ -29,6 +30,9 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import { parseFaqMarkdown } from "@/lib/ai/rag/ingest/faq";
+import { DicaDeMarcadores } from "@/components/ai/DicaDeMarcadores";
+import { marcadoresDaTela, preencherMarcadores } from "@/lib/ai/rag/ingest/marcadores-de-faq";
+import type { Idioma } from "@/lib/i18n/idiomas";
 
 interface ItemDaFaq {
   question: string;
@@ -45,12 +49,15 @@ interface Props {
   onSalvo: () => void;
 }
 
-function paraMarkdown(itens: ItemDaFaq[]): string {
-  return itens.map((i) => `## Pergunta: ${i.question}\n## Resposta: ${i.answer}`).join("\n\n");
+/** Os itens guardados viram texto com os marcadores do idioma de quem edita. */
+function paraMarkdown(itens: ItemDaFaq[], idioma: Idioma): string {
+  const { pergunta, resposta } = marcadoresDaTela(idioma);
+  return itens.map((i) => `${pergunta} ${i.question}\n${resposta} ${i.answer}`).join("\n\n");
 }
 
 export function EditarFaqDialog({ sourceId, nome, aberto, onFechar, onSalvo }: Props) {
   const t = useT();
+  const idioma = useIdioma();
   const [texto, setTexto] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -63,7 +70,7 @@ export function EditarFaqDialog({ sourceId, nome, aberto, onFechar, onSalvo }: P
       .get<{ data: { items: ItemDaFaq[] } }>(`/api/v1/ai/knowledge/sources/${sourceId}`)
       .then((res) => {
         if (!vivo) return;
-        setTexto(paraMarkdown(res.data.items ?? []));
+        setTexto(paraMarkdown(res.data.items ?? [], idioma));
       })
       .catch((err) => {
         if (vivo) showApiError(err);
@@ -74,20 +81,18 @@ export function EditarFaqDialog({ sourceId, nome, aberto, onFechar, onSalvo }: P
     return () => {
       vivo = false;
     };
-  }, [aberto, sourceId]);
+  }, [aberto, sourceId, idioma]);
 
   async function salvar(): Promise<void> {
     const itens = parseFaqMarkdown(texto);
     if (itens.length === 0) {
-      // `## Pergunta:`/`## Resposta:` NÃO entram na tradução: são os marcadores
-      // que `lib/ai/rag/ingest/faq.ts` casa por regex de língua fixa. Traduzi-los
-      // faria a instrução ensinar um formato que o parser recusa.
+      // Os marcadores vêm da lista de `marcadores-de-faq.ts` (a mesma que o
+      // leitor casa), na língua de quem edita, e não passam por `t()`.
       toast.error(
-        t("Não achei nenhum par pergunta/resposta. Use uma linha") +
-          " ## Pergunta: " +
-          t("e uma") +
-          " ## Resposta: " +
-          t("por item."),
+        preencherMarcadores(
+          t("Não achei nenhum par pergunta/resposta. Use uma linha {pergunta} e uma {resposta} por item."),
+          idioma,
+        ),
       );
       return;
     }
@@ -129,8 +134,7 @@ export function EditarFaqDialog({ sourceId, nome, aberto, onFechar, onSalvo }: P
             disabled={carregando || salvando}
           />
           <p className="text-xs text-text-muted">
-            {t("Uma linha")} <code>## Pergunta:</code> {t("e uma")} <code>## Resposta:</code>{" "}
-            {t("por item, separados por uma linha em branco.")}
+            <DicaDeMarcadores />
           </p>
         </div>
 

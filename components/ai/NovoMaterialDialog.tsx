@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/hooks/i18n/useT";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 /**
  * ADICIONAR MATERIAL AO ACERVO.
  *
@@ -45,23 +46,8 @@ import {
   ePreenchidoPorRotina,
   type TipoDeFonteId,
 } from "@/lib/ai/rag/tipos-de-fonte";
-
-// Os DOIS exemplos ficam em português de propósito. O de FAQ é obrigação:
-// `## Pergunta:`/`## Resposta:` são os marcadores que
-// `lib/ai/rag/ingest/faq.ts` casa por regex de língua fixa, e um exemplo
-// traduzido ensinaria um formato que o parser recusa. O de documento vai junto
-// porque meio exemplo traduzido, meio não, dentro do mesmo campo, lê pior que
-// os dois iguais.
-const EXEMPLO_FAQ = `## Pergunta: Qual o prazo de entrega?
-## Resposta: De 2 a 3 dias úteis após a confirmação do pagamento.
-
-## Pergunta: Vocês fazem troca?
-## Resposta: Sim, em até 30 dias, com o produto sem uso.`;
-
-const EXEMPLO_DOCUMENTO = `# Política de troca
-
-Aceitamos troca em até 30 dias da entrega, com o produto sem uso e na embalagem
-original. O frete de devolução é por nossa conta quando o defeito for de fábrica.`;
+import { DicaDeMarcadores } from "@/components/ai/DicaDeMarcadores";
+import { exemploDeDocumento, exemploDeFaq } from "@/lib/ai/rag/exemplos-de-material";
 
 interface Props {
   aberto: boolean;
@@ -73,6 +59,7 @@ interface Props {
 
 export function NovoMaterialDialog({ aberto, onFechar, onCriado, podeIndexar }: Props) {
   const t = useT();
+  const idioma = useIdioma();
   const [tipo, setTipo] = useState<TipoDeFonteId>("faq");
   const [nome, setNome] = useState("");
   const [conteudo, setConteudo] = useState("");
@@ -228,15 +215,14 @@ export function NovoMaterialDialog({ aberto, onFechar, onCriado, podeIndexar }: 
                 id="material-conteudo"
                 data-testid="material-conteudo"
                 rows={10}
-                placeholder={ePerguntaEResposta(tipo) ? EXEMPLO_FAQ : EXEMPLO_DOCUMENTO}
+                placeholder={ePerguntaEResposta(tipo) ? exemploDeFaq(idioma) : exemploDeDocumento(idioma)}
                 value={conteudo}
                 onChange={(e) => setConteudo(e.target.value)}
                 disabled={enviando}
               />
               {ePerguntaEResposta(tipo) ? (
                 <p className="text-xs text-text-muted">
-                  {t("Uma linha")} <code>## Pergunta:</code> {t("e uma")}{" "}
-                  <code>## Resposta:</code> {t("por item, separados por uma linha em branco.")}
+                  <DicaDeMarcadores />
                 </p>
               ) : null}
             </div>

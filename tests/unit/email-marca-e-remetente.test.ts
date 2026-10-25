@@ -30,6 +30,7 @@ describe("convite de time", () => {
       role: "agent",
       expiresAt: new Date("2026-08-20T12:00:00.000Z"),
       marca: MARCA,
+      idioma: "pt-BR",
     });
 
   it("assunto e corpo trazem a marca de quem convidou, não a do produto", () => {
@@ -74,6 +75,7 @@ describe("convite de time", () => {
       role: "agent",
       expiresAt: new Date("2026-08-20T12:00:00.000Z"),
       marca: { ...MARCA, logoUrl: "https://cdn.exemplo.test/revendedor.png" },
+      idioma: "pt-BR",
     });
 
     expect(html).toContain('src="https://cdn.exemplo.test/revendedor.png"');
@@ -100,6 +102,7 @@ describe("convite de time", () => {
       role: "agent",
       expiresAt: new Date("2026-08-20T12:00:00.000Z"),
       marca: { ...MARCA, logoUrl: 'https://x/y.png" onerror="alert(1)' },
+      idioma: "pt-BR",
     });
 
     expect(html).not.toContain('onerror="alert(1)"');
@@ -116,6 +119,7 @@ describe("convite de time", () => {
       role: "agent",
       expiresAt: new Date("2026-08-20T12:00:00.000Z"),
       marca: { ...MARCA, nome: '<img src=x onerror="alert(1)">' },
+      idioma: "pt-BR",
     });
 
     expect(html).not.toContain("<img src=x");

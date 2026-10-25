@@ -44,6 +44,8 @@ export interface MaterialDoAcervo {
   source_type: string;
   chunks_count: number;
   last_index_status: string | null;
+  /** `criada_automaticamente` marca o material que o sistema criou: só o nome desse é traduzido. */
+  source_metadata?: Record<string, unknown> | null;
   /**
    * `false` = arquivado no acervo.
    *
@@ -64,6 +66,8 @@ interface Props {
 export function BasesDoAgente({ materiais, value, onChange, disabled = false }: Props) {
   const t = useT();
   const marcados = new Set(value);
+  const nomeExibido = (m: MaterialDoAcervo): string =>
+    m.source_metadata?.criada_automaticamente === true ? t(m.name) : m.name;
 
   function alternar(id: string, marcado: boolean): void {
     const proximo = new Set(marcados);
@@ -128,10 +132,10 @@ export function BasesDoAgente({ materiais, value, onChange, disabled = false }: 
                 checked={marcados.has(m.id)}
                 onChange={(e) => alternar(m.id, e.target.checked)}
                 disabled={disabled}
-                aria-label={m.name}
+                aria-label={nomeExibido(m)}
               />
               <Label htmlFor={`base-${m.id}`} className="text-sm font-normal">
-                {m.name}
+                {nomeExibido(m)}
                 {/* Singular e plural viram CHAVES separadas em vez de um sufixo
                     concatenado: em português o plural de "trecho" é +s, em
                     espanhol "fragmento"/"fragmentos" muda a palavra inteira, e

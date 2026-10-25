@@ -15,6 +15,8 @@ import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildModel, chaveDePlataforma } from "@/lib/ai/runtime/agent";
 import { loadCredential } from "@/lib/ai/credentials";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
 import { slugDeNome } from "@/lib/leads/stage-editing";
 import {
   etapasParaGravar,
@@ -252,6 +254,8 @@ export async function aplicarQuadro(formData: FormData): Promise<ResultadoDoQuad
     return { ok: false, erro: explicarRecusa(r.motivo, r.quantos) };
   }
 
+  await escreverVocabularioDoFunil(admin, ctx.orgId, atual.pipelineId);
+
   const origem = String(formData.get("origem") ?? "pacote") === "ia" ? "ia" : "pacote";
   try {
     await patchOnboardingState(ctx.orgId, {
@@ -272,6 +276,52 @@ export async function aplicarQuadro(formData: FormData): Promise<ResultadoDoQuad
   });
 
   redirect("/onboarding");
+}
+
+/**
+ * O funil que o gatilho semeou nasce sem `vocabulary`, e o default da coluna é
+ * português («Cliente», «Pedido», «Pago»…). O quadro renomeia o funil e as
+ * etapas; as palavras do funil (a barra de ações do kanban, as Configurações)
+ * precisam sair no idioma da empresa também.
+ *
+ * Só empresa nova passa por aqui, e só se o vocabulário ainda for o default do
+ * banco: um vocabulário que alguém já personalizou não é sobrescrito. Falhar
+ * aqui não desfaz o quadro (as palavras são acabamento): fica no log.
+ */
+async function escreverVocabularioDoFunil(
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string,
+  pipelineId: string,
+): Promise<void> {
+  try {
+    const { data: funil } = await admin
+      .from("crm_pipelines")
+      .select("vocabulary")
+      .eq("id", pipelineId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+    const atual = (funil as { vocabulary?: Record<string, unknown> | null } | null)?.vocabulary;
+    const padraoDoBanco = vocabularioDoFunilPadrao("pt-BR");
+    const intocado =
+      !atual ||
+      (Object.keys(padraoDoBanco) as (keyof typeof padraoDoBanco)[]).every(
+        (k) => atual[k] === undefined || atual[k] === padraoDoBanco[k],
+      );
+    if (!intocado) return;
+
+    const idioma = await idiomaDaOrgPeloSupabase(admin, orgId);
+    const { error } = await admin
+      .from("crm_pipelines")
+      .update({ vocabulary: vocabularioDoFunilPadrao(idioma) })
+      .eq("id", pipelineId)
+      .eq("organization_id", orgId);
+    if (error) console.error("[onboarding-quadro] vocabulário do funil não gravado:", error.message);
+  } catch (err) {
+    console.error(
+      "[onboarding-quadro] vocabulário do funil não gravado:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 }
 
 /** As recusas da função do banco, ditas para quem não sabe o que é uma FK. */

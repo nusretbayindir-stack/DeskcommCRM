@@ -29,6 +29,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mcpAgentDraftRecords } from "@/lib/ai/agents/create-draft";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { codigoDoEscopo, mensagemDoEscopo, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
 import { agentCreateSchema } from "@/lib/ai/guardrails-schema";
 import { corpoLegadoComoCorpoDeCriacao } from "@/lib/ai/agents/legado-para-versao";
@@ -269,7 +270,16 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Validate scope before the first write; a rejected form leaves no orphan.
   const escopo = await validarEscopoDaVersao(admin, organizationId, input.version);
   if (!escopo.ok) return fail(codigoDoEscopo(escopo), mensagemDoEscopo(escopo), 422, { requestId });
-  const records = mcpAgentDraftRecords({ orgId: organizationId, userId: authUserId ?? "" }, input);
+  // O corpo CRU (`corpo`) é quem diz se `handoff_keywords` foi mandado; `input` já
+  // traz o default português do zod. Omitido, vale o idioma da ORGANIZAÇÃO.
+  const records = mcpAgentDraftRecords(
+    {
+      orgId: organizationId,
+      userId: authUserId ?? "",
+      idioma: await idiomaDaOrgPeloSupabase(admin, organizationId),
+    },
+    corpo,
+  );
   const { data: agentRow, error: agentError } = await admin
     .from("ai_agents")
     .insert({ ...records.agent, created_by: authUserId })
