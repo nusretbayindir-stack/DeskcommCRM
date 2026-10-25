@@ -215,6 +215,24 @@ describe("POST /api/v1/ai/followup-flows/from-model", () => {
     expect(body.error.message).toContain(modeloPorId("clinica-consulta-retomada")!.nome);
   });
 
+  it("o 409 sai no idioma de quem instala (tr), com o nome do fluxo", async () => {
+    deps.role.mockResolvedValue({
+      ok: true,
+      user: { id: EU, idioma: "tr" },
+      org: { orgId: ORG, role: "manager" },
+    });
+    const { client } = clientFake({
+      erroDoInsert: { code: "23505", message: "duplicate key" },
+    });
+    deps.client.mockResolvedValue(client);
+
+    const res = await POST(req({ model_id: "clinica-consulta-retomada", name: "Meu fluxo" }));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error.message).toContain("«Meu fluxo»");
+    expect(body.error.message).not.toMatch(/Você já tem|instale com/);
+  });
+
   it("modelo inexistente é 404", async () => {
     deps.client.mockResolvedValue(clientFake().client);
     const res = await POST(req({ model_id: "clinica-nao-existe" }));

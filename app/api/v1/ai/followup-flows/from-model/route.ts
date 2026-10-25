@@ -156,7 +156,10 @@ export async function POST(req: NextRequest): Promise<Response> {
     if (insErr?.code === "23505") {
       return fail(
         "conflict",
-        `Você já tem um fluxo chamado «${nome}». Abra esse ou instale com outro nome.`,
+        t("Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.").replace(
+          "{nome}",
+          nome,
+        ),
         409,
         { requestId },
       );
