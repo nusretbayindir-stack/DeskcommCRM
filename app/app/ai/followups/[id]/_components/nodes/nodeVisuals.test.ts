@@ -109,6 +109,26 @@ describe("nenhum card fala a língua do banco", () => {
       ),
     ).toBe("1 regla · espera 15 min");
   });
+
+  it("em turco o minuto é «dk», não «min»", () => {
+    // Medido no canvas da demo: "1 kural · bekleme 2880 min" — a unidade era
+    // escrita fora de `t()`.
+    const tr = (texto: string) => traduzir(texto, "tr");
+    expect(
+      describeNodeConfig(
+        "match_reply",
+        { branches: [{ id: "br_sim", label: "Sim", op: "contains", pattern: "sim" }], grace_timeout_ms: 900_000 },
+        tr,
+      ),
+    ).toBe("1 kural · bekleme 15 dk");
+    expect(describeNodeConfig("wait", { mode: "fixed", duration_ms: 600_000 }, tr)).toBe("10 dk");
+  });
+});
+
+describe("a saída de escape no canvas turco", () => {
+  it("«Outros casos» vira «Diğer durumlar» — «vaka» é o caso de atendimento, outra coisa do produto", () => {
+    expect(traduzir("Outros casos", "tr")).toBe("Diğer durumlar");
+  });
 });
 
 describe("o nó de classificação nasce no idioma do operador", () => {

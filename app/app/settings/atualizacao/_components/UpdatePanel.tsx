@@ -292,12 +292,12 @@ export function UpdatePanel() {
    * outros estados). Sem botão: o pedido já foi atendido, e reoferecê-lo era o
    * outro defeito desta janela.
    */
-  // O que a rodada do banco contou de si mesma, em português de gente. Vale nos
+  // O que a rodada do banco contou de si mesma, em linguagem de gente. Vale nos
   // dois desfechos em que o servidor mexeu no banco (deu certo / voltou atrás):
   // quem clicou tem o direito de saber que a base estava ocupada, quantas
   // retentativas custou e em qual passada fechou. Sem registro na rodada isto é
   // `null`, e a tela fica calada em vez de afirmar zero.
-  const contaDoBanco = textoDaRodadaDoBanco(data.run?.rodada_do_banco);
+  const contaDoBanco = textoDaRodadaDoBanco(data.run?.rodada_do_banco, t);
   // O ponteiro para o `.update.log` vem junto do resumo, mas só quando a
   // rodada REGISTROU disputa — é aí que existe passada por passada para ler.
   // Rodada medida e limpa fica com o resumo só: endereço de log que ninguém

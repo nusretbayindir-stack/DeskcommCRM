@@ -216,22 +216,26 @@ export function rodadaDoBancoDaLinha(
   };
 }
 
-function passadasPorExtenso(passada: number): string {
-  return passada === 2 ? "duas passadas" : `${passada} passadas`;
+function passadasPorExtenso(passada: number, t: (texto: string) => string): string {
+  return passada === 2 ? t("duas passadas") : t("{n} passadas").replace("{n}", String(passada));
 }
 
-function retentativasPorExtenso(retentativas: number): string {
-  return retentativas === 1 ? "uma retentativa" : `${retentativas} retentativas`;
+function retentativasPorExtenso(retentativas: number, t: (texto: string) => string): string {
+  return retentativas === 1
+    ? t("uma retentativa")
+    : t("{n} retentativas").replace("{n}", String(retentativas));
 }
 
 /**
  * Conta o que aconteceu com o banco quando a atualização terminou — em
- * português de gente, para a tela de atualização mostrar. Devolve `null` quando
- * não há o que contar (ninguém mediu, ou os números não fazem sentido): a tela
- * fica silenciosa em vez de afirmar uma passada que não aconteceu.
+ * linguagem de gente, no idioma de quem lê (`t` da tela), para a tela de
+ * atualização mostrar. Devolve `null` quando não há o que contar (ninguém
+ * mediu, ou os números não fazem sentido): a tela fica silenciosa em vez de
+ * afirmar uma passada que não aconteceu.
  */
 export function textoDaRodadaDoBanco(
   rodada: RodadaDoBanco | null | undefined,
+  t: (texto: string) => string = (texto) => texto,
 ): string | null {
   if (!rodada) return null;
 
@@ -245,14 +249,16 @@ export function textoDaRodadaDoBanco(
 
   if (retentativas === 0) {
     return disputa
-      ? "Houve disputa com o sistema usando o banco, mas a primeira passada fechou."
-      : "O banco atualizou de uma vez, na primeira passada, sem disputa com o sistema no ar.";
+      ? t("Houve disputa com o sistema usando o banco, mas a primeira passada fechou.")
+      : t("O banco atualizou de uma vez, na primeira passada, sem disputa com o sistema no ar.");
   }
 
   if (disputa) {
-    return `O banco estava em disputa com o sistema no ar: foram ${passadasPorExtenso(
-      passada,
-    )} e ${retentativasPorExtenso(retentativas)} até a atualização do banco fechar.`;
+    return t(
+      "O banco estava em disputa com o sistema no ar: foram {passadas} e {retentativas} até a atualização do banco fechar.",
+    )
+      .replace("{passadas}", passadasPorExtenso(passada, t))
+      .replace("{retentativas}", retentativasPorExtenso(retentativas, t));
   }
 
   // `retentativas >= 1` com `disputa: false` é um estado que NINGUÉM produz: quem

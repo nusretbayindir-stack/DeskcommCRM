@@ -3244,6 +3244,10 @@ export const DICIONARIO: Traducoes = {
   "Nunca indexado": { es: "Nunca indexado" },
   "agora há pouco": { es: "hace un momento" },
   "há {tempo}": { es: "hace {tempo}" },
+  // A hora da última leitura no cartão do acervo (`KnowledgeSourceCard`).
+  "há {n} min": { es: "hace {n} min" },
+  "há {n} h": { es: "hace {n} h" },
+  "há {n} d": { es: "hace {n} d" },
   "Cliente reagiu com {emoji}": { es: "El cliente reaccionó con {emoji}" },
   "Atendente reagiu com {emoji}": { es: "El agente reaccionó con {emoji}" },
   "Nenhuma fonte configurada.": { es: "Ninguna fuente configurada." },
@@ -7381,6 +7385,20 @@ export const DICIONARIO: Traducoes = {
     es: "El sistema queda fuera de servicio unos instantes y vuelve solo. Puedes dejar esta página abierta.",
   },
   "A atualização para a versão": { es: "La actualización a la versión" },
+  // O que a rodada do banco contou de si mesma (`textoDaRodadaDoBanco`).
+  "O banco atualizou de uma vez, na primeira passada, sem disputa com o sistema no ar.": {
+    es: "La base de datos se actualizó de una vez, en la primera pasada, sin conflicto con el sistema en línea.",
+  },
+  "Houve disputa com o sistema usando o banco, mas a primeira passada fechou.": {
+    es: "Hubo conflicto con el sistema que usaba la base de datos, pero la primera pasada se completó.",
+  },
+  "O banco estava em disputa com o sistema no ar: foram {passadas} e {retentativas} até a atualização do banco fechar.": {
+    es: "La base de datos estaba en conflicto con el sistema en línea: fueron {passadas} y {retentativas} hasta que se completó la actualización de la base de datos.",
+  },
+  "duas passadas": { es: "dos pasadas" },
+  "{n} passadas": { es: "{n} pasadas" },
+  "uma retentativa": { es: "un reintento" },
+  "{n} retentativas": { es: "{n} reintentos" },
   "não deu certo": { es: "no funcionó" },
   "Voltei o sistema para a versão": { es: "Regresé el sistema a la versión" },
   "que é a que está no ar agora, e os seus dados estão intactos. O banco de dados já tinha sido atualizado e permanece assim — isso é seguro, a versão": {

@@ -81,3 +81,49 @@ describe("abrir o material pelo cartão (#3059)", () => {
     expect(screen.getByText("Política de troca")).toBeTruthy();
   });
 });
+
+/**
+ * A hora da última leitura sai no idioma de quem opera. "há 3 d" aparecia em
+ * português na grade turca: só "agora há pouco" e "nunca" passavam por `t()`.
+ * O português fica byte a byte o mesmo de antes.
+ */
+describe("a hora da última leitura no idioma de quem opera", () => {
+  const MINUTO = 60_000;
+
+  function montarLidoHa(idioma: string, msAtras: number) {
+    return render(
+      <IdiomaProvider locale={idioma}>
+        <KnowledgeSourceCard
+          source={{ ...MATERIAL, last_indexed_at: new Date(Date.now() - msAtras).toISOString() }}
+          usadoPor={[]}
+          onReindex={vi.fn()}
+          onArquivar={vi.fn()}
+          onMudou={vi.fn()}
+        />
+      </IdiomaProvider>,
+    );
+  }
+
+  it.each([
+    [5 * MINUTO, "5 dk önce"],
+    [3 * 60 * MINUTO, "3 sa önce"],
+    [3 * 24 * 60 * MINUTO, "3 gün önce"],
+  ])("turco: %i ms atrás vira «%s»", (msAtras, esperado) => {
+    montarLidoHa("tr", msAtras);
+
+    expect(screen.getByText(esperado)).toBeTruthy();
+    expect(screen.queryByText(/^há /)).toBeNull();
+  });
+
+  it("espanhol: «hace 3 d»", () => {
+    montarLidoHa("es", 3 * 24 * 60 * MINUTO);
+
+    expect(screen.getByText("hace 3 d")).toBeTruthy();
+  });
+
+  it("português: continua «há 3 d»", () => {
+    montarLidoHa("pt-BR", 3 * 24 * 60 * MINUTO);
+
+    expect(screen.getByText("há 3 d")).toBeTruthy();
+  });
+});

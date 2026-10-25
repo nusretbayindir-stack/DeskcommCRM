@@ -250,7 +250,11 @@ function summaryLabel(
     const pausa = params?.reentry_pause_minutes;
     const teto = params?.max_silence_minutes;
     const detalhe = [
-      typeof minutes === "number" ? (typeof teto === "number" && teto > 0 ? `${minutes}–${teto} min` : `${minutes} min`) : null,
+      typeof minutes === "number"
+        ? typeof teto === "number" && teto > 0
+          ? `${minutes}–${teto} ${t("min")}`
+          : `${minutes} ${t("min")}`
+        : null,
       typeof pausa === "number" && pausa > 0
         ? params?.reentry_pause_basis === "ultimo_envio"
           ? `${t("no máximo 1× a cada")} ${Math.round((pausa / 60) * 10) / 10} h`
