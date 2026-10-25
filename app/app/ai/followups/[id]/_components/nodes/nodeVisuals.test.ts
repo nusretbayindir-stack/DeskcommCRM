@@ -111,13 +111,21 @@ describe("nenhum card fala a língua do banco", () => {
   });
 });
 
-describe("o nó de classificação nasce falando português", () => {
-  it("as classes padrão dizem o critério, e ficam FORA do dicionário", () => {
+describe("o nó de classificação nasce no idioma do operador", () => {
+  it("pt-BR: as classes padrão dizem o critério, como sempre", () => {
     const { classes } = NODE_VISUALS.ai_classify.defaultConfig() as { classes: string[] };
     expect(classes).toEqual(["Interessado", "Sem interesse"]);
-    // Classe é dado do usuário: se virasse chave, o card mostraria uma palavra e
-    // o motor compararia outra para quem usa espanhol.
-    for (const classe of classes) expect(traduzir(classe, "es")).toBe(classe);
+  });
+
+  it("tr e es: as classes nascem traduzidas (o nó é novo, nenhuma aresta aponta para elas)", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+    const dele = NODE_VISUALS.ai_classify.defaultConfig(tr) as { classes: string[]; branches?: unknown };
+    expect(dele.classes).toHaveLength(2);
+    for (const classe of dele.classes) expect(["Interessado", "Sem interesse"]).not.toContain(classe);
+    // O limite do schema vale para o texto traduzido.
+    for (const classe of dele.classes) expect(classe.length).toBeLessThanOrEqual(40);
+    const emEs = NODE_VISUALS.ai_classify.defaultConfig(es) as { classes: string[] };
+    for (const classe of emEs.classes) expect(["Interessado", "Sem interesse"]).not.toContain(classe);
   });
 
   it("nenhum nome padrão colide com um ramo reservado do contrato", () => {
@@ -180,8 +188,19 @@ describe("padrões de nó novo no idioma do operador", () => {
     expect(pergunta.label).toBe("tr:Nova pergunta");
   });
 
+  it("o padrão da regra acompanha o rótulo: evet em turco, si em espanhol, sim em pt-BR", () => {
+    const pat = (t: (s: string) => string) =>
+      (NODE_VISUALS.match_reply.defaultConfig(t) as { branches: { id: string; pattern: string }[] }).branches[0]!;
+    expect(pat((s) => traduzir(s, "tr")).pattern).toBe("evet");
+    expect(pat(es).pattern).toBe("si");
+    expect(pat(pt).pattern).toBe("sim");
+    // O id do ramo é estável e não depende do idioma.
+    expect(pat((s) => traduzir(s, "tr")).id).toBe("br_sim");
+  });
+
   it("sem tradutor (pt-BR) nada muda", () => {
-    const regra = NODE_VISUALS.match_reply.defaultConfig() as { branches: { label: string }[] };
+    const regra = NODE_VISUALS.match_reply.defaultConfig() as { branches: { label: string; pattern: string }[] };
+    expect(regra.branches[0]!.pattern).toBe("sim");
     expect(regra.branches[0]!.label).toBe("Sim");
     const pergunta = NODE_VISUALS.collect.defaultConfig() as { label: string };
     expect(pergunta.label).toBe("Nova pergunta");

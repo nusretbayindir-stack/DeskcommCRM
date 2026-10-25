@@ -99,14 +99,16 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     chipClassName: "bg-accent text-accent-foreground",
     borderClassName: "border-l-accent-700",
     defaultLabel: "Classificar resposta",
-    defaultConfig: () => ({
-      // Em português, e dizendo o CRITÉRIO: estes nomes são a definição inteira
-      // que o modelo recebe para classificar a resposta (`followup-flow-classify`),
-      // e aparecem crus na saída do card, na aresta e no dossiê. "hot"/"cold"
-      // pedia ao dono da loja que adivinhasse o critério — e ao modelo também.
-      // Fora do dicionário de propósito: são DADO do usuário, e uma chave faria
-      // o card traduzir o que o motor compara ao pé da letra.
-      classes: ["Interessado", "Sem interesse"],
+    defaultConfig: (t = (texto) => texto) => ({
+      // Dizendo o CRITÉRIO: estes nomes são a definição inteira que o modelo
+      // recebe para classificar a resposta (`followup-flow-classify`), e aparecem
+      // crus na saída do card, na aresta e no dossiê. "hot"/"cold" pedia ao dono
+      // da loja que adivinhasse o critério — e ao modelo também.
+      // Nascem no idioma do operador: o nó é NOVO, então nenhuma aresta aponta
+      // para estes textos ainda (no formato sem `branches`, o texto da classe é o
+      // próprio id do ramo, criado a partir deste mesmo valor). Depois de gravada,
+      // a classe é dado do usuário: nenhuma tela a traduz na exibição.
+      classes: [t("Interessado"), t("Sem interesse")],
       grace_timeout_ms: 900_000,
       target: "last_reply",
     }),
@@ -119,7 +121,10 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     borderClassName: "border-l-info",
     defaultLabel: "Casar resposta",
     defaultConfig: (t = (texto) => texto) => ({
-      branches: [{ id: "br_sim", label: t("Sim"), op: "contains", pattern: "sim" }],
+      // O padrão acompanha o rótulo: "contains" compara em minúsculas, sem
+      // ignorar acento. Em espanhol vale "si" (quem digita no celular quase nunca
+      // põe o acento); o operador ajusta a regra se o público for outro.
+      branches: [{ id: "br_sim", label: t("Sim"), op: "contains", pattern: t("sim") }],
       grace_timeout_ms: 900_000,
     }),
   },

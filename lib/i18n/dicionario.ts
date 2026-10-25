@@ -17694,6 +17694,9 @@ export const DICIONARIO: Traducoes = {
   "Não achei nenhum par pergunta/resposta no texto. Use uma linha {pergunta} e uma {resposta} por item.": { es: "No encontré ningún par pregunta/respuesta en el texto. Usa una línea {pergunta} y otra {resposta} por elemento." },
   "Uma linha {pergunta} e uma {resposta} por item, separados por uma linha em branco.": { es: "Una línea {pergunta} y otra {resposta} por elemento, separados por una línea en blanco." },
   "Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.": { es: "Ya tienes un flujo llamado «{nome}». Abre ese o instala con otro nombre." },
+  "Interessado": { es: "Interesado" },
+  "Sem interesse": { es: "Sin interés" },
+  "sim": { es: "si" },
 };
 
 /**
