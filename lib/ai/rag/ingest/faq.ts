@@ -4,7 +4,7 @@
  * Section markers (case-insensitive, `:` or full-width `：`) come from
  * `marcadores-de-faq.ts`, for every UI language at once: `## Pergunta:` /
  * `## Resposta:` (and `## P:` / `## R:`), `## Pregunta:` / `## Respuesta:`,
- * `## Soru:` / `## Cevap:` (or `## Yanıt:`). No language detection: mixed text
+ * `## Soru:` / `## Yanıt:` (or `## Cevap:`). No language detection: mixed text
  * works.
  *
  * Optional YAML frontmatter (---) applies locale/tags defaults to all items

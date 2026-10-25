@@ -27,7 +27,7 @@ export const MARCADORES_DE_FAQ: Record<Idioma, MarcadoresDeFaq> = {
   // espanhol `P`/`R`).
   "pt-BR": { pergunta: ["Pergunta", "P"], resposta: ["Resposta", "R"] },
   es: { pergunta: ["Pregunta"], resposta: ["Respuesta"] },
-  tr: { pergunta: ["Soru"], resposta: ["Cevap", "Yanıt"] },
+  tr: { pergunta: ["Soru"], resposta: ["Yanıt", "Cevap"] },
 };
 
 /**
@@ -58,7 +58,7 @@ export function tipoDeMarcador(palavra: string): "pergunta" | "resposta" | null 
   return null;
 }
 
-/** Os marcadores como a tela os escreve no idioma: `## Soru:` / `## Cevap:`. */
+/** Os marcadores como a tela os escreve no idioma: `## Soru:` / `## Yanıt:`. */
 export function marcadoresDaTela(idioma: Idioma): { pergunta: string; resposta: string } {
   const m = MARCADORES_DE_FAQ[idioma];
   return { pergunta: `## ${m.pergunta[0]}:`, resposta: `## ${m.resposta[0]}:` };

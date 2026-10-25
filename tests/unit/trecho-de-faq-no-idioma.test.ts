@@ -13,8 +13,8 @@ import { rotulosDoTrechoNoIdioma } from "@/lib/ai/rag/ingest/rotulos-de-trecho";
 const TRECHO = "Pergunta: Qual o prazo?\nResposta: Dois dias.";
 
 describe("rotulosDoTrechoNoIdioma", () => {
-  it("tr: Soru/Cevap", () => {
-    expect(rotulosDoTrechoNoIdioma(TRECHO, "tr", "faq")).toBe("Soru: Qual o prazo?\nCevap: Dois dias.");
+  it("tr: Soru/Yanıt", () => {
+    expect(rotulosDoTrechoNoIdioma(TRECHO, "tr", "faq")).toBe("Soru: Qual o prazo?\nYanıt: Dois dias.");
   });
   it("es: Pregunta/Respuesta", () => {
     expect(rotulosDoTrechoNoIdioma(TRECHO, "es", "faq")).toBe("Pregunta: Qual o prazo?\nRespuesta: Dois dias.");
@@ -25,7 +25,7 @@ describe("rotulosDoTrechoNoIdioma", () => {
   it("palavra no meio da linha, na resposta do usuario, nao muda", () => {
     const t = "Pergunta: Voce diz Pergunta: ou Resposta: ?\nResposta: Use a Resposta: certa\nPergunta: de novo";
     expect(rotulosDoTrechoNoIdioma(t, "tr", "faq")).toBe(
-      "Soru: Voce diz Pergunta: ou Resposta: ?\nCevap: Use a Resposta: certa\nPergunta: de novo",
+      "Soru: Voce diz Pergunta: ou Resposta: ?\nYanıt: Use a Resposta: certa\nPergunta: de novo",
     );
   });
   it("trecho que nao e de FAQ nao muda", () => {

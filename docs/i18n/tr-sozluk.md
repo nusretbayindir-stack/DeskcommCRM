@@ -158,7 +158,7 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 
 **CSV sütun adları çevrilmez.** `nome, telefone, email, cpf, nascimento, tags` gibi sütun adları içe aktarıcının tanıdığı başlıklardır (`lib/contacts/csv.ts`). Metinde olduğu gibi kalır.
 
-**SSS işaretleri çevrilmez.** `## Pergunta:`, `## Resposta:`, `## P:` ve `## R:` işaretlerini SSS ayrıştırıcısı tanır (`lib/ai/rag/ingest/faq.ts`). Metinde olduğu gibi kalır.
+**SSS işaretleri cümlede yer tutucuyla gelir.** İşaret cümleleri `{pergunta}` ve `{resposta}` yer tutucularını taşır; çevirmen bunları olduğu gibi korur, işaretin kendisini yazmaz. İşaretler `lib/ai/rag/ingest/marcadores-de-faq.ts` dosyasındaki dil listelerinden gelir ve ekranda gösterilen kelime her dilin listesindeki ilk kelimedir (Türkçede `## Soru:` ve `## Yanıt:`). SSS ayrıştırıcısı (`lib/ai/rag/ingest/faq.ts`) tüm dillerin işaretlerini tanır; `## Cevap:` da kabul edilir.
 
 **Durdurma kelimeleri çevrilmez.** Metin müşterinin yazacağı bir kelimeyi söylüyorsa (`responda PARAR`, `envie SAIR`, `BAJA`, `STOP`), Türkçede **STOP** yazılır: "müşteriden STOP yazmasını isteyin". Sistem yalnızca bu kelimeleri tanır. "DUR" veya "İPTAL" yazılırsa müşteri yazar ama engellenmez.
 

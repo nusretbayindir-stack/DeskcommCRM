@@ -3,7 +3,7 @@
  *
  * Antes, o editor escrevia `## Pergunta:`/`## Resposta:` para todo mundo. Em
  * turco, quem abria um FAQ guardado via português no campo; agora vê
- * `## Soru:`/`## Cevap:`, e salvar devolve exatamente os mesmos itens.
+ * `## Soru:`/`## Yanıt:`, e salvar devolve exatamente os mesmos itens.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -43,10 +43,10 @@ afterEach(cleanup);
 const campo = () => screen.getByTestId("faq-editar-texto") as HTMLTextAreaElement;
 
 describe("EditarFaqDialog × idioma", () => {
-  it("tr: abre com ## Soru:/## Cevap: e salvar devolve os mesmos itens", async () => {
+  it("tr: abre com ## Soru:/## Yanıt: e salvar devolve os mesmos itens", async () => {
     abrir("tr");
     await waitFor(() => expect(campo().value).toContain("## Soru: Teslimat süresi nedir?"));
-    expect(campo().value).toContain("## Cevap: 2 ila 3 gün.");
+    expect(campo().value).toContain("## Yanıt: 2 ila 3 gün.");
     expect(campo().value).not.toMatch(/Pergunta|Resposta/);
     expect(document.body.textContent).toContain("## Soru:");
 
@@ -67,7 +67,7 @@ describe("EditarFaqDialog × idioma", () => {
     await waitFor(() => expect(toastErro).toHaveBeenCalled());
     const msg = String(toastErro.mock.calls[0]?.[0]);
     expect(msg).toContain("## Soru:");
-    expect(msg).toContain("## Cevap:");
+    expect(msg).toContain("## Yanıt:");
     expect(msg).not.toContain("Pergunta");
     expect(api.patch).not.toHaveBeenCalled();
   });

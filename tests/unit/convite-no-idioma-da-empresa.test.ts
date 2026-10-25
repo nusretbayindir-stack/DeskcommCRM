@@ -84,7 +84,7 @@ describe("convite em turco", () => {
   const tudo = `${subject}\n${html}\n${text}`;
 
   it("assunto, botão e papel em turco", () => {
-    expect(subject).toBe("Ana sizi Vendas Turbo üzerinden Clínica Bem Viver şirketine davet etti");
+    expect(subject).toBe("Ana sizi Vendas Turbo üzerinde Clínica Bem Viver şirketine davet etti");
     expect(html).toContain("Daveti kabul et");
     expect(html).toContain("<strong>Temsilci</strong>");
     expect(html).toContain('<html lang="tr">');

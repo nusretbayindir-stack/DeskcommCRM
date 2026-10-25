@@ -99,7 +99,7 @@ describe("exemplos da tela", () => {
   }
 
   it("a primeira palavra de cada lista é a que a tela mostra", () => {
-    expect(marcadoresDaTela("tr")).toEqual({ pergunta: "## Soru:", resposta: "## Cevap:" });
+    expect(marcadoresDaTela("tr")).toEqual({ pergunta: "## Soru:", resposta: "## Yanıt:" });
     for (const idioma of IDIOMAS) {
       expect(marcadoresDaTela(idioma).pergunta).toBe(`## ${MARCADORES_DE_FAQ[idioma].pergunta[0]}:`);
     }
@@ -109,7 +109,7 @@ describe("exemplos da tela", () => {
     const texto = `${exemploDeFaq("tr")}\n${exemploDeDocumento("tr")}`;
     expect(texto).not.toMatch(/Pergunta|Resposta|Qual o|Política|Aceitamos|troca|entrega|úteis|Vocês|Sim,/);
     expect(texto).toContain("## Soru:");
-    expect(texto).toContain("## Cevap:");
+    expect(texto).toContain("## Yanıt:");
   });
 
   it("pt-BR: os exemplos são os de sempre, letra por letra", () => {

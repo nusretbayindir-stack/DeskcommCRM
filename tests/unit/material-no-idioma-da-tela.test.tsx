@@ -86,7 +86,7 @@ describe("lerConteudoDoMaterial no idioma da tela", () => {
       ),
       { orgId: "o1", sourceId: "s1", idioma: "tr" },
     );
-    expect(r.ok && r.material.conteudo).toBe("Soru: prazo?\nCevap: 2 dias");
+    expect(r.ok && r.material.conteudo).toBe("Soru: prazo?\nYanıt: 2 dias");
     expect(r.ok && r.material.criadaAutomaticamente).toBe(false);
   });
 });
