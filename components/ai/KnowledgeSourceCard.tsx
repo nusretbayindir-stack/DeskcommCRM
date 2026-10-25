@@ -82,11 +82,11 @@ function formatRelative(
   const diffSec = Math.floor((Date.now() - then) / 1000);
   if (diffSec < 60) return t("agora há pouco");
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `há ${diffMin} min`;
+  if (diffMin < 60) return t("há {n} min").replace("{n}", String(diffMin));
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `há ${diffHr} h`;
+  if (diffHr < 24) return t("há {n} h").replace("{n}", String(diffHr));
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `há ${diffDay} d`;
+  if (diffDay < 30) return t("há {n} d").replace("{n}", String(diffDay));
   return new Date(iso).toLocaleDateString(tagDoIdioma);
 }
 

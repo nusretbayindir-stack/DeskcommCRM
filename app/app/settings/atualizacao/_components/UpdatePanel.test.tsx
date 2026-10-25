@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
 import { irAoDesafioDeMfa } from "@/lib/auth/ir-ao-desafio-de-mfa";
+import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 
 import { UpdatePanel } from "./UpdatePanel";
 import type { SystemVersion } from "@/hooks/system/useSystemVersion";
@@ -275,6 +276,25 @@ describe("tela de atualização — a rodada conta a disputa do banco", () => {
 
     expect(screen.getByText(/foram 3 passadas e 2 retentativas/)).toBeInTheDocument();
     expect(screen.getByText(/\.update\.log/)).toBeInTheDocument();
+  });
+
+  it("em turco o resumo sai em turco — a tela passa o `t` para quem monta a frase", () => {
+    // Medido na atualização para a v1.88.3: o painel todo em turco e esta frase
+    // em português, porque ela era montada fora do dicionário.
+    dadosVersao.atual = rodada({ rodada_do_banco: { disputa: false, retentativas: 0, passada: 1 } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <IdiomaProvider locale="tr">
+        <QueryClientProvider client={client}>
+          <UpdatePanel />
+        </QueryClientProvider>
+      </IdiomaProvider>,
+    );
+
+    expect(
+      screen.getByText(/Veritabanı ilk turda, çalışan sistemle çakışmadan tek seferde güncellendi\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/atualizou de uma vez/)).not.toBeInTheDocument();
   });
 });
 

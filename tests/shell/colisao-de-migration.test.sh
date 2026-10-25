@@ -75,6 +75,12 @@ unset $(git rev-parse --local-env-vars)
 export GIT_CEILING_DIRECTORIES="$TMP"
 export GIT_AUTHOR_NAME="Teste" GIT_AUTHOR_EMAIL="teste@exemplo.invalid"
 export GIT_COMMITTER_NAME="Teste" GIT_COMMITTER_EMAIL="teste@exemplo.invalid"
+# ── isolamento do CI: o PR que roda a suíte não é o PR do cenário ──────────────────────
+# O gate tira da conta o PR do próprio run, lido de GITHUB_REF (refs/pull/N/merge). Os
+# cenários usam PRs falsos #5, #7, #8 e #11; herdado do CI, o GITHUB_REF de um PR real com
+# um desses números fazia o gate tratar o PR do cenário como "o seu" e calar o aviso. Medido
+# no PR #7 do fork (9 casos vermelhos) e reproduzido com GITHUB_REF=refs/pull/8/merge (1).
+unset GITHUB_REF
 
 # ── gh FALSO, para TODOS os casos: sem rede e sem depender do gh de quem roda ──────────
 # Ele HONRA o contrato da chamada real — se ignorasse os argumentos, trocar `--state open`

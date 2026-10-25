@@ -20,6 +20,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { traduzir } from "../../lib/i18n/dicionario";
 import { rodadaDoBancoDaLinha, textoDaRodadaDoBanco } from "../../lib/system/update-run";
 
 describe("o que a tela conta da rodada de banco", () => {
@@ -65,6 +66,45 @@ describe("o que a tela conta da rodada de banco", () => {
     expect(textoDaRodadaDoBanco({ disputa: false, retentativas: -1, passada: 1 })).toBeNull();
     expect(textoDaRodadaDoBanco({ disputa: false, retentativas: 0, passada: 0 })).toBeNull();
     expect(textoDaRodadaDoBanco({ disputa: false, retentativas: 1.5, passada: 2 })).toBeNull();
+  });
+});
+
+// A frase saía em português para quem opera em turco: a tela de atualização
+// mostrava "O banco atualizou de uma vez…" no meio do resto em turco (medido na
+// atualização para a v1.88.3). O português continua byte a byte o de antes — é
+// o `t` identidade, que os casos acima já medem.
+describe("a tela conta a rodada no idioma de quem lê", () => {
+  const tr = (texto: string) => traduzir(texto, "tr");
+  const es = (texto: string) => traduzir(texto, "es");
+
+  it("turco: as três frases saem em turco, com os números no lugar", () => {
+    expect(textoDaRodadaDoBanco({ disputa: false, retentativas: 0, passada: 1 }, tr)).toBe(
+      "Veritabanı ilk turda, çalışan sistemle çakışmadan tek seferde güncellendi.",
+    );
+    expect(textoDaRodadaDoBanco({ disputa: true, retentativas: 0, passada: 1 }, tr)).toBe(
+      "Veritabanını kullanan sistemle çakışma oldu, ama ilk tur tamamlandı.",
+    );
+    expect(textoDaRodadaDoBanco({ disputa: true, retentativas: 1, passada: 2 }, tr)).toBe(
+      "Veritabanı çalışan sistemle çakıştı: veritabanı güncellemesi iki tur ve bir yeniden deneme sonunda tamamlandı.",
+    );
+    expect(textoDaRodadaDoBanco({ disputa: true, retentativas: 2, passada: 3 }, tr)).toBe(
+      "Veritabanı çalışan sistemle çakıştı: veritabanı güncellemesi 3 tur ve 2 yeniden deneme sonunda tamamlandı.",
+    );
+  });
+
+  it("espanhol: nenhuma frase fica em português", () => {
+    const casos = [
+      { disputa: false, retentativas: 0, passada: 1 },
+      { disputa: true, retentativas: 0, passada: 1 },
+      { disputa: true, retentativas: 1, passada: 2 },
+      { disputa: true, retentativas: 2, passada: 3 },
+    ];
+    for (const caso of casos) {
+      const texto = textoDaRodadaDoBanco(caso, es);
+      expect(texto).not.toBeNull();
+      expect(texto).not.toBe(textoDaRodadaDoBanco(caso));
+      expect(texto).not.toMatch(/passada|retentativa|banco/);
+    }
   });
 });
 
