@@ -1,4 +1,5 @@
 "use client";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import type { InterfaceSettings } from "@/lib/navigation/interface";
 import { useRef } from "react";
 import { createTenantSchema } from "@/lib/schemas/tenant-creation";
@@ -19,6 +20,8 @@ export interface CreateTenantPayload {
   plano_id?: string;
   owner_email: string;
   owner_interface_settings?: InterfaceSettings;
+  locale?: Idioma;
+  timezone?: string;
 }
 
 export interface CreateTenantResponse {
@@ -32,6 +35,8 @@ export interface CreateTenantResponse {
       email_dispatched: boolean;
       email: string;
     } | null;
+    /** Presente quando o pedido trouxe idioma ou fuso: `false` = a organização não os gravou. */
+    idioma_gravado?: boolean;
   };
 }
 

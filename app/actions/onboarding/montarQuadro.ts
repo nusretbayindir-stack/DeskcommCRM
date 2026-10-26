@@ -16,6 +16,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildModel, chaveDePlataforma } from "@/lib/ai/runtime/agent";
 import { loadCredential } from "@/lib/ai/credentials";
 import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { sementesNoIdioma } from "@/lib/organizacao/sementes-no-idioma";
 import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
 import { slugDeNome } from "@/lib/leads/stage-editing";
 import {
@@ -357,5 +358,14 @@ export async function pularQuadro(): Promise<void> {
     resourceType: "organization",
     resourceId: ctx.orgId,
   });
+  // O quadro que fica de pé é o semeado, e a semente é portuguesa: traduz o que
+  // ainda é semente (funil, etapas, palavras do funil, tipos da agenda) para o
+  // idioma da empresa. Acabamento — falhar aqui não desfaz o pulo.
+  try {
+    const admin = createAdminClient();
+    await sementesNoIdioma(admin, ctx.orgId, await idiomaDaOrgPeloSupabase(admin, ctx.orgId));
+  } catch (err) {
+    console.error("[onboarding-quadro] sementes no idioma da org:", err instanceof Error ? err.message : err);
+  }
   redirect("/onboarding");
 }

@@ -15,20 +15,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FUSO_PADRAO, FUSOS_DO_ONBOARDING } from "@/lib/tempo/fusos";
+import { FUSO_PADRAO, FUSOS_DO_ONBOARDING, FUSOS_OFERECIDOS } from "@/lib/tempo/fusos";
 
+/**
+ * As opções de fuso, com o da organização dentro. Quem criou a empresa pelo
+ * painel de administração já escolheu um fuso, da lista inteira; se ele não
+ * está na lista curta do onboarding, entra nela — senão a tela marcaria São
+ * Paulo e o "continuar" gravaria São Paulo por cima.
+ */
+function opcoesDeFuso(fusoDaOrg: string | null | undefined) {
+  if (!fusoDaOrg || FUSOS_DO_ONBOARDING.some((f) => f.id === fusoDaOrg)) return FUSOS_DO_ONBOARDING;
+  const oferecido = FUSOS_OFERECIDOS.find((f) => f.codigo === fusoDaOrg);
+  return oferecido ? [{ id: oferecido.codigo, cidade: oferecido.rotulo }, ...FUSOS_DO_ONBOARDING] : FUSOS_DO_ONBOARDING;
+}
 
 export function WelcomeForm({
   defaultOrgName,
   orgId,
+  fusoInicial,
 }: {
   defaultOrgName: string;
   orgId: string;
+  /** O fuso que a organização já tem (`organizations.timezone`). */
+  fusoInicial?: string | null;
 }) {
   const t = useT();
   const [displayName, setDisplayName] = useState(defaultOrgName);
   const [oQueFaz, setOQueFaz] = useState("");
-  const [timezone, setTimezone] = useState(FUSO_PADRAO);
+  const opcoes = opcoesDeFuso(fusoInicial);
+  const [timezone, setTimezone] = useState(
+    opcoes.some((f) => f.id === fusoInicial) ? (fusoInicial as string) : FUSO_PADRAO,
+  );
   const [accepted, setAccepted] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -95,7 +112,7 @@ export function WelcomeForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {FUSOS_DO_ONBOARDING.map((f) => (
+            {opcoes.map((f) => (
               <SelectItem key={f.id} value={f.id}>
                 {t(f.cidade)}
               </SelectItem>
