@@ -74,6 +74,8 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 | CNPJ | vergi numarası |
 | CPF ou CNPJ | kimlik veya vergi numarası |
 | tenant | şirket ("Tenants" menüsü: "Şirketler") |
+| rodízio | dönüşümlü atama ("fila do rodízio": "dönüşümlü atama kuyruğu"). Kısa yerde "dönüşümlü" tek başına kullanılabilir. |
+| de (sayaç: "3 de 10") | "/" ("3 / 10"). Sayaç olmayan "de/da" tek başına çevrilmez: cümle `{marcador}` ile tek anahtar olur (v1.88.5). |
 | cross-tenant | tüm şirketler |
 | duplicado (kayıt) | mükerrer kayıt |
 | Moeda (alan türü) | para tutarı |

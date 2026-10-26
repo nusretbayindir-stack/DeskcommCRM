@@ -1016,8 +1016,14 @@ export function AgendaClient({
               {(() => {
                 const alvo = todos.find((a) => a.id === cancelandoId);
                 if (!alvo) return t("Este agendamento não está mais na lista.");
-                const quem = alvo.quemSeraAtendido ? ` ${t("de")} ${alvo.quemSeraAtendido}` : "";
-                return `${alvo.titulo}${quem}, ${format(
+                // Uma chave só: o "de" solto é o da contagem ("3 / 10" em turco).
+                const quem = alvo.quemSeraAtendido;
+                const titulo = quem
+                  ? t("{titulo} de {quem}")
+                      .replace("{titulo}", () => alvo.titulo)
+                      .replace("{quem}", () => quem)
+                  : alvo.titulo;
+                return `${titulo}, ${format(
                   dataDeParede(new Date(alvo.comeca), fusoDaAgenda),
                   t("d 'de' MMMM 'às' HH:mm"),
                   { locale: localeDaData },

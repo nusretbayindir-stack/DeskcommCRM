@@ -21,10 +21,34 @@ import { PROVEDOR_POR_ID } from "@/lib/ai/pontos/provedores";
  * de adopters roda em clínica, imobiliária e infoproduto. Os identificadores
  * continuam os mesmos porque já existem gravados; só a fala mudou.
  */
-/** "openrouter" no meio de uma frase é identificador vazando para a tela. */
-function provedorLegivel(id: string | null, t: (texto: string) => string): string {
-  if (!id) return t("da inteligência escolhida na instalação");
-  return `${t("da")} ${PROVEDOR_POR_ID.get(id)?.rotulo ?? id}`;
+/**
+ * "openrouter" no meio de uma frase é identificador vazando para a tela.
+ *
+ * Só o NOME, sem a preposição: o "da" mora na frase inteira (as três abaixo),
+ * porque em turco ele vira sufixo e muda de lugar — e a chave solta "da" tinha
+ * virado "şunun:". O português sai igual ao de antes.
+ */
+function nomeDoProvedor(id: string | null, t: (texto: string) => string): string {
+  if (!id) return t("inteligência escolhida na instalação");
+  return PROVEDOR_POR_ID.get(id)?.rotulo ?? id;
+}
+
+export function fraseSemChave(id: string | null, t: (texto: string) => string): string {
+  return t(
+    "Não achei chave da {provedor} nem cadastrada aqui, nem vinda da instalação. Cole a chave no campo acima («o cérebro dele») e crie o atendente de novo — ou cadastre em",
+  ).replace("{provedor}", () => nomeDoProvedor(id, t));
+}
+
+export function fraseModelosSemFerramentas(id: string | null, t: (texto: string) => string): string {
+  return t(
+    "Os modelos da {provedor} que esta instalação conhece não sabem usar ferramentas — sem isso ele conversaria bem e nunca criaria um cliente nem moveria um negócio no funil. Escolha outra empresa de IA em",
+  ).replace("{provedor}", () => nomeDoProvedor(id, t));
+}
+
+export function fraseSemListaDeModelos(id: string | null, t: (texto: string) => string): string {
+  return t("Esta instalação ainda não tem a lista de modelos da {provedor}.").replace("{provedor}", () =>
+    nomeDoProvedor(id, t),
+  );
 }
 
 const JEITOS: { id: PromptTemplate; titulo: string; desc: string }[] = [
@@ -242,9 +266,7 @@ export function SetupAiForm({ capacidades, conferencias }: Props) {
             </p>
           ) : (
             <p className="text-sm">
-              {t("Não achei chave")} {provedorLegivel(provedor, t)}{" "}
-              {t("nem cadastrada aqui, nem vinda da instalação. Cole a chave no campo acima («o cérebro dele») e crie o atendente de novo — ou cadastre em")}{" "}
-              <strong>{t("IA › Credenciais")}</strong>.
+              {fraseSemChave(provedor, t)} <strong>{t("IA › Credenciais")}</strong>.
             </p>
           )}
           {/*
@@ -287,15 +309,11 @@ export function SetupAiForm({ capacidades, conferencias }: Props) {
           */}
           {motivoDoModelo === "nenhum_com_ferramentas" ? (
             <p className="text-sm">
-              {t("Os modelos")} {provedorLegivel(provedor, t)}{" "}
-              {t(
-                "que esta instalação conhece não sabem usar ferramentas — sem isso ele conversaria bem e nunca criaria um cliente nem moveria um negócio no funil. Escolha outra empresa de IA em",
-              )}{" "}
-              <strong>{t("IA › Provedores")}</strong>.
+              {fraseModelosSemFerramentas(provedor, t)} <strong>{t("IA › Provedores")}</strong>.
             </p>
           ) : (
             <p className="text-sm">
-              {t("Esta instalação ainda não tem a lista de modelos")} {provedorLegivel(provedor, t)}.{" "}
+              {fraseSemListaDeModelos(provedor, t)}{" "}
               {t("Ela é baixada automaticamente uma vez por dia; depois disso, publique em")}{" "}
               <strong>{t("IA › Agentes")}</strong>.
             </p>

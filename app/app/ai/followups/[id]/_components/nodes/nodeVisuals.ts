@@ -296,7 +296,8 @@ export function describeNodeConfig(
     }
     case "internal_task": {
       const c = config as ConfigOf<"internal_task">;
-      const prazo = c.vence_em_dias === 0 ? t("hoje") : `+${c.vence_em_dias}d`;
+      // A unidade passa por `t` ("+3g" em turco), a mesma chave do card do quadro.
+      const prazo = c.vence_em_dias === 0 ? t("hoje") : `+${t("{n}d").replace("{n}", String(c.vence_em_dias))}`;
       return `${c.titulo} · ${prazo} · ${t("sem mensagem ao cliente")}`;
     }
     // #2065 — o rótulo da etapa (nome de banco) não chega aqui: o card diz o

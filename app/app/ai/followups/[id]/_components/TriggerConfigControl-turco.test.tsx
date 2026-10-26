@@ -59,9 +59,29 @@ describe("resumo do gatilho de silêncio em turco", () => {
     expect(screen.getByTestId("trigger-config-button").textContent).toContain("(60–240 dk)");
   });
 
+  it("a pausa entre recomeços sai em «sa», nas duas bases", () => {
+    montar("tr", { kind: "silence", params: { threshold_minutes: 60, reentry_pause_minutes: 150 } });
+    expect(screen.getByTestId("trigger-config-button").textContent).toContain("2.5 sa");
+    expect(screen.getByTestId("trigger-config-button").textContent).not.toMatch(/\d h\b/);
+  });
+
+  it("a pausa contada do último envio também", () => {
+    montar("tr", {
+      kind: "silence",
+      params: { threshold_minutes: 60, reentry_pause_minutes: 120, reentry_pause_basis: "ultimo_envio" },
+    });
+    expect(screen.getByTestId("trigger-config-button").textContent).toContain("2 sa");
+  });
+
   it("português: continua «min»", () => {
     montar("pt-BR", { kind: "silence", params: { threshold_minutes: 1440 } });
 
     expect(screen.getByTestId("trigger-config-button").textContent).toContain("(1440 min)");
+  });
+
+  it("português: a pausa continua «h»", () => {
+    montar("pt-BR", { kind: "silence", params: { threshold_minutes: 60, reentry_pause_minutes: 150 } });
+
+    expect(screen.getByTestId("trigger-config-button").textContent).toContain("pausa de 2.5 h");
   });
 });

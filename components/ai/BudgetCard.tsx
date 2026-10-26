@@ -407,7 +407,9 @@ function EditBudgetDialog({ status }: { status: BudgetStatus }) {
               atual={modo}
               onPick={setModo}
               disabled={update.isPending}
-              titulo={`${t("Me avisar ao passar de")} ${limiarEfetivo}% ${t("de")} ${fmtCents(tetoParaCopy)}`}
+              titulo={t("Me avisar ao passar de {pct}% de {teto}")
+                .replace("{pct}", String(limiarEfetivo))
+                .replace("{teto}", () => fmtCents(tetoParaCopy))}
               corpo={t("Abrimos um aviso na Central de avisos. A IA continua respondendo normalmente.")}
             />
             <OpcaoDeModo

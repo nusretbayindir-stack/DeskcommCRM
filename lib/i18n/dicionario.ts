@@ -3988,6 +3988,13 @@ export const DICIONARIO: Traducoes = {
   },
   "Falha ao resolver os avisos.": { es: "Error al resolver los avisos." },
   "Me avisar ao passar de": { es: "Avisarme al pasar de" },
+  "Me avisar ao passar de {pct}% de {teto}": { es: "Avisarme al pasar del {pct}% de {teto}" },
+  // Frases que usavam o "de" solto como preposição: em turco o "de" de contagem
+  // é "/", e estas não são contagem.
+  "{titulo} de {quem}": { es: "{titulo} de {quem}" },
+  "Excluir {tag} de {contatos} contato(s), {leads} lead(s) e {conversas} conversa(s).": {
+    es: "Eliminar {tag} de {contatos} contacto(s), {leads} lead(s) y {conversas} conversación(es).",
+  },
   "Melhorias que você aprovou": { es: "Mejoras que aprobaste" },
   "Memória da IA": { es: "Memoria de la IA" },
   "Mensagem técnica do provedor": { es: "Mensaje técnico del proveedor" },
@@ -4897,6 +4904,65 @@ export const DICIONARIO: Traducoes = {
   "A tarefa segue só observando.": { es: "La tarea sigue solo observando." },
   "Abrir os agentes": { es: "Abrir los agentes" },
   "Abrir os roteadores": { es: "Abrir los enrutadores" },
+  // Painel de lacunas (`components/ai/EvolutionGaps.tsx`): cada frase é UMA chave
+  // com marcadores, e o singular e o plural são chaves irmãs.
+  'No funil "{funil}", {n} passo do atendimento não tem etapa correspondente: {passos}.': {
+    es: 'En el embudo "{funil}", {n} paso de la atención no tiene etapa correspondiente: {passos}.',
+  },
+  'No funil "{funil}", {n} passos do atendimento não têm etapa correspondente: {passos}.': {
+    es: 'En el embudo "{funil}", {n} pasos de la atención no tienen etapa correspondiente: {passos}.',
+  },
+  "Quando o agente chega em um desses passos, o card do cliente não se move — ele fica onde está. Às vezes isso é proposital: nem todo funil precisa de uma etapa para cada passo. Mas se você esperava ver esses clientes andarem sozinhos no quadro, é aqui que falta o vínculo — e você mesmo escolhe, passo a passo, para qual etapa o card vai.": {
+    es: "Cuando el agente llega a uno de estos pasos, la tarjeta del cliente no se mueve: se queda donde está. A veces es intencional: no todo embudo necesita una etapa para cada paso. Pero si esperabas ver a estos clientes avanzar solos en el tablero, aquí falta el vínculo, y tú mismo eliges, paso a paso, a qué etapa va la tarjeta.",
+  },
+  "{nomes} é exceção: ele só pode apontar para a etapa de fechamento ou de perda do funil. Se o seu funil não tem essas etapas, isso é com quem instalou o sistema.": {
+    es: "{nomes} es una excepción: solo puede apuntar a la etapa de cierre o de pérdida del embudo. Si tu embudo no tiene esas etapas, eso le corresponde a quien instaló el sistema.",
+  },
+  "{nomes} são exceção: eles só podem apontar para a etapa de fechamento ou de perda do funil. Se o seu funil não tem essas etapas, isso é com quem instalou o sistema.": {
+    es: "{nomes} son una excepción: solo pueden apuntar a la etapa de cierre o de pérdida del embudo. Si tu embudo no tiene esas etapas, eso le corresponde a quien instaló el sistema.",
+  },
+  "Escolher a etapa de cada passo": { es: "Elegir la etapa de cada paso" },
+  "{n} pergunta de cliente não encontrou resposta nos seus materiais. São os assuntos que ainda faltam escrever — cada um deles é uma conversa em que o agente teve que improvisar ou passar adiante.": {
+    es: "{n} pregunta de cliente no encontró respuesta en tus materiales. Son los temas que todavía faltan escribir: cada uno es una conversación en la que el agente tuvo que improvisar o derivar.",
+  },
+  "{n} perguntas de clientes não encontraram resposta nos seus materiais. São os assuntos que ainda faltam escrever — cada um deles é uma conversa em que o agente teve que improvisar ou passar adiante.": {
+    es: "{n} preguntas de clientes no encontraron respuesta en tus materiales. Son los temas que todavía faltan escribir: cada uno es una conversación en la que el agente tuvo que improvisar o derivar.",
+  },
+  "Abrir a base de conhecimento": { es: "Abrir la base de conocimiento" },
+  "Destas, {n} chegou perto: havia material parecido, mas não parecido o bastante para o agente arriscar usar. Aqui o conteúdo provavelmente já existe — só está escrito com palavras diferentes das que o cliente usa. Vale reescrever esses materiais com as perguntas do jeito que chegam.": {
+    es: "De estas, {n} estuvo cerca: había material parecido, pero no lo bastante para que el agente se arriesgara a usarlo. Aquí el contenido probablemente ya existe; solo está escrito con palabras distintas de las que usa el cliente. Vale la pena reescribir esos materiales con las preguntas tal como llegan.",
+  },
+  "Destas, {n} chegaram perto: havia material parecido, mas não parecido o bastante para o agente arriscar usar. Aqui o conteúdo provavelmente já existe — só está escrito com palavras diferentes das que o cliente usa. Vale reescrever esses materiais com as perguntas do jeito que chegam.": {
+    es: "De estas, {n} estuvieron cerca: había material parecido, pero no lo bastante para que el agente se arriesgara a usarlo. Aquí el contenido probablemente ya existe; solo está escrito con palabras distintas de las que usa el cliente. Vale la pena reescribir esos materiales con las preguntas tal como llegan.",
+  },
+  "Em {n} conversa o agente não soube para qual atendimento encaminhar e usou o atendimento padrão. Se isso se repete, falta cadastrar esse assunto no roteador do seu número.": {
+    es: "En {n} conversación el agente no supo a qué atención derivar y usó la atención predeterminada. Si esto se repite, falta registrar ese tema en el enrutador de tu número.",
+  },
+  "Em {n} conversas o agente não soube para qual atendimento encaminhar e usou o atendimento padrão. Se isso se repete, falta cadastrar esse assunto no roteador do seu número.": {
+    es: "En {n} conversaciones el agente no supo a qué atención derivar y usó la atención predeterminada. Si esto se repite, falta registrar ese tema en el enrutador de tu número.",
+  },
+  "Em {n} conversa a leitura falhou por problema técnico, e ela caiu no atendimento padrão. Isso não é configuração: é a IA que não respondeu na hora. Se o número for alto, vale conferir a conexão com o provedor de IA.": {
+    es: "En {n} conversación la lectura falló por un problema técnico y cayó en la atención predeterminada. Esto no es configuración: es la IA que no respondió a tiempo. Si el número es alto, conviene revisar la conexión con el proveedor de IA.",
+  },
+  "Em {n} conversas a leitura falhou por problema técnico, e ela caiu no atendimento padrão. Isso não é configuração: é a IA que não respondeu na hora. Se o número for alto, vale conferir a conexão com o provedor de IA.": {
+    es: "En {n} conversaciones la lectura falló por un problema técnico y cayó en la atención predeterminada. Esto no es configuración: es la IA que no respondió a tiempo. Si el número es alto, conviene revisar la conexión con el proveedor de IA.",
+  },
+  "Conferir a conexão de IA": { es: "Revisar la conexión de IA" },
+  "toda pergunta encontrou resposta nos seus materiais": { es: "toda pregunta encontró respuesta en tus materiales" },
+  "toda conversa achou para onde ir": { es: "toda conversación encontró a dónde ir" },
+  "todo passo do atendimento tem uma etapa do funil que o recebe": {
+    es: "todo paso de la atención tiene una etapa del embudo que lo recibe",
+  },
+  "ninguém consultou sua base de conhecimento": { es: "nadie consultó tu base de conocimiento" },
+  "nenhuma conversa foi encaminhada": { es: "ninguna conversación fue derivada" },
+  "você ainda não tem nenhum funil montado": { es: "todavía no tienes ningún embudo armado" },
+  "Ainda não dá para dizer se algo está travando: {faltando}. Volte aqui depois que seu agente tiver atendido.": {
+    es: "Todavía no se puede decir si algo está trabado: {faltando}. Vuelve aquí cuando tu agente haya atendido.",
+  },
+  "Nada travando neste período: {partes}.": { es: "Nada trabado en este período: {partes}." },
+  "Uma ressalva: {faltando} — sobre isso não dá para dizer nem que está bem nem que está mal.": {
+    es: "Una salvedad: {faltando}; sobre eso no se puede decir ni que está bien ni que está mal.",
+  },
   "Sem uma IA principal, o clima religado volta decidindo sozinho: não há com quem comparar nem quem cubra uma falha do Jev.": {
     es: "Sin una IA principal, el clima reactivado vuelve decidiendo por su cuenta: no hay con quién comparar ni quién cubra una falla de Jev.",
   },
@@ -8639,6 +8705,18 @@ export const DICIONARIO: Traducoes = {
     es: "ni registrada aquí ni incluida con la instalación. Pega la clave en el campo de arriba («su cerebro») y vuelve a crear el agente, o regístrala en",
   },
   "IA › Credenciais": { es: "IA › Credenciales" },
+  // As mesmas frases do onboarding com a empresa de IA DENTRO da chave
+  // (`fraseSemChave` e irmãs): em turco o "da" vira sufixo e muda de lugar.
+  "Não achei chave da {provedor} nem cadastrada aqui, nem vinda da instalação. Cole a chave no campo acima («o cérebro dele») e crie o atendente de novo — ou cadastre em": {
+    es: "No encontré ninguna clave de {provedor}: ni registrada aquí ni incluida con la instalación. Pega la clave en el campo de arriba («su cerebro») y vuelve a crear el agente, o regístrala en",
+  },
+  "Os modelos da {provedor} que esta instalação conhece não sabem usar ferramentas — sem isso ele conversaria bem e nunca criaria um cliente nem moveria um negócio no funil. Escolha outra empresa de IA em": {
+    es: "Los modelos de {provedor} que conoce esta instalación no saben usar herramientas. Sin eso, conversaría bien, pero nunca crearía un cliente ni movería un negocio en el embudo. Elige otra empresa de IA en",
+  },
+  "Esta instalação ainda não tem a lista de modelos da {provedor}.": {
+    es: "Esta instalación todavía no tiene la lista de modelos de {provedor}.",
+  },
+  "inteligência escolhida na instalação": { es: "la inteligencia elegida en la instalación" },
   "A chave que você colou ainda não foi confirmada pelo provedor.": {
     es: "El proveedor todavía no confirma la clave que pegaste.",
   },
@@ -9838,6 +9916,7 @@ export const DICIONARIO: Traducoes = {
   "em {etapa}": { es: "en {etapa}" },
   "{n}d": { es: "{n}d" },
   "{n}h": { es: "{n}h" },
+  "{n} h": { es: "{n} h" },
   "Não consegui completar essa ação. Tente de novo.": {
     es: "No pude completar esa acción. Intenta de nuevo.",
   },
