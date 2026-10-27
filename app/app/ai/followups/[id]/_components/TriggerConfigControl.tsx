@@ -256,9 +256,10 @@ function summaryLabel(
           : `${minutes} ${t("min")}`
         : null,
       typeof pausa === "number" && pausa > 0
-        ? params?.reentry_pause_basis === "ultimo_envio"
-          ? `${t("no máximo 1× a cada")} ${Math.round((pausa / 60) * 10) / 10} h`
-          : `${t("pausa de")} ${Math.round((pausa / 60) * 10) / 10} h`
+        ? `${params?.reentry_pause_basis === "ultimo_envio" ? t("no máximo 1× a cada") : t("pausa de")} ${t("{n} h").replace(
+            "{n}",
+            String(Math.round((pausa / 60) * 10) / 10),
+          )}`
         : null,
     ].filter(Boolean);
     return `${t("Gatilho")}: ${t("Silêncio")}${detalhe.length > 0 ? ` (${detalhe.join(" · ")})` : ""}`;

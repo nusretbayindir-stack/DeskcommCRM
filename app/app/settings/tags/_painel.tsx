@@ -366,13 +366,26 @@ export function PainelDeTags({ tags, idioma, paginado = false }: { tags: LinhaDe
                 {t("Juntar")} <strong>{alvo.tag}</strong> {t("em outra etiqueta existente:")}
               </>
             )}
-            {acao === "excluir" && (
-              <>
-                {t("Excluir")} <strong>{alvo.tag}</strong> {t("de")} {alvo.uso_em_contatos}{" "}
-                {t("contato(s),")} {alvo.uso_em_leads} {t("lead(s) e")} {alvo.uso_em_conversas}{" "}
-                {t("conversa(s).")}
-              </>
-            )}
+            {acao === "excluir" &&
+              (() => {
+                // Uma chave só, com a etiqueta em negrito no lugar do marcador: em
+                // turco a etiqueta e as contagens mudam de lugar na frase.
+                const [antes, depois = ""] = t(
+                  "Excluir {tag} de {contatos} contato(s), {leads} lead(s) e {conversas} conversa(s).",
+                ).split("{tag}");
+                const preenche = (trecho: string) =>
+                  trecho
+                    .replace("{contatos}", String(alvo.uso_em_contatos))
+                    .replace("{leads}", String(alvo.uso_em_leads))
+                    .replace("{conversas}", String(alvo.uso_em_conversas));
+                return (
+                  <>
+                    {preenche(antes ?? "")}
+                    <strong>{alvo.tag}</strong>
+                    {preenche(depois)}
+                  </>
+                );
+              })()}
             {acao === "definir_cor" && (
               <>
                 {t("Cor")} <strong>{alvo.tag}</strong>{" "}

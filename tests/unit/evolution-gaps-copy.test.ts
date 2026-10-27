@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { boaNoticia, montaLacunas } from "@/components/ai/EvolutionGaps";
 import { descricaoResultado, taxaDeAjuda } from "@/app/app/ai/evolution/_client";
 import { aggregateEvolution, type EvolutionInput } from "@/lib/ai/evolution/aggregate";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 /**
  * Estes dois pedaços são INALCANÇÁVEIS pela tela nas orgs que temos: basta um
@@ -114,6 +115,67 @@ describe("lacuna de funil — o botão fecha o ciclo, e o ciclo tem guarda", () 
     const l = lacunaDe(["new", "won", "lost"]);
     expect(l.texto).toContain("«Ganho» e «Perdido» são exceção");
     expect(l.texto).toContain("é com quem instalou o sistema");
+  });
+});
+
+/**
+ * As frases saíam em português para quem opera em turco ou espanhol: eram
+ * montadas em template fora do dicionário. O português continua byte a byte o
+ * de antes — é o `t` identidade, que os blocos acima medem.
+ */
+describe("lacunas e boa notícia no idioma de quem opera", () => {
+  const tr = (texto: string) => traduzir(texto, "tr");
+  const es = (texto: string) => traduzir(texto, "es");
+  // Palavras que só o português tem — nenhuma delas pode sobrar em tr nem em es.
+  // `\b` do JS é ASCII e não fecha depois de "ê"; por isso a fronteira é por letra Unicode.
+  const SO_PORTUGUES =
+    /(?<!\p{L})(não|você|funil|passo|passos|Destas|ninguém|nenhuma|Ainda|travando|exceção|leitura)(?!\p{L})/u;
+
+  const tudo = {
+    pipelines_evaluated: 1,
+    unmapped_agent_steps: [{ pipeline_name: "Pedidos", steps: ["new", "won", "lost"] }],
+    knowledge_empty: 3,
+    knowledge_near_misses: 1,
+    router_no_match: 2,
+    router_failed: 1,
+  };
+
+  it.each([
+    ["tr", tr],
+    ["es", es],
+  ] as const)("%s: toda lacuna e todo botão saem traduzidos", (_idioma, t) => {
+    const lacunas = montaLacunas(tudo, t);
+    const emPortugues = montaLacunas(tudo);
+    expect(lacunas).toHaveLength(5);
+    lacunas.forEach((l, i) => {
+      expect(l.texto, l.chave).not.toBe(emPortugues[i]!.texto);
+      expect(l.texto, l.chave).not.toMatch(SO_PORTUGUES);
+      expect(l.cta, l.chave).not.toBe(emPortugues[i]!.cta);
+      expect(l.href).toBe(emPortugues[i]!.href);
+    });
+  });
+
+  it("tr: o nome do funil, os números e os passos aparecem no lugar", () => {
+    const [funil, vazio, perto, semRota, falha] = montaLacunas(tudo, tr);
+    expect(funil!.texto).toContain("Pedidos");
+    expect(funil!.texto).toContain("Yeni potansiyel müşteri");
+    expect(funil!.texto).toContain("«Kazanıldı» ve «Kaybedildi»");
+    expect(vazio!.texto).toContain("3");
+    expect(perto!.texto).toContain("1");
+    expect(semRota!.texto).toContain("2");
+    expect(falha!.texto).toContain("1");
+  });
+
+  it.each([
+    [0, 0, 0],
+    [30, 12, 3],
+    [0, 12, 3],
+  ])("boa notícia (%i, %i, %i) sai traduzida em tr e em es", (buscas, decisoes, funis) => {
+    for (const t of [tr, es]) {
+      const texto = boaNoticia(buscas, decisoes, funis, t);
+      expect(texto).not.toBe(boaNoticia(buscas, decisoes, funis));
+      expect(texto).not.toMatch(SO_PORTUGUES);
+    }
   });
 });
 

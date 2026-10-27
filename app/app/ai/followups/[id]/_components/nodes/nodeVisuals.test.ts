@@ -123,6 +123,14 @@ describe("nenhum card fala a língua do banco", () => {
     ).toBe("1 kural · bekleme 15 dk");
     expect(describeNodeConfig("wait", { mode: "fixed", duration_ms: 600_000 }, tr)).toBe("10 dk");
   });
+
+  it("o prazo da tarefa interna: «+3g» em turco, «+3d» em português", () => {
+    const tr = (texto: string) => traduzir(texto, "tr");
+    const config = { ...(NODE_VISUALS.internal_task.defaultConfig() as object), vence_em_dias: 3 } as never;
+    expect(describeNodeConfig("internal_task", config, tr)).toContain("+3g");
+    expect(describeNodeConfig("internal_task", config, tr)).not.toContain("+3d");
+    expect(describeNodeConfig("internal_task", config, pt)).toContain("+3d");
+  });
 });
 
 describe("a saída de escape no canvas turco", () => {
