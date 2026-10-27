@@ -30,10 +30,9 @@
  * gatilhos gravam — vigiado em `sementes-no-idioma.test.ts`, que lê o
  * `baseline.sql`.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import type { Idioma } from "@/lib/i18n/idiomas";
 import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
+import type { createAdminClient } from "@/lib/supabase/admin";
 
 type SlugDoTipo = "consulta" | "reuniao" | "atendimento";
 type SlugDaEtapa =
@@ -127,7 +126,7 @@ function vocabularioIntocado(atual: Record<string, unknown> | null | undefined):
  * nome de semente é acabamento, e quem chama já criou a empresa.
  */
 export async function sementesNoIdioma(
-  admin: SupabaseClient,
+  admin: ReturnType<typeof createAdminClient>,
   orgId: string,
   idioma: Idioma,
 ): Promise<boolean> {
@@ -199,7 +198,7 @@ export async function sementesNoIdioma(
  * como estão, para não traduzir para um idioma que a empresa não tem.
  */
 export async function gravarIdiomaEFuso(
-  admin: SupabaseClient,
+  admin: ReturnType<typeof createAdminClient>,
   orgId: string,
   escolha: { locale?: Idioma; timezone?: string },
 ): Promise<boolean> {
