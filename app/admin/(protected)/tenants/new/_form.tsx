@@ -27,6 +27,9 @@ import { type CreateTenantResponse, useCreateTenant } from "@/hooks/useCreateTen
 import { ApiError } from "@/lib/api/types";
 import { useT } from "@/hooks/i18n/useT";
 import { useIdioma } from "@/lib/i18n/IdiomaProvider";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
+import { FUSO_PADRAO, FUSOS_OFERECIDOS } from "@/lib/tempo/fusos";
 import { copyToClipboard } from "@/lib/clipboard";
 
 // ---------------------------------------------------------------------------
@@ -87,15 +90,22 @@ function formatarPreco(cents: number, idioma: string): string {
 
 export function NewTenantForm({
   cobranca,
+  fusoInicial,
 }: {
   /** Spec da cobrança §9: ligada, o plano de cobrança substitui o rótulo antigo (D-2). */
   cobranca: { ligada: boolean; planos: readonly PlanoParaEscolher[] };
+  /** O fuso da organização de quem cria, resolvido pela página (ausente = o padrão do produto). */
+  fusoInicial?: string;
 }) {
   const t = useT();
   const idioma = useIdioma();
   const router = useRouter();
   const createTenant = useCreateTenant();
   const [ownerInterface, setOwnerInterface] = useState(INTERFACE_COMPLETA);
+  // O convite do dono sai no idioma da organização NA criação: a escolha mora
+  // aqui, com o padrão de quem cria (o idioma da tela dele e o fuso da org dele).
+  const [locale, setLocale] = useState<Idioma>(idioma);
+  const [timezone, setTimezone] = useState(fusoInicial ?? FUSO_PADRAO);
   const [slugLocked, setSlugLocked] = useState(false);
   const [created, setCreated] = useState<CreateTenantResponse["data"] | null>(null);
 
@@ -148,6 +158,8 @@ export function NewTenantForm({
         ...(cobranca.ligada ? { plano_id: values.plano_id } : { plan: values.plan }),
         owner_email: values.owner_email,
         owner_interface_settings: ownerInterface,
+        locale,
+        timezone,
       });
 
       toast.success(t("Tenant criado com sucesso!"));
@@ -178,6 +190,13 @@ export function NewTenantForm({
           <p>
             {t("Você já é administrador de")} {created.display_name}.
           </p>
+          {created.idioma_gravado === false && (
+            <p className="text-sm text-warning-fg">
+              {t(
+                "Não consegui gravar o idioma e o fuso. Ajuste nas configurações da organização antes de o responsável entrar; o convite pode ter saído em português.",
+              )}
+            </p>
+          )}
           {created.owner_invitation && (
             <div className="space-y-3">
               <p>
@@ -350,6 +369,43 @@ export function NewTenantForm({
               )}
             </div>
             )}
+
+            {/* idioma e fuso da empresa nova */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="locale">{t("Idioma da organização")}</Label>
+                <Select value={locale} onValueChange={(v) => setLocale(v as Idioma)}>
+                  <SelectTrigger id="locale" aria-label={t("Idioma da organização")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IDIOMAS_VISIVEIS.map(({ codigo, nomeNativo }) => (
+                      <SelectItem key={codigo} value={codigo}>
+                        {nomeNativo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("O convite do responsável e os nomes iniciais da agenda e do funil saem neste idioma.")}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="timezone">{t("Fuso horário")}</Label>
+                <Select value={timezone} onValueChange={setTimezone}>
+                  <SelectTrigger id="timezone" aria-label={t("Fuso horário")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FUSOS_OFERECIDOS.map((f) => (
+                      <SelectItem key={f.codigo} value={f.codigo}>
+                        {t(f.rotulo)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             {/* owner_email */}
             <div className="space-y-1.5">

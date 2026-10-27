@@ -1,5 +1,7 @@
+import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fusoOferecidoOuPadrao } from "@/lib/tempo/fusos";
 
 import { NewTenantForm, type PlanoParaEscolher } from "./_form";
 import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
@@ -25,5 +27,9 @@ export default async function NewTenantPage() {
     if (error) throw new Error(`planos de cobrança: leitura falhou (${error.code})`);
     planos = (data ?? []) as PlanoParaEscolher[];
   }
-  return <NewTenantForm cobranca={{ ligada, planos }} />;
+  // O fuso padrão da empresa nova é o da organização de quem cria. Resolvido
+  // aqui, no servidor: o fuso do navegador divergiria do render do servidor.
+  const usuario = await loadAuthUser();
+  const ativa = usuario ? await resolveActiveOrg(usuario) : null;
+  return <NewTenantForm cobranca={{ ligada, planos }} fusoInicial={fusoOferecidoOuPadrao(ativa?.timezone)} />;
 }
