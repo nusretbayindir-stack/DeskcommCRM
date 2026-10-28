@@ -76,6 +76,57 @@ describe('parseIntentVerdict', () => {
   });
 });
 
+// Nome com ":" vira, no prompt, "- Yedek parça: parça, uygunluk ve fiyat: <descrição>",
+// e o modelo devolve só o que vem antes do primeiro ":". Comparado letra a letra,
+// o nome caía como alucinação e o turno ia calado para a reserva.
+describe('parseIntentVerdict — nome que o modelo encurtou ou escreveu diferente', () => {
+  const membrosDoDemo = [
+    { agentId: 'p', intentName: 'Yedek parça: parça, uygunluk ve fiyat', intentDescription: 'Peça de carro', examples: [] },
+    { agentId: 'm', intentName: 'Mutfak: tasarım ve keşif', intentDescription: 'Cozinha planejada', examples: [] },
+    { agentId: 'i', intentName: 'İade ve şikâyet', intentDescription: 'Devolução', examples: [] },
+  ];
+
+  it('o nome até o ":" casa com a única intenção que começa assim, e devolve o nome inteiro', () => {
+    expect(parseIntentVerdict('{"intent":"Yedek parça","confidence":0.9}', membrosDoDemo))
+      .toEqual({ intentName: 'Yedek parça: parça, uygunluk ve fiyat', confidence: 0.9 });
+  });
+
+  it('maiúsculas, o İ/ı turco e acentos não separam o nome', () => {
+    expect(parseIntentVerdict('{"intent":"MUTFAK: TASARIM VE KESIF","confidence":0.8}', membrosDoDemo))
+      .toEqual({ intentName: 'Mutfak: tasarım ve keşif', confidence: 0.8 });
+    expect(parseIntentVerdict('{"intent":"iade ve sikayet","confidence":0.8}', membrosDoDemo))
+      .toEqual({ intentName: 'İade ve şikâyet', confidence: 0.8 });
+  });
+
+  it('pedaço que corta uma palavra no meio não casa', () => {
+    expect(parseIntentVerdict('{"intent":"Yedek par","confidence":0.9}', membrosDoDemo))
+      .toEqual({ intentName: null, confidence: 0, falhou: true });
+  });
+
+  it('começo que serve a duas intenções é recusado — o parse não escolhe por sorte', () => {
+    const ambiguos = [
+      { agentId: 'a', intentName: 'Yedek parça: fiyat', intentDescription: 'x', examples: [] },
+      { agentId: 'b', intentName: 'Yedek parça: stok', intentDescription: 'y', examples: [] },
+    ];
+    expect(parseIntentVerdict('{"intent":"Yedek parça","confidence":0.9}', ambiguos))
+      .toEqual({ intentName: null, confidence: 0, falhou: true });
+  });
+
+  it('o nome exato vence o começo de outro nome', () => {
+    const encaixados = [
+      { agentId: 'a', intentName: 'Satış', intentDescription: 'x', examples: [] },
+      { agentId: 'b', intentName: 'Satış: kampanya', intentDescription: 'y', examples: [] },
+    ];
+    expect(parseIntentVerdict('{"intent":"satış","confidence":0.9}', encaixados))
+      .toEqual({ intentName: 'Satış', confidence: 0.9 });
+  });
+
+  it('"None" em maiúscula é nenhuma, não falha', () => {
+    expect(parseIntentVerdict('{"intent":"None","confidence":0.3}', membrosDoDemo))
+      .toEqual({ intentName: null, confidence: 0.3 });
+  });
+});
+
 describe('classifyIntent', () => {
   it('usa o modelo do router e purpose intent_router', async () => {
     const runModelCall = vi.fn().mockResolvedValue({ result: { text: '{"intent":"vendas","confidence":0.88}' } });
@@ -105,6 +156,48 @@ describe('classifyIntent', () => {
       { log: { info: vi.fn(), warn, error: vi.fn() } as never, runModelCall } as never);
     expect(out).toBeNull();
     expect(warn).toHaveBeenCalled();
+  });
+});
+
+// Saída que não é resposta vira "nenhuma" e o turno vai para a reserva. Antes
+// isso não deixava rastro nenhum: só a falha da chamada ia para o log.
+describe('classifyIntent — saída recusada deixa rastro no log', () => {
+  const classificarCom = async (texto: string, signal: string) => {
+    const runModelCall = vi.fn().mockResolvedValue({ result: { text: texto } });
+    const warn = vi.fn();
+    const out = await classifyIntent({} as never, {} as never,
+      { tenantId: 'o1', leadId: 'l1', jobId: 'j1', router, signal },
+      { log: { info: vi.fn(), warn, error: vi.fn() } as never, runModelCall } as never);
+    return { out, warn };
+  };
+
+  it('intenção fora da lista: o log diz qual nome voltou, sem o texto do cliente', async () => {
+    const { out, warn } = await classificarCom('{"intent":"financeiro","confidence":0.95}', 'meu cartão 4111 venceu');
+    expect(out).toEqual({ intentName: null, confidence: 0, falhou: true });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![1]).toMatchObject({ routerId: 'r1', intencaoDevolvida: 'financeiro' });
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('4111');
+  });
+
+  it('saída sem JSON: o log registra a recusa, mas não a prosa do modelo', async () => {
+    const { warn } = await classificarCom('O cliente disse que o cartão 4111 venceu.', 'meu cartão 4111 venceu');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![1]).toMatchObject({ routerId: 'r1', intencaoDevolvida: null });
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('4111');
+  });
+
+  it('nome devolvido que copia dado do cliente sai mascarado e curto', async () => {
+    const longo = `fale com joao@exemplo.com ${'x'.repeat(200)}`;
+    const { warn } = await classificarCom(JSON.stringify({ intent: longo, confidence: 0.9 }), 'oi');
+    const devolvida = (warn.mock.calls[0]![1] as { intencaoDevolvida: string }).intencaoDevolvida;
+    expect(devolvida).not.toContain('joao@exemplo.com');
+    expect(devolvida).toContain('[EMAIL]');
+    expect(devolvida.length).toBeLessThanOrEqual(80);
+  });
+
+  it('resposta aceita não escreve nada no log', async () => {
+    const { warn } = await classificarCom('{"intent":"vendas","confidence":0.9}', 'quanto custa');
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

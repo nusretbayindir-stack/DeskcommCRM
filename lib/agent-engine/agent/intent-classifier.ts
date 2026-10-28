@@ -16,6 +16,7 @@ import type pg from 'pg';
 
 import { extrairObjetoJsonDoTexto } from '@/lib/agent-engine/texto/extrair-json-do-texto';
 import { contextoDoClassificador, type ClassifierContextMessage } from '@/lib/ai/classifier-context';
+import { scrubMessage } from '@/lib/sentry/scrub';
 
 import type { Logger } from '../obs/logger';
 import { runModelCall, type LlmEdgeConfig } from '../edge/llm/run-model-call';
@@ -84,11 +85,47 @@ export function buildClassifierPrompt(
 }
 
 /**
+ * O nome sem o que não distingue uma intenção de outra: maiúsculas, acentos, o
+ * I/İ/ı do turco e espaços repetidos.
+ */
+function chaveDoNome(nome: string): string {
+  return nome
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * O membro que o modelo quis dizer: o nome exato; senão o mesmo nome pela
+ * `chaveDoNome`; senão o nome que COMEÇA com o devolvido até uma fronteira de
+ * palavra — num nome com ":", o prompt mostra "- Nome: detalhe: descrição" e o
+ * modelo devolve só "Nome". Mais de um candidato é recusa: o parse nunca
+ * escolhe um agente por sorte.
+ */
+function membroDoNome(nome: string, members: RouterMember[]): RouterMember | undefined {
+  const exato = members.find((m) => m.intentName === nome);
+  if (exato !== undefined) return exato;
+  const chave = chaveDoNome(nome);
+  if (chave === '') return undefined;
+  const iguais = members.filter((m) => chaveDoNome(m.intentName) === chave);
+  if (iguais.length > 0) return iguais.length === 1 ? iguais[0] : undefined;
+  const comecos = members.filter((m) => {
+    const alvo = chaveDoNome(m.intentName);
+    return alvo.startsWith(chave) && !/[\p{L}\p{N}]/u.test(alvo.charAt(chave.length));
+  });
+  return comecos.length === 1 ? comecos[0] : undefined;
+}
+
+/**
  * Parse tolerante via `extrairJsonDoTexto` (cerca de código, prosa em volta e
  * repetição do objeto). NUNCA lança — qualquer saída inesperada do modelo
- * vira { intentName: null, confidence: 0 }. Intenção fora de `members` é
- * recusada (defesa contra alucinação): o chamador não pode rotear pra um
- * agentId que o parse inventou.
+ * vira { intentName: null, confidence: 0 }. O nome devolvido é lido pela
+ * `membroDoNome`, e o veredito traz o nome do membro como está no router.
+ * Intenção que não leva a um membro só é recusada (defesa contra alucinação):
+ * o chamador não pode rotear pra um agentId que o parse inventou.
  */
 export function parseIntentVerdict(text: string, members: RouterMember[]): IntentVerdict {
   const nullVerdict: IntentVerdict = { intentName: null, confidence: 0, falhou: true };
@@ -103,11 +140,11 @@ export function parseIntentVerdict(text: string, members: RouterMember[]): Inten
     : 0;
 
   if (typeof raw.intent !== 'string') return nullVerdict;
-  if (raw.intent === 'none') return { intentName: null, confidence };
-  const known = members.some((m) => m.intentName === raw.intent);
-  if (!known) return nullVerdict;
+  if (chaveDoNome(raw.intent) === 'none') return { intentName: null, confidence };
+  const membro = membroDoNome(raw.intent, members);
+  if (membro === undefined) return nullVerdict;
 
-  return { intentName: raw.intent, confidence };
+  return { intentName: membro.intentName, confidence };
 }
 
 export interface ClassifyIntentDeps {
@@ -159,7 +196,19 @@ export async function classifyIntent(
       },
       { log: deps.log },
     );
-    return parseIntentVerdict(result.text, input.router.members);
+    const verdict = parseIntentVerdict(result.text, input.router.members);
+    if (verdict.falhou) {
+      // Vira "nenhuma" e o turno segue sem a escolha da IA: sem esta linha,
+      // nada mostrava que ela respondeu e foi recusada. O nome devolvido aponta
+      // a intenção que o modelo não acerta; a prosa dele, não — pode trazer a
+      // mensagem do cliente.
+      const bruto = extrairObjetoJsonDoTexto(result.text) as { intent?: unknown } | null;
+      deps.log.warn('intent-classifier: saída do modelo não é uma intenção do router — turno segue como "nenhuma"', {
+        routerId: input.router.id,
+        intencaoDevolvida: typeof bruto?.intent === 'string' ? scrubMessage(bruto.intent).slice(0, 80) : null,
+      });
+    }
+    return verdict;
   } catch (err) {
     // Falha do classificador NUNCA derruba o turno — chamador cai no fallback do router.
     deps.log.warn('intent-classifier: falha ao classificar intenção — turno cai no fallback', {
