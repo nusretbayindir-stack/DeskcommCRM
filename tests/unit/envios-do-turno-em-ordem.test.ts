@@ -212,7 +212,7 @@ describe("enviosEmOrdemDeChegada", () => {
       }),
     })!;
     const executar = tools.send_message!.execute!;
-    const opcoes = { toolCallId: "x", messages: [] };
+    const opcoes = { toolCallId: "x", messages: [], context: undefined };
     const [primeiro, segundo] = await Promise.allSettled([
       executar({ body: "quebra" }, opcoes),
       executar({ body: "segue" }, opcoes),
@@ -261,7 +261,7 @@ describe("enviosEmOrdemDeChegada", () => {
           },
         }),
       })!;
-    const opcoes = { toolCallId: "x", messages: [] };
+    const opcoes = { toolCallId: "x", messages: [], context: undefined };
     await Promise.all([
       turno("lento", 30).send_message!.execute!({}, opcoes),
       turno("rapido", 0).send_message!.execute!({}, opcoes),
