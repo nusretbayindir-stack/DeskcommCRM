@@ -94,6 +94,19 @@ export const FUNIL_SEMEADO: Record<Idioma, { nome: string; etapas: Record<SlugDa
   },
 };
 
+/**
+ * As etiquetas de conversa da migration 0033. Ali não há gatilho: o bloco
+ * escreve `settings.canonical_conversation_tags` em toda organização que ainda
+ * não tem a chave, e o `update.sh` re-aplica o baseline a cada atualização —
+ * a empresa turca criada hoje ganhava as oito em português na próxima.
+ * Escrever a lista no idioma dela na criação faz o bloco pular a organização.
+ */
+export const ETIQUETAS_SEMEADAS: Record<Idioma, readonly string[]> = {
+  "pt-BR": ["dúvida", "reclamação", "troca", "devolução", "elogio", "orçamento", "pós-venda", "urgente"],
+  es: ["duda", "reclamo", "cambio", "devolución", "elogio", "presupuesto", "posventa", "urgente"],
+  tr: ["soru", "şikayet", "değişim", "iade", "teşekkür", "teklif", "satış sonrası", "acil"],
+};
+
 const SLUG_DO_FUNIL_SEMEADO = "pedidos";
 
 type Resultado = { error: { message: string } | null };
@@ -122,7 +135,8 @@ function vocabularioIntocado(atual: Record<string, unknown> | null | undefined):
 /**
  * Renomeia, para `idioma`, as linhas que os gatilhos semearam e ninguém mexeu:
  * os tipos de agendamento, o funil "Pedidos", as etapas dele e as palavras do
- * funil. `true` = toda escrita passou (ou não havia o que escrever). Não lança:
+ * funil. E escreve as etiquetas de conversa onde a chave ainda não existe.
+ * `true` = toda escrita passou (ou não havia o que escrever). Não lança:
  * nome de semente é acabamento, e quem chama já criou a empresa.
  */
 export async function sementesNoIdioma(
@@ -144,6 +158,31 @@ export async function sementesNoIdioma(
           .eq("organization_id", orgId)
           .eq("slug", slug)
           .eq("name", tiposPt[slug]),
+      ),
+    );
+  }
+
+  // Só onde a chave ainda não existe: a lista que já está lá — a do banco ou
+  // a que o dono arrumou — tem uso em conversas, e renomear é trabalho de
+  // `fn_vocabulario_de_tags_operar`, não de semente.
+  const { data: org, error: erroDaOrg } = await admin
+    .from("organizations")
+    .select("settings")
+    .eq("id", orgId)
+    .maybeSingle();
+  if (erroDaOrg) {
+    console.error("[sementes-no-idioma] settings da organização:", erroDaOrg.message);
+    escritas.push(Promise.resolve(false));
+  }
+  const settings = (org?.settings ?? {}) as Record<string, unknown>;
+  if (org && !("canonical_conversation_tags" in settings)) {
+    escritas.push(
+      escrever(
+        "etiquetas de conversa",
+        admin
+          .from("organizations")
+          .update({ settings: { ...settings, canonical_conversation_tags: [...ETIQUETAS_SEMEADAS[idioma]] } })
+          .eq("id", orgId),
       ),
     );
   }

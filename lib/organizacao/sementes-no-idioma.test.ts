@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
 
 import {
+  ETIQUETAS_SEMEADAS,
   FUNIL_SEMEADO,
   TIPOS_DA_AGENDA_SEMEADOS,
   gravarIdiomaEFuso,
@@ -34,6 +35,7 @@ type Chamada = {
 
 function bancoFalso(opcoes: {
   funil?: { id: string; name: string; vocabulary: Record<string, unknown> | null } | null;
+  org?: { settings: Record<string, unknown> | null } | null;
   falhaEm?: string;
 }) {
   const chamadas: Chamada[] = [];
@@ -63,7 +65,10 @@ function bancoFalso(opcoes: {
               chamada.filtros.push([coluna, valor]);
               return consulta;
             },
-            maybeSingle: async () => ({ data: opcoes.funil ?? null, error: null }),
+            maybeSingle: async () => ({
+              data: tabela === "organizations" ? (opcoes.org ?? null) : (opcoes.funil ?? null),
+              error: null,
+            }),
           };
           return consulta;
         },
@@ -163,6 +168,51 @@ describe("sementesNoIdioma", () => {
     expect(updatesEm(chamadas, "crm_stages")).toEqual([]);
   });
 
+  it("tr: a organização sem etiquetas de conversa ganha as oito no idioma dela, sem perder o resto de settings", async () => {
+    const { admin, chamadas } = bancoFalso({ funil: null, org: { settings: { plan: "pro" } } });
+    await sementesNoIdioma(admin, ORG, "tr");
+
+    expect(updatesEm(chamadas, "organizations")).toEqual([
+      {
+        tabela: "organizations",
+        op: "update",
+        valores: {
+          settings: {
+            plan: "pro",
+            canonical_conversation_tags: [
+              "soru",
+              "şikayet",
+              "değişim",
+              "iade",
+              "teşekkür",
+              "teklif",
+              "satış sonrası",
+              "acil",
+            ],
+          },
+        },
+        filtros: [["id", ORG]],
+      },
+    ]);
+  });
+
+  it("organização que já tem etiquetas de conversa (a semente do banco ou as do dono) fica como está", async () => {
+    const { admin, chamadas } = bancoFalso({
+      funil: null,
+      org: { settings: { canonical_conversation_tags: ETIQUETAS_SEMEADAS["pt-BR"] } },
+    });
+    await sementesNoIdioma(admin, ORG, "tr");
+    expect(updatesEm(chamadas, "organizations")).toEqual([]);
+  });
+
+  it("settings nulo conta como sem etiquetas", async () => {
+    const { admin, chamadas } = bancoFalso({ funil: null, org: { settings: null } });
+    await sementesNoIdioma(admin, ORG, "es");
+    expect(updatesEm(chamadas, "organizations")).toEqual([
+      expect.objectContaining({ valores: { settings: { canonical_conversation_tags: ETIQUETAS_SEMEADAS.es } } }),
+    ]);
+  });
+
   it("pt-BR: nada é escrito, a semente já está no idioma", async () => {
     const { admin, chamadas } = bancoFalso({ funil: FUNIL_INTOCADO });
     expect(await sementesNoIdioma(admin, ORG, "pt-BR")).toBe(true);
@@ -222,6 +272,13 @@ describe("a tabela em português é a semente do banco", () => {
     );
     expect(Object.keys(doBanco)).toHaveLength(3);
     expect(TIPOS_DA_AGENDA_SEMEADOS["pt-BR"]).toEqual(doBanco);
+  });
+
+  it("etiquetas de conversa: mesma lista, na mesma ordem, do bloco da migration 0033", () => {
+    const bloco = baseline.match(/'canonical_conversation_tags',\s*jsonb_build_array\(([\s\S]*?)\)/)?.[1] ?? "";
+    const doBanco = [...bloco.matchAll(/'([^']+)'/g)].map(([, tag]) => tag);
+    expect(doBanco).toHaveLength(8);
+    expect(ETIQUETAS_SEMEADAS["pt-BR"]).toEqual(doBanco);
   });
 
   it("funil: mesmo nome, mesmos slugs e nomes de `fn_seed_default_pipeline_for_org`", () => {
