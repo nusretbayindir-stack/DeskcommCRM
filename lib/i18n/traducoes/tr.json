@@ -11356,6 +11356,8 @@
   "{n}d": "{n}g",
   "{n}h": "{n}sa",
   "{n} h": "{n} sa",
+  "{segundos} s": "{segundos} sn",
+  "{minutos} min {segundos} s": "{minutos} dk {segundos} sn",
   "{quem} em {quando}": "{quem} · {quando}",
   "{tempo} em {etapa}": "{etapa} · {tempo}",
   "{usados} de {limite}": "{usados} / {limite}",

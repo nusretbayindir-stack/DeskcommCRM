@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { apiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
@@ -295,6 +295,51 @@ describe("tela de atualização — a rodada conta a disputa do banco", () => {
       screen.getByText(/Veritabanı ilk turda, çalışan sistemle çakışmadan tek seferde güncellendi\./),
     ).toBeInTheDocument();
     expect(screen.queryByText(/atualizou de uma vez/)).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * O relógio da espera fala o idioma da tela. Medido na atualização para a
+ * v1.88.7: "Bekleme süresi 1 min 56 s" — a frase em turco e as unidades em
+ * português, porque `formataEspera` as escrevia fora do dicionário.
+ */
+describe("tela de atualização — o relógio da espera", () => {
+  const AGORA = new Date("2026-10-30T22:32:00Z");
+
+  function esperando(segundos: number, locale?: "tr") {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(AGORA);
+    dadosVersao.atual = rodada({
+      status: "dispatched",
+      last_step: null,
+      dispatched_at: new Date(AGORA.getTime() - segundos * 1000).toISOString(),
+      rodada_do_banco: undefined,
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tela = (
+      <QueryClientProvider client={client}>
+        <UpdatePanel />
+      </QueryClientProvider>
+    );
+    render(locale ? <IdiomaProvider locale={locale}>{tela}</IdiomaProvider> : tela);
+    return screen.getByTestId("espera-decorrida").textContent;
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("em turco, minutos e segundos saem em turco", () => {
+    expect(esperando(116, "tr")).toBe("Bekleme süresi 1 dk 56 sn.");
+  });
+
+  it("em turco, menos de um minuto também", () => {
+    expect(esperando(43, "tr")).toBe("Bekleme süresi 43 sn.");
+  });
+
+  it("em português nada muda", () => {
+    expect(esperando(116)).toBe("Esperando há 1 min 56 s.");
+    expect(screen.getByTestId("espera-decorrida").textContent).not.toMatch(/dk|sn/);
   });
 });
 

@@ -726,7 +726,7 @@ function AguardandoOServidor({
       </p>
       {segundos !== null && (
         <p className="mt-3 text-sm tabular-nums text-muted-foreground" data-testid="espera-decorrida">
-          {t("Esperando há")} {formataEspera(segundos)}.
+          {t("Esperando há")} {formataEspera(segundos, t)}.
         </p>
       )}
       <p className="mt-3 text-sm text-muted-foreground">
@@ -736,11 +736,15 @@ function AguardandoOServidor({
   );
 }
 
-/** "43 segundos" / "2 min 05 s" — sem biblioteca, e sem virar "0:5". */
-function formataEspera(segundos: number): string {
-  if (segundos < 60) return `${segundos} s`;
-  const min = Math.floor(segundos / 60);
-  return `${min} min ${String(segundos % 60).padStart(2, "0")} s`;
+/**
+ * "43 s" / "2 min 05 s" — sem biblioteca, e sem virar "0:5". As unidades vêm
+ * do dicionário: em turco o relógio saía "1 min 56 s" no meio da frase turca.
+ */
+function formataEspera(segundos: number, t: (texto: string) => string): string {
+  if (segundos < 60) return t("{segundos} s").replace("{segundos}", String(segundos));
+  return t("{minutos} min {segundos} s")
+    .replace("{minutos}", String(Math.floor(segundos / 60)))
+    .replace("{segundos}", String(segundos % 60).padStart(2, "0"));
 }
 
 function BotaoAtualizar({

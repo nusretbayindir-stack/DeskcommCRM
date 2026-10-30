@@ -7436,6 +7436,8 @@ export const DICIONARIO: Traducoes = {
     es: " — avanza sola en cuanto el servidor empiece.",
   },
   "Esperando há": { es: "Esperando desde hace" },
+  "{segundos} s": { es: "{segundos} s" },
+  "{minutos} min {segundos} s": { es: "{minutos} min {segundos} s" },
   "Pode fechar esta página: o pedido já está registrado e não se perde.": {
     es: "Puedes cerrar esta página: la solicitud ya está registrada y no se pierde.",
   },
