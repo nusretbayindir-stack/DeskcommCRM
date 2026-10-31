@@ -27,6 +27,7 @@ import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
 import { activityLabel, actorLabel, actorShape } from "@/lib/leads/activity-vocabulary";
+import { motivoNoIdioma } from "@/lib/leads/motivo-no-idioma";
 import { soChavesAlteradas } from "@/lib/leads/custom-fields-so-diff";
 import { ConversationTagsEditor } from "./ConversationTagsEditor";
 import { ContactTagsEditor } from "./ContactTagsEditor";
@@ -1226,7 +1227,7 @@ export function CRMSidePanel({ conversation, recolhido = false, onAlternarRecolh
                   />
                   {t(activityLabel(a.type))}
                 </div>
-                {a.reason && <div className="mt-0.5 truncate text-muted-foreground">{t(a.reason)}</div>}
+                {a.reason && <div className="mt-0.5 truncate text-muted-foreground">{motivoNoIdioma(a.reason, t) ?? t(a.reason)}</div>}
                 <div className="text-muted-foreground">
                   {a.performed_by_name ?? t(actorLabel(a.actor_kind))} · {shortDate(a.performed_at, localeDaData)}
                 </div>

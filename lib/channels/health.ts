@@ -30,6 +30,10 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import type { Idioma } from "@/lib/i18n/idiomas";
+
 import { PROVIDERS_DE_MENSAGEM } from "./capabilities";
 import { ehNomeDeSessaoE2E } from "./sessoes-e2e";
 
@@ -95,8 +99,17 @@ export interface SaudeObservada {
  * `apelido` é como o operador chama esta conexão na tela. Entra no título porque
  * com dois números ligados "WhatsApp desconectado" não diz QUAL — e a primeira
  * pergunta de quem lê o aviso é exatamente essa.
+ *
+ * `idioma` é o da organização: a Central mostra a frase gravada, e a empresa
+ * turca lia o aviso em português. O que decide SE avisa não depende dele.
  */
-export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeConexao | null {
+export function avisoDaConexao(
+  saude: SaudeObservada,
+  apelido: string,
+  idioma: Idioma = "pt-BR",
+): AvisoDeConexao | null {
+  const frase = (texto: string, valores: Record<string, string> = {}): string =>
+    Object.entries(valores).reduce((t, [chave, valor]) => t.replace(`{${chave}}`, valor), texto);
   if (!saude.reachable) {
     // "Não deu para perguntar" tem DOIS motivos que pedem ações opostas, e
     // tratá-los igual foi o defeito medido: numa VPS real a chave do WAHA foi
@@ -112,9 +125,13 @@ export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeC
       return {
         kind: "channel_number_alert",
         severity: "critical",
-        title: `Conexão "${apelido}": o servidor de WhatsApp recusou a chave de acesso`,
-        body:
+        title: frase(traduzir('Conexão "{apelido}": o servidor de WhatsApp recusou a chave de acesso', idioma), {
+          apelido,
+        }),
+        body: traduzir(
           "Escanear o QR não resolve: a chave que o CRM usa para falar com o servidor de WhatsApp não confere com a que o servidor espera. Enquanto isso durar, nenhuma mensagem entra nem sai por NENHUMA conexão. Quem cuida do servidor precisa conferir a WAHA_API_KEY do .env e recriar o contêiner do WhatsApp.",
+          idioma,
+        ),
         episodio: "CREDENCIAL_RECUSADA",
       };
     }
@@ -126,7 +143,7 @@ export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeC
     return {
       kind: "channel_number_alert",
       severity: "warn",
-      title: `Não foi possível verificar a conexão "${apelido}"`,
+      title: frase(traduzir('Não foi possível verificar a conexão "{apelido}"', idioma), { apelido }),
       body: saude.detail,
       episodio: "UNREACHABLE",
     };
@@ -140,8 +157,10 @@ export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeC
     return {
       kind: "qr_rescan",
       severity: "critical",
-      title: `WhatsApp "${apelido}" desconectado — precisa escanear o QR de novo`,
-      body: "Enquanto isso não acontecer, nenhuma mensagem entra nem sai por esta conexão.",
+      title: frase(traduzir('WhatsApp "{apelido}" desconectado — precisa escanear o QR de novo', idioma), {
+        apelido,
+      }),
+      body: traduzir("Enquanto isso não acontecer, nenhuma mensagem entra nem sai por esta conexão.", idioma),
       episodio: status,
     };
   }
@@ -149,8 +168,8 @@ export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeC
   return {
     kind: "channel_number_alert",
     severity: "critical",
-    title: `WhatsApp "${apelido}" fora do ar (${status})`,
-    body: "Nenhuma mensagem entra nem sai por esta conexão até ela voltar.",
+    title: frase(traduzir('WhatsApp "{apelido}" fora do ar ({status})', idioma), { apelido, status }),
+    body: traduzir("Nenhuma mensagem entra nem sai por esta conexão até ela voltar.", idioma),
     episodio: status,
   };
 }
@@ -291,12 +310,16 @@ export async function sincronizarSaudeDaConexao(
   // (caiu por QR, agora está FAILED) avisa de novo — mudou o que fazer.
   if (jaEscalado === episodio) return "ja_avisado";
 
+  // A frase gravada é a que a Central mostra: no idioma da organização. A
+  // decisão acima não depende dele; só aqui, quando o aviso vai mesmo entrar.
+  const idioma = await idiomaDaOrgPeloSupabase(admin, sessao.organization_id);
+  const texto = avisoDaConexao(saude, apelido, idioma) ?? aviso;
   await admin.from("agent_inbox_items").insert({
     organization_id: sessao.organization_id,
     kind: aviso.kind,
     severity: aviso.severity,
-    title: aviso.title,
-    body: aviso.body,
+    title: texto.title,
+    body: texto.body,
     ref_kind: REF_KIND_SESSAO,
     ref_id: sessao.id,
   });

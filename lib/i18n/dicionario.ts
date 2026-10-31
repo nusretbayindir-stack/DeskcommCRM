@@ -7436,6 +7436,8 @@ export const DICIONARIO: Traducoes = {
     es: " — avanza sola en cuanto el servidor empiece.",
   },
   "Esperando há": { es: "Esperando desde hace" },
+  "{segundos} s": { es: "{segundos} s" },
+  "{minutos} min {segundos} s": { es: "{minutos} min {segundos} s" },
   "Pode fechar esta página: o pedido já está registrado e não se perde.": {
     es: "Puedes cerrar esta página: la solicitud ya está registrada y no se pierde.",
   },
@@ -12843,6 +12845,59 @@ export const DICIONARIO: Traducoes = {
   // novo e as duas razões que não dependem do nome do funil.
   "Veio de outro funil": { es: "Vino de otro embudo" },
   "Levado para outro funil": { es: "Movido a otro embudo" },
+  // O porquê da linha do tempo (lib/leads/motivo-no-idioma.ts): frases que o
+  // banco grava em português, com o dado no marcador.
+  "Levado para outro funil pelo roteador de intenção": {
+    es: "Movido a otro embudo por el enrutador de intención",
+  },
+  "Levado para outro funil pela automação": { es: "Movido a otro embudo por la automatización" },
+  "Movido de {de} para {para}": { es: "Movido de {de} a {para}" },
+  "Movido para {para}": { es: "Movido a {para}" },
+  " (a etapa «{etapa}» foi arquivada)": { es: " (la etapa «{etapa}» fue archivada)" },
+  "Nova objeção: {texto}": { es: "Nueva objeción: {texto}" },
+  "{n} novas objeções: {texto}": { es: "{n} nuevas objeciones: {texto}" },
+  "Novo compromisso: {texto}": { es: "Nuevo compromiso: {texto}" },
+  "{n} novos compromissos: {texto}": { es: "{n} nuevos compromisos: {texto}" },
+  "Próxima ação: {texto}": { es: "Próxima acción: {texto}" },
+  // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
+  "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
+    es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",
+  },
+  "Escanear o QR não resolve: a chave que o CRM usa para falar com o servidor de WhatsApp não confere com a que o servidor espera. Enquanto isso durar, nenhuma mensagem entra nem sai por NENHUMA conexão. Quem cuida do servidor precisa conferir a WAHA_API_KEY do .env e recriar o contêiner do WhatsApp.": {
+    es: "Escanear el QR no lo resuelve: la clave que el CRM usa para hablar con el servidor de WhatsApp no coincide con la que el servidor espera. Mientras dure, ningún mensaje entra ni sale por NINGUNA conexión. Quien cuida el servidor debe revisar la WAHA_API_KEY del .env y recrear el contenedor de WhatsApp.",
+  },
+  "Não foi possível verificar a conexão \"{apelido}\"": {
+    es: "No fue posible verificar la conexión \"{apelido}\"",
+  },
+  "WhatsApp \"{apelido}\" desconectado — precisa escanear o QR de novo": {
+    es: "WhatsApp \"{apelido}\" desconectado — hay que escanear el QR de nuevo",
+  },
+  "Enquanto isso não acontecer, nenhuma mensagem entra nem sai por esta conexão.": {
+    es: "Mientras eso no ocurra, ningún mensaje entra ni sale por esta conexión.",
+  },
+  "WhatsApp \"{apelido}\" fora do ar ({status})": {
+    es: "WhatsApp \"{apelido}\" fuera de servicio ({status})",
+  },
+  "Nenhuma mensagem entra nem sai por esta conexão até ela voltar.": {
+    es: "Ningún mensaje entra ni sale por esta conexión hasta que vuelva.",
+  },
+  // O aviso do circuito de saúde do número (lib/agent-engine/health/circuit.ts),
+  // gravado no idioma da organização.
+  "Número novo aguardando liberação (go-live)": {
+    es: "Número nuevo esperando liberación (go-live)",
+  },
+  "Saúde do número degradada — outbound em espera automática": {
+    es: "Salud del número degradada — envíos salientes en espera automática",
+  },
+  "Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o número estiver pronto para disparar.": {
+    es: "Número nuevo esperando liberación (go-live). Los envíos que inicia el sistema — seguimiento y cadencia de prospección — nacen en espera por seguridad: la cola los retiene, nada se pierde. RESPONDER a quien te escribió sigue funcionando normalmente. Resuelve este elemento cuando el número esté listo para enviar.",
+  },
+  "Bloqueios em {taxa} dos {total} últimos envios do número (limiar {limiar}). Outbound em espera automática — a fila retém, nada é perdido. Verifique o número (possível queima do WhatsApp) e resolva este item para retomar.": {
+    es: "Bloqueos en {taxa} de los {total} últimos envíos del número (umbral {limiar}). Envíos salientes en espera automática — la cola los retiene, nada se pierde. Verifica el número (posible bloqueo de WhatsApp) y resuelve este elemento para reanudar.",
+  },
+  "Taxa de resposta em {taxa} ({responderam} de {contatados} leads contatados responderam; piso {piso}). Outbound em espera automática — a fila retém. Verifique a abordagem/o número e resolva este item para retomar.": {
+    es: "Tasa de respuesta en {taxa} ({responderam} de {contatados} leads contactados respondieron; mínimo {piso}). Envíos salientes en espera automática — la cola los retiene. Verifica el enfoque/el número y resuelve este elemento para reanudar.",
+  },
   // A TELA que faltava para a troca de funil — menu do card e o diálogo.
   "Levar para outro funil": { es: "Llevar a otro embudo" },
   // ── Retomada como novo negócio (issue #1538) ──
