@@ -12868,6 +12868,42 @@ export const DICIONARIO: Traducoes = {
   "{tipo} — appointment_no_show": { es: "{tipo}" },
   // A aba da ficha do contato (app/app/contacts/[id]/_client.tsx); "LGPD" já existe acima.
   "Timeline": { es: "Cronología" },
+  // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
+  // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
+  "O assistente quis organizar um negócio de um funil que não é dele": {
+    es: "El asistente quiso organizar un negocio de un embudo que no es suyo",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", mas ele não cuida do funil onde o negócio está ({detalhe}). Ninguém mexeu no card. Se ele deveria cuidar desse funil, marque isso na configuração do assistente; se não, não há nada a fazer.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", pero no se encarga del embudo donde está el negocio ({detalhe}). Nadie movió la tarjeta. Si debería encargarse de ese embudo, márcalo en la configuración del asistente; si no, no hay nada que hacer.",
+  },
+  "O assistente quis marcar um negócio como perdido — e isso exige um motivo": {
+    es: "El asistente quiso marcar un negocio como perdido — y eso exige un motivo",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", que no seu funil é uma etapa de perda. Perder um negócio exige um motivo, e o motivo é a razão que quem está no negócio reconhece — o assistente não inventa uma. Ninguém mexeu no card: ele continua onde estava. Se o negócio realmente se perdeu, abra o card no funil, use \"Marcar como perdido\" e informe o motivo; se não, não há nada a fazer.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", que en tu embudo es una etapa de pérdida. Perder un negocio exige un motivo, y el motivo es la razón que reconoce quien está en el negocio — el asistente no inventa uno. Nadie movió la tarjeta: sigue donde estaba. Si el negocio realmente se perdió, abre la tarjeta en el embudo, usa \"Marcar como perdido\" e informa el motivo; si no, no hay nada que hacer.",
+  },
+  "O assistente quis mover um negócio — o funil exige campos antes": {
+    es: "El asistente quiso mover un negocio — el embudo exige campos antes",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", mas o seu funil exige o preenchimento de alguns campos antes de entrar nela. {detalhe} Ninguém mexeu no card: ele continua onde estava. Abra o negócio, preencha o que falta no dossiê e mova o card normalmente.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", pero tu embudo exige completar algunos campos antes de entrar en ella. {detalhe} Nadie movió la tarjeta: sigue donde estaba. Abre el negocio, completa lo que falta en el expediente y mueve la tarjeta normalmente.",
+  },
+  "Espelho de stage no CRM falhou — funil possivelmente inconsistente": {
+    es: "La sincronización de etapa con el CRM falló — embudo posiblemente inconsistente",
+  },
+  "lead_state avançou para \"{etapa}\" no harness, mas crm_move_lead_stage falhou ({motivo}: {detalhe}). Reconcilie o stage no CRM manualmente.": {
+    es: "lead_state avanzó a \"{etapa}\" en el harness, pero crm_move_lead_stage falló ({motivo}: {detalhe}). Reconcilia la etapa en el CRM manualmente.",
+  },
+  "nenhum funil liberado para este assistente": { es: "ningún embudo habilitado para este asistente" },
+  "o negócio está num funil que este assistente não cuida": {
+    es: "el negocio está en un embudo del que este asistente no se encarga",
+  },
+  "este assistente não cuida do funil onde o negócio está": {
+    es: "este asistente no se encarga del embudo donde está el negocio",
+  },
+  "a etapa de destino exige campos que o negócio não tem preenchidos": {
+    es: "la etapa de destino exige campos que el negocio no tiene completados",
+  },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",

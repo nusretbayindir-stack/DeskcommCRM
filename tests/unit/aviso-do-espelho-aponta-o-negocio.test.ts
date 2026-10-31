@@ -30,11 +30,16 @@ const CONTATO = "contato-1";
 const NEGOCIO = "negocio-1";
 const cfg = { supabase: {} as never } as never;
 
+/**
+ * Registra só a gravação do aviso. O idioma da organização também é lido por
+ * este `db` (U14), e sem linha ele cai no português — a ordem dos parâmetros
+ * do insert é o que estes testes conferem.
+ */
 function bancoQueRegistra() {
   const chamadas: Array<{ sql: string; params: unknown[] }> = [];
   const db = {
     query: async (sql: string, params: unknown[]) => {
-      chamadas.push({ sql, params });
+      if (/insert into agent_inbox_items/i.test(sql)) chamadas.push({ sql, params });
       return { rows: [] };
     },
   };

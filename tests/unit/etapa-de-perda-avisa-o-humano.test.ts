@@ -180,11 +180,13 @@ describe("as outras recusas continuam com o aviso delas", () => {
  * afirma sobre o que chega ao banco — o SQL com a guarda e os parâmetros dela.
  */
 describe("abrir o aviso na Central", () => {
+  // Registra só a gravação do aviso: o idioma da organização também é lido por
+  // este `db` (U14) e, sem linha, cai no português.
   function bancoQueRegistra() {
     const chamadas: Array<{ sql: string; params: unknown[] }> = [];
     const db = {
       query: async (sql: string, params: unknown[]) => {
-        chamadas.push({ sql, params });
+        if (/insert into agent_inbox_items/i.test(sql)) chamadas.push({ sql, params });
         return { rows: [] };
       },
     };
