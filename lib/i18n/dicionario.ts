@@ -12845,6 +12845,20 @@ export const DICIONARIO: Traducoes = {
   // novo e as duas razões que não dependem do nome do funil.
   "Veio de outro funil": { es: "Vino de otro embudo" },
   "Levado para outro funil": { es: "Movido a otro embudo" },
+  // O porquê da linha do tempo (lib/leads/motivo-no-idioma.ts): frases que o
+  // banco grava em português, com o dado no marcador.
+  "Levado para outro funil pelo roteador de intenção": {
+    es: "Movido a otro embudo por el enrutador de intención",
+  },
+  "Levado para outro funil pela automação": { es: "Movido a otro embudo por la automatización" },
+  "Movido de {de} para {para}": { es: "Movido de {de} a {para}" },
+  "Movido para {para}": { es: "Movido a {para}" },
+  " (a etapa «{etapa}» foi arquivada)": { es: " (la etapa «{etapa}» fue archivada)" },
+  "Nova objeção: {texto}": { es: "Nueva objeción: {texto}" },
+  "{n} novas objeções: {texto}": { es: "{n} nuevas objeciones: {texto}" },
+  "Novo compromisso: {texto}": { es: "Nuevo compromiso: {texto}" },
+  "{n} novos compromissos: {texto}": { es: "{n} nuevos compromisos: {texto}" },
+  "Próxima ação: {texto}": { es: "Próxima acción: {texto}" },
   // A TELA que faltava para a troca de funil — menu do card e o diálogo.
   "Levar para outro funil": { es: "Llevar a otro embudo" },
   // ── Retomada como novo negócio (issue #1538) ──

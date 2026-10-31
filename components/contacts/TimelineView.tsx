@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useTimeline } from "@/hooks/contacts/useTimeline";
 import type { TimelineItemView as TimelineItem } from "@/lib/types/contacts";
 import { activityLabel, actorName, actorShape } from "@/lib/leads/activity-vocabulary";
+import { motivoNoIdioma } from "@/lib/leads/motivo-no-idioma";
 
 interface Props {
   contactId: string;
@@ -128,7 +129,7 @@ export function TimelineView({ contactId, types }: Props) {
                 const Icon = ICON_MAP[it.source_module] ?? Gear;
                 const label = t(activityLabel(it.type));
                 const reasonTrim = (it.reason ?? "").trim();
-                const corpo = reasonTrim ? t(reasonTrim) : summarizePayload(it.payload);
+                const corpo = reasonTrim ? (motivoNoIdioma(reasonTrim, t) ?? t(reasonTrim)) : summarizePayload(it.payload);
                 const forma = actorShape(it.actor_kind ?? null);
                 const quem = actorName(
                   it.actor_kind ?? null,
