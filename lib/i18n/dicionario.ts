@@ -12859,6 +12859,23 @@ export const DICIONARIO: Traducoes = {
   "Novo compromisso: {texto}": { es: "Nuevo compromiso: {texto}" },
   "{n} novos compromissos: {texto}": { es: "{n} nuevos compromisos: {texto}" },
   "Próxima ação: {texto}": { es: "Próxima acción: {texto}" },
+  // O aviso do circuito de saúde do número (lib/agent-engine/health/circuit.ts),
+  // gravado no idioma da organização.
+  "Número novo aguardando liberação (go-live)": {
+    es: "Número nuevo esperando liberación (go-live)",
+  },
+  "Saúde do número degradada — outbound em espera automática": {
+    es: "Salud del número degradada — envíos salientes en espera automática",
+  },
+  "Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o número estiver pronto para disparar.": {
+    es: "Número nuevo esperando liberación (go-live). Los envíos que inicia el sistema — seguimiento y cadencia de prospección — nacen en espera por seguridad: la cola los retiene, nada se pierde. RESPONDER a quien te escribió sigue funcionando normalmente. Resuelve este elemento cuando el número esté listo para enviar.",
+  },
+  "Bloqueios em {taxa} dos {total} últimos envios do número (limiar {limiar}). Outbound em espera automática — a fila retém, nada é perdido. Verifique o número (possível queima do WhatsApp) e resolva este item para retomar.": {
+    es: "Bloqueos en {taxa} de los {total} últimos envíos del número (umbral {limiar}). Envíos salientes en espera automática — la cola los retiene, nada se pierde. Verifica el número (posible bloqueo de WhatsApp) y resuelve este elemento para reanudar.",
+  },
+  "Taxa de resposta em {taxa} ({responderam} de {contatados} leads contatados responderam; piso {piso}). Outbound em espera automática — a fila retém. Verifique a abordagem/o número e resolva este item para retomar.": {
+    es: "Tasa de respuesta en {taxa} ({responderam} de {contatados} leads contactados respondieron; mínimo {piso}). Envíos salientes en espera automática — la cola los retiene. Verifica el enfoque/el número y resuelve este elemento para reanudar.",
+  },
   // A TELA que faltava para a troca de funil — menu do card e o diálogo.
   "Levar para outro funil": { es: "Llevar a otro embudo" },
   // ── Retomada como novo negócio (issue #1538) ──

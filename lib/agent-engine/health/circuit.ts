@@ -34,6 +34,9 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type pg from 'pg';
 
 import type { Logger } from '../obs/logger';
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { traduzir } from '@/lib/i18n/dicionario';
+import type { Idioma } from '@/lib/i18n/idiomas';
 import { enforceHolds } from '../edge/crm/session-watchdog';
 import { HEALTH_DEFAULTS, type HealthKnobs } from './defaults';
 
@@ -165,35 +168,70 @@ async function computeSessionRates(
   };
 }
 
-/** Percentual legível para o diagnóstico (fora de qualquer linha com literal de saúde). */
-function pct(fraction: number): string {
-  return `${(fraction * 100).toFixed(0)}%`;
+/**
+ * Percentual legível para o diagnóstico (fora de qualquer linha com literal de saúde).
+ * Em turco o sinal vem antes do número ("%45").
+ */
+function pct(fraction: number, idioma: Idioma): string {
+  const n = (fraction * 100).toFixed(0);
+  return idioma === 'tr' ? `%${n}` : `${n}%`;
 }
 
-/** Texto do diagnóstico do inbox_item (pt-br; SÓ taxas/contagens — PII jamais). */
-function diagnosisBody(reason: HoldReason, rates: SessionRates, k: HealthKnobs): string {
+function preencher(modelo: string, valores: Record<string, string | number>): string {
+  return Object.entries(valores).reduce((texto, [chave, valor]) => texto.replace(`{${chave}}`, String(valor)), modelo);
+}
+
+/**
+ * Texto do diagnóstico do inbox_item, no idioma da organização (SÓ
+ * taxas/contagens — PII jamais). A tela mostra o que está gravado: em
+ * português ele sai byte a byte como antes.
+ */
+function diagnosisBody(reason: HoldReason, rates: SessionRates, k: HealthKnobs, idioma: Idioma): string {
   if (reason === 'go_live') {
-    return (
-      'Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up ' +
-      'e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. ' +
-      'RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o ' +
-      'número estiver pronto para disparar.'
+    return traduzir(
+      'Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o número estiver pronto para disparar.',
+      idioma,
     );
   }
   if (reason === 'block_rate') {
     const rate = rates.totalSends > 0 ? rates.blockedSends / rates.totalSends : 0;
-    return (
-      `Bloqueios em ${pct(rate)} dos ${rates.totalSends} últimos envios do número ` +
-      `(limiar ${pct(k.blockRateThreshold)}). Outbound em espera automática — a fila retém, nada é perdido. ` +
-      'Verifique o número (possível queima do WhatsApp) e resolva este item para retomar.'
+    return preencher(
+      traduzir(
+        'Bloqueios em {taxa} dos {total} últimos envios do número (limiar {limiar}). Outbound em espera automática — a fila retém, nada é perdido. Verifique o número (possível queima do WhatsApp) e resolva este item para retomar.',
+        idioma,
+      ),
+      { taxa: pct(rate, idioma), total: rates.totalSends, limiar: pct(k.blockRateThreshold, idioma) },
     );
   }
   const rate = rates.sentLeads > 0 ? rates.respondedLeads / rates.sentLeads : 0;
-  return (
-    `Taxa de resposta em ${pct(rate)} (${rates.respondedLeads} de ${rates.sentLeads} leads contatados ` +
-    `responderam; piso ${pct(k.responseRateFloor)}). Outbound em espera automática — a fila retém. ` +
-    'Verifique a abordagem/o número e resolva este item para retomar.'
+  return preencher(
+    traduzir(
+      'Taxa de resposta em {taxa} ({responderam} de {contatados} leads contatados responderam; piso {piso}). Outbound em espera automática — a fila retém. Verifique a abordagem/o número e resolva este item para retomar.',
+      idioma,
+    ),
+    {
+      taxa: pct(rate, idioma),
+      responderam: rates.respondedLeads,
+      contatados: rates.sentLeads,
+      piso: pct(k.responseRateFloor, idioma),
+    },
   );
+}
+
+/** Título e corpo do item da Central, no idioma da organização. */
+export function avisoDoNumero(
+  reason: HoldReason,
+  rates: SessionRates,
+  k: HealthKnobs,
+  idioma: Idioma,
+): { titulo: string; corpo: string } {
+  return {
+    titulo:
+      reason === 'go_live'
+        ? traduzir('Número novo aguardando liberação (go-live)', idioma)
+        : traduzir('Saúde do número degradada — outbound em espera automática', idioma),
+    corpo: diagnosisBody(reason, rates, k, idioma),
+  };
 }
 
 export interface HealthTickResult {
@@ -279,6 +317,11 @@ async function evaluateSession(
         [tenantId, channelSessionId, reason],
       );
       delta.held = 1;
+      // O aviso sai no idioma da organização. Lido pelo `client`, dentro da
+      // transação: ela segura o lock da linha de saúde, e uma segunda conexão
+      // pedida ao pool cheio esperaria por quem talvez espere este lock.
+      const idioma = await idiomaDaOrgPeloPg(client, tenantId);
+      const aviso = avisoDoNumero(reason, rates, k, idioma);
       // inbox item 1× por episódio: só cria se não há item aberto do número (dedup).
       const ins = await client.query(
         `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
@@ -290,10 +333,8 @@ async function evaluateSession(
         [
           tenantId,
           reason === 'go_live' ? 'info' : 'warn',
-          reason === 'go_live'
-            ? 'Número novo aguardando liberação (go-live)'
-            : 'Saúde do número degradada — outbound em espera automática',
-          diagnosisBody(reason, rates, k),
+          aviso.titulo,
+          aviso.corpo,
           HEALTH_HOLD_REF_KIND,
           channelSessionId,
         ],
