@@ -106,10 +106,12 @@ import {
   checkpointContentSchema,
   fecharOTurno,
   insertCheckpoint,
+  instrucaoDeIdiomaDoFechamento,
   parseCheckpointText,
   type CheckpointContent,
   type LeadCheckpointRow,
 } from "./abertura/checkpoint";
+import { idiomaDaOrgPeloPg } from "@/lib/ai/agents/idioma-da-org";
 import { buildOpeningMessage, ritualBlocks } from "./abertura/ritual";
 import { applySaveLeadNote, buildNotesIndexBlock, getLeadNoteBody } from './lead-notes';
 import { buildCompromissosBlock } from './compromissos-do-contato';
@@ -3634,6 +3636,8 @@ async function executarTurnoDoAgente(
               sourceModule: 'near-dup',
               sourceId: job?.id ?? null,
               ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+              // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+              ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
               reason: vetoReason('near_dup', 'duplicate_suppressed'),
               payload: {
                 gate: 'near_dup',
@@ -5540,6 +5544,11 @@ async function executarTurnoDoAgente(
     }
     // Uma correção antes de re-tentar o turno inteiro (`fecharOTurno`): o JSON
     // recusado volta ao modelo com o problema, numa 2ª chamada de fechamento.
+    // Os textos do fechamento no idioma da CONTA (U23, segundo assunto: numa
+    // conta em turco a próxima ação saía em português). `idiomaDaOrgPeloPg` não
+    // lança: sem leitura, vale o idioma do produto — e português não ganha
+    // mensagem nenhuma.
+    const fraseDoIdiomaDoFechamento = instrucaoDeIdiomaDoFechamento(await idiomaDaOrgPeloPg(pool, tenantId));
     const { content, resposta: closing } = await fecharOTurno({
       pedir: async (correcao) => {
         const chamada = await runModelCall(
@@ -5566,6 +5575,8 @@ async function executarTurnoDoAgente(
               ...openingTextOnly,
               ...responseMessages,
               ...(agendaAtual ? [{ role: 'user' as const, content: agendaAtual }] : []),
+              // O idioma vem ANTES: a correção tem de ficar colada na instrução.
+              ...(fraseDoIdiomaDoFechamento ? [{ role: 'user' as const, content: fraseDoIdiomaDoFechamento }] : []),
               { role: 'user', content: CHECKPOINT_INSTRUCTION },
               ...correcao,
             ],
@@ -5699,6 +5710,8 @@ async function executarTurnoDoAgente(
           // autoria justamente no evento mais "de IA" que existe.
           ...(closing.callId ? { evidence: { llm_call_ids: [closing.callId] } } : {}),
           ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+          // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+          ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
           reason: mudanca.reason,
           payload: {
             added_commitments: mudanca.addedCommitments,

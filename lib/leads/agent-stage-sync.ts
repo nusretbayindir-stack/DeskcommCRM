@@ -260,6 +260,9 @@ export async function sincronizaEstagioDoAgente(
       created_at: c.created_at,
       last_activity_at: c.last_activity_at,
     })),
+    // Preferência pelo card do funil do assistente (U23). O veto de escopo
+    // abaixo continua valendo quando ele não tem card aberto em funil seu.
+    { pipelinesDoAgente: input.escopoDeFunis ?? null },
   );
   if (!rota.routed) {
     return { moveu: false, motivo: rota.reason === "no_open_lead" ? "sem_negocio" : "ambiguo" };
