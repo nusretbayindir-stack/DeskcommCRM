@@ -3634,6 +3634,8 @@ async function executarTurnoDoAgente(
               sourceModule: 'near-dup',
               sourceId: job?.id ?? null,
               ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+              // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+              ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
               reason: vetoReason('near_dup', 'duplicate_suppressed'),
               payload: {
                 gate: 'near_dup',
@@ -5699,6 +5701,8 @@ async function executarTurnoDoAgente(
           // autoria justamente no evento mais "de IA" que existe.
           ...(closing.callId ? { evidence: { llm_call_ids: [closing.callId] } } : {}),
           ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+          // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+          ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
           reason: mudanca.reason,
           payload: {
             added_commitments: mudanca.addedCommitments,

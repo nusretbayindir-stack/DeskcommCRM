@@ -42,10 +42,27 @@ export type ActiveLeadResolution =
  */
 export function resolveActiveLeadForContact(
   candidates: LeadCandidate[],
-  opts: { defaultPipelineId?: string | null } = {},
+  opts: {
+    defaultPipelineId?: string | null;
+    /**
+     * Os funis do assistente que está falando (`agent_versions.pipeline_ids`).
+     *
+     * PREFERÊNCIA, não filtro: havendo negócio aberto nesses funis, a escolha
+     * fica entre eles — a nota do turno do Emlak vai para o card do Emlak, e não
+     * para o card mais recente de outro funil (U23, demo de 31/10/2026; a nota
+     * ainda renovava o `last_activity_at` do card errado e o erro se reforçava).
+     * Sem nenhum aberto neles, decide a regra de antes: filtrar transformaria
+     * "o único negócio está fora do escopo" em "não há negócio", e o veto
+     * `fora_do_escopo` — que explica ao dono — sumiria.
+     */
+    pipelinesDoAgente?: readonly string[] | null;
+  } = {},
 ): ActiveLeadResolution {
   assertMesmaOrg(candidates);
-  const abertos = candidates.filter((c) => c.status === "open");
+  const todosAbertos = candidates.filter((c) => c.status === "open");
+  const escopo = opts.pipelinesDoAgente ?? [];
+  const noFunilDoAgente = todosAbertos.filter((c) => escopo.includes(c.pipeline_id));
+  const abertos = noFunilDoAgente.length > 0 ? noFunilDoAgente : todosAbertos;
 
   if (abertos.length === 0) {
     return { routed: false, reason: "no_open_lead", candidateIds: [] };

@@ -245,6 +245,37 @@ describe("sincronizaEstagioDoAgente", () => {
 });
 
 /**
+ * U23 (demo de 31/10/2026): o contato tinha cards abertos em vários funis. O
+ * assistente andou de passo e o espelho escolheu o card MAIS RECENTE — de outro
+ * funil — e o veto de escopo barrou ("Ninguém mexeu no card"), enquanto o card do
+ * próprio funil do assistente ficava parado. O escopo agora é preferência na
+ * escolha; o veto continua para quando NÃO há card aberto no funil dele.
+ */
+describe("sincronizaEstagioDoAgente — escolhe o card do funil do assistente", () => {
+  beforeEach(() => vi.mocked(emitLeadActivity).mockClear());
+
+  const DO_ASSISTENTE = { ...LEAD, id: "lead-do-funil", pipeline_id: "pipe-1", last_activity_at: "2026-10-30T10:00:00Z" };
+  const DE_OUTRO_FUNIL = { ...LEAD, id: "lead-de-outro", pipeline_id: "pipe-2", last_activity_at: "2026-10-31T10:00:00Z" };
+
+  it("com card aberto no funil dele, move ESSE card, mesmo que outro seja mais recente", async () => {
+    const r = await sincronizaEstagioDoAgente(
+      fakeAdmin(cenario({ leads: { data: [DO_ASSISTENTE, DE_OUTRO_FUNIL], error: null } })),
+      { organizationId: ORG, contactId: CONTATO, passo: "negotiating", escopoDeFunis: ["pipe-1"] },
+    );
+    expect(r).toMatchObject({ moveu: true, motivo: "movido", leadId: "lead-do-funil" });
+  });
+
+  it("sem card aberto no funil dele, o veto de escopo continua explicando", async () => {
+    const r = await sincronizaEstagioDoAgente(
+      fakeAdmin(cenario({ leads: { data: [DE_OUTRO_FUNIL], error: null } })),
+      { organizationId: ORG, contactId: CONTATO, passo: "negotiating", escopoDeFunis: ["pipe-1"] },
+    );
+    expect(r).toMatchObject({ moveu: false, motivo: "fora_do_escopo", leadId: "lead-de-outro" });
+    expect(vi.mocked(emitLeadActivity)).not.toHaveBeenCalled();
+  });
+});
+
+/**
  * MOVER PELO ASSISTENTE TEM DE SER INDISTINGUÍVEL DE MOVER PELA MÃO.
  *
  * A atividade em `crm_lead_activities` é para humano ler; o `event_log` é o que
