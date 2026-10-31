@@ -40,6 +40,7 @@ import {
   type OrgLlmConfig,
   type OrigemDaChaveLlm,
 } from './credentials';
+import { enviosEmOrdemDeChegada } from './envios-em-ordem';
 import {
   AVISO_CORPO,
   AVISO_TITULO,
@@ -911,7 +912,9 @@ export async function runModelCall(db: pg.Pool, cfg: LlmEdgeConfig, input: RunMo
       system: prefix.system,
       messages: input.messages,
       abortSignal: input.abortSignal,
-      tools: guardServiceTools(prefix.tools),
+      // Envios na ordem em que o modelo os escreveu, por FORA da guarda: ver
+      // `envios-em-ordem.ts`.
+      tools: enviosEmOrdemDeChegada(guardServiceTools(prefix.tools)),
       stopWhen:
         input.maxSteps === undefined
           ? undefined
