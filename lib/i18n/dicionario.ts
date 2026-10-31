@@ -12859,6 +12859,15 @@ export const DICIONARIO: Traducoes = {
   "Novo compromisso: {texto}": { es: "Nuevo compromiso: {texto}" },
   "{n} novos compromissos: {texto}": { es: "{n} nuevos compromisos: {texto}" },
   "Próxima ação: {texto}": { es: "Próxima acción: {texto}" },
+  // O código interno do agendamento (`_handler.ts`: "{tipo} — appointment_*")
+  // sai da tela; fica o nome do tipo (U26).
+  "{tipo} — appointment_scheduled": { es: "{tipo}" },
+  "{tipo} — appointment_rescheduled": { es: "{tipo}" },
+  "{tipo} — appointment_cancelled": { es: "{tipo}" },
+  "{tipo} — appointment_completed": { es: "{tipo}" },
+  "{tipo} — appointment_no_show": { es: "{tipo}" },
+  // A aba da ficha do contato (app/app/contacts/[id]/_client.tsx); "LGPD" já existe acima.
+  "Timeline": { es: "Cronología" },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",

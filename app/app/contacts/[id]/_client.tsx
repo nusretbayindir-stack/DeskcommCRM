@@ -376,8 +376,8 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [] }: Props) 
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">{t("Visão geral")}</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          {isAdmin && <TabsTrigger value="lgpd">LGPD</TabsTrigger>}
+          <TabsTrigger value="timeline">{t("Timeline")}</TabsTrigger>
+          {isAdmin && <TabsTrigger value="lgpd">{t("LGPD")}</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">

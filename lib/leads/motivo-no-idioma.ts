@@ -37,6 +37,22 @@ const ROTULOS_DO_CHECKPOINT: Frase[] = [
   { padrao: /^Próxima ação: (?<texto>.+)$/s, frase: (t) => t("Próxima ação: {texto}") },
 ];
 
+/**
+ * O porquê do agendamento (`app/api/v1/agenda/agendamentos/_handler.ts`):
+ * "{nome do tipo} — {código da atividade}". O código é interno e o título da
+ * linha já diz o que aconteceu ("Agendamento marcado"), então a tradução deixa
+ * só o nome do tipo (U26). Em português a chave volta igual: byte a byte.
+ * O nome do tipo pode ter travessão dentro ("Keşif — Ekin Yapı"), por isso a
+ * família é conferida na frase INTEIRA, antes do corte pelo travessão.
+ */
+const AGENDAMENTO: Frase[] = [
+  { padrao: /^(?<tipo>.+) — appointment_scheduled$/s, frase: (t) => t("{tipo} — appointment_scheduled") },
+  { padrao: /^(?<tipo>.+) — appointment_rescheduled$/s, frase: (t) => t("{tipo} — appointment_rescheduled") },
+  { padrao: /^(?<tipo>.+) — appointment_cancelled$/s, frase: (t) => t("{tipo} — appointment_cancelled") },
+  { padrao: /^(?<tipo>.+) — appointment_completed$/s, frase: (t) => t("{tipo} — appointment_completed") },
+  { padrao: /^(?<tipo>.+) — appointment_no_show$/s, frase: (t) => t("{tipo} — appointment_no_show") },
+];
+
 /** O sufixo que `stage-operations.ts` acrescenta quando a etapa de origem foi arquivada. */
 const ETAPA_ARQUIVADA = /^(?<frase>.+) \(a etapa «(?<etapa>.+)» foi arquivada\)$/s;
 
@@ -68,6 +84,9 @@ function trocaDeEtapa(texto: string, t: T): string | null {
  * dado — aí quem chama traduz o texto inteiro: `motivoNoIdioma(r, t) ?? t(r)`.
  */
 export function motivoNoIdioma(motivo: string, t: T): string | null {
+  const agendamento = pelaLista(motivo, AGENDAMENTO, t);
+  if (agendamento !== null) return agendamento;
+
   // O motivo livre que a API anexa depois do travessão fica como veio.
   const travessao = motivo.indexOf(" — ");
   const cabeca = travessao === -1 ? motivo : motivo.slice(0, travessao);

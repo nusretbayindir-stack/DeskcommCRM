@@ -57,6 +57,9 @@ export function vetoReason(gate: string, code: string): string {
     budget: "Não enviei: orçamento de IA esgotado",
     warmup: "Não enviei: número ainda em aquecimento",
     promise: "Não enviei: a mensagem prometia algo que não posso garantir",
+    // O detector semântico de promessa (U26): sem esta linha caía no genérico e o
+    // nome interno da regra ("semantic_promise") ia para a tela do dono.
+    semantic_promise: "Não enviei: a mensagem prometia algo que não posso garantir",
     internal_vocabulary:
       "Não enviei: a mensagem usava termos internos do sistema que o cliente não deve ler",
     near_dup:
