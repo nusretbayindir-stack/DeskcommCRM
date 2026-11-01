@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
 import type { MotivoSemRemetente } from "./remetente-do-lembrete";
+
+const INSTRUCAO_DO_AVISO =
+  "O lembrete não foi enviado nem marcado como enviado. Confira a reserva na Agenda e o canal em Configurações → Tipos de agendamento. Corrigido dentro do prazo, a próxima rodada tenta enviar; avisos vencidos não são reenviados.";
 
 export const REF_REMETENTE_LEMBRETE = "agenda_reminder_sender";
 const explicacoes: Record<MotivoSemRemetente, string> = {
@@ -45,8 +50,11 @@ export async function atualizarAvisoDeRemetente(
     }
     const { data, error: leitura } = await filtro().maybeSingle();
     if (leitura) throw leitura;
-    const body = `${explicacoes[motivo]} O lembrete não foi enviado nem marcado como enviado. Confira a reserva na Agenda e o canal em Configurações → Tipos de agendamento. Corrigido dentro do prazo, a próxima rodada tenta enviar; avisos vencidos não são reenviados.`;
-    const valores = { title: "Lembrete aguardando definição do canal", body };
+    // No idioma da organização (U14): a Central mostra a frase gravada. O item é
+    // achado por `ref_kind`/`ref_id`, nunca pelo título — traduzir não abre outro.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, org);
+    const body = `${traduzir(explicacoes[motivo], idioma)} ${traduzir(INSTRUCAO_DO_AVISO, idioma)}`;
+    const valores = { title: traduzir("Lembrete aguardando definição do canal", idioma), body };
     const { error } = data
       ? await admin
           .from("agent_inbox_items")
