@@ -12940,6 +12940,35 @@ export const DICIONARIO: Traducoes = {
   // O aviso da resposta a caso obsoleto (lib/atendimento/aviso-caso-obsoleto.ts);
   // o corpo já estava acima, com a tela.
   "Resposta registrada; atendimento mudou": { es: "Respuesta registrada; la atención cambió" },
+  // O aviso do envio travado (app/api/v1/cron/recover-stuck-messages/route.ts).
+  "Uma resposta não chegou ao cliente": { es: "Una respuesta no llegó al cliente" },
+  "{n} respostas não chegaram ao cliente": { es: "{n} respuestas no llegaron al cliente" },
+  "Ficaram mais de {minutos} minutos aguardando envio e foram marcadas como falha. Verifique se a conexão do WhatsApp está ativa e se o worker de envio está rodando. Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.": {
+    es: "Pasaron más de {minutos} minutos esperando el envío y se marcaron como fallidas. Verifica que la conexión de WhatsApp esté activa y que el worker de envío esté en marcha. No se reenvió nada automáticamente: reenviar sin conocer la causa puede mandar el mismo mensaje dos veces.",
+  },
+  // O aviso do lembrete sem canal (lib/agenda/aviso-de-remetente.ts).
+  "Lembrete aguardando definição do canal": { es: "Recordatorio a la espera de definir el canal" },
+  "O lembrete não foi enviado nem marcado como enviado. Confira a reserva na Agenda e o canal em Configurações → Tipos de agendamento. Corrigido dentro do prazo, a próxima rodada tenta enviar; avisos vencidos não são reenviados.": {
+    es: "El recordatorio no se envió ni se marcó como enviado. Revisa la reserva en la Agenda y el canal en Configuración → Tipos de cita. Si se corrige a tiempo, la próxima ronda intenta enviarlo; los avisos vencidos no se reenvían.",
+  },
+  "Há mais de um canal disponível e a reserva não indica qual usar.": {
+    es: "Hay más de un canal disponible y la reserva no indica cuál usar.",
+  },
+  "Não há canal de mensagem disponível.": { es: "No hay ningún canal de mensajes disponible." },
+  "O canal indicado está desconectado, pausado, arquivado ou não pode enviar mensagens.": {
+    es: "El canal indicado está desconectado, en pausa, archivado o no puede enviar mensajes.",
+  },
+  "A conversa da reserva não corresponde a este contato e organização, ou está sem canal.": {
+    es: "La conversación de la reserva no corresponde a este contacto y organización, o no tiene canal.",
+  },
+  "O canal indicado não pode enviar texto livre fora da janela de atendimento.": {
+    es: "El canal indicado no puede enviar texto libre fuera de la ventana de atención.",
+  },
+  "Não foi possível consultar o canal da reserva. A próxima rodada tentará novamente.": {
+    es: "No se pudo consultar el canal de la reserva. La próxima ronda lo intentará de nuevo.",
+  },
+  // O aviso do snooze vencido (app/api/v1/cron/snooze-watcher/route.ts).
+  "Lead não respondeu no prazo": { es: "El lead no respondió a tiempo" },
   // A escalação de manipulação do agente (lib/agent-engine/guardrails/jailbreak/classifier.ts).
   "Possível manipulação do agente — revisar conversa": {
     es: "Posible manipulación del agente — revisar la conversación",

@@ -48,6 +48,8 @@ import {
 } from "@/lib/messaging/falha-de-entrega";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { autorizaCron } from "@/lib/auth/cron-auth";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
 
@@ -180,18 +182,25 @@ export async function recoverStuckMessages(
     // que trava não é uma mensagem, é o envio inteiro — N avisos idênticos
     // enterrariam a Central de avisos exatamente no dia em que ela mais precisa
     // ser lida.
+    //
+    // No idioma da organização (U14): a Central mostra a frase gravada. Leitura
+    // que falha vale português (`idiomaDaOrgPeloSupabase` não lança) — o aviso
+    // sai de qualquer jeito.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, orgId);
     const { error: inboxErr } = await admin.from("agent_inbox_items").insert({
       organization_id: orgId,
       kind: "message_send_stuck",
       severity: "critical",
       title:
         n === 1
-          ? "Uma resposta não chegou ao cliente"
-          : `${n} respostas não chegaram ao cliente`,
-      body:
-        `Ficaram mais de ${STUCK_AFTER_MS / 60000} minutos aguardando envio e foram marcadas como falha. ` +
-        `Verifique se a conexão do WhatsApp está ativa e se o worker de envio está rodando. ` +
-        `Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.`,
+          ? traduzir("Uma resposta não chegou ao cliente", idioma)
+          : traduzir("{n} respostas não chegaram ao cliente", idioma).replace("{n}", () => String(n)),
+      body: traduzir(
+        "Ficaram mais de {minutos} minutos aguardando envio e foram marcadas como falha. " +
+          "Verifique se a conexão do WhatsApp está ativa e se o worker de envio está rodando. " +
+          "Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.",
+        idioma,
+      ).replace("{minutos}", () => String(STUCK_AFTER_MS / 60000)),
       ref_kind: "conversation",
       ref_id: mensagens[0]?.conversation_id ?? null,
     });
