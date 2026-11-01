@@ -11598,5 +11598,9 @@
   "Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.": "«{nome}» adlı bir akışınız zaten var. Onu açın veya başka bir adla yükleyin.",
   "Interessado": "İlgileniyor",
   "Sem interesse": "İlgilenmiyor",
-  "sim": "evet"
+  "sim": "evet",
+  "Decida sobre 1 negócio parado — a sugestão de retomar venceu": "1 durmuş fırsat için karar verin — yeniden iletişim önerisinin süresi doldu",
+  "Decida sobre {n} negócios parados — a sugestão de retomar venceu": "{n} durmuş fırsat için karar verin — yeniden iletişim önerisinin süresi doldu",
+  "Um negócio esfriou e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": "Bir fırsat soğudu ve kişiyle yeniden iletişim önerisi süresi içinde yanıtlanmadı. Devam ediyormuş gibi görünmesin diye panodan çıkarıldı. Yeniden iletişime geçmek de kapatmak da bir karardır; olduğu gibi bırakmak karar değildir.",
+  "{n} negócios esfriaram e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": "{n} fırsat soğudu ve kişiyle yeniden iletişim önerileri süresi içinde yanıtlanmadı. Devam ediyormuş gibi görünmesinler diye panodan çıkarıldılar. Yeniden iletişime geçmek de kapatmak da bir karardır; olduğu gibi bırakmak karar değildir."
 }

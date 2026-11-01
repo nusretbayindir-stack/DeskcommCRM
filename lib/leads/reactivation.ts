@@ -1,7 +1,42 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
+
+/**
+ * O título e o corpo do aviso "decida sobre N negócios parados", no idioma da
+ * organização. Um literal por forma (singular, plural) — o dicionário é
+ * consultado por chave fixa, nunca por variável — e o número entra depois, numa
+ * passada só. Em português o resultado é byte a byte o texto de antes.
+ */
+export function textoDoAvisoDeReativacaoVencida(
+  vencidas: number,
+  idioma: Idioma,
+): { title: string; body: string } {
+  const n = String(vencidas);
+  if (vencidas === 1) {
+    return {
+      title: traduzir("Decida sobre 1 negócio parado — a sugestão de retomar venceu", idioma),
+      body: traduzir(
+        "Um negócio esfriou e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.",
+        idioma,
+      ),
+    };
+  }
+  return {
+    title: traduzir("Decida sobre {n} negócios parados — a sugestão de retomar venceu", idioma).replace(
+      "{n}",
+      () => n,
+    ),
+    body: traduzir(
+      "{n} negócios esfriaram e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.",
+      idioma,
+    ).replace("{n}", () => n),
+  };
+}
 
 /**
  * A PROPOSTA DE REATIVAÇÃO: nasce quando o negócio esfria, vence sozinha, e o
@@ -190,18 +225,19 @@ export async function venceReativacoes(
       .eq("status", "open")
       .maybeSingle();
     if (!jaAberto) {
+      // A Central mostra a frase GRAVADA: ela sai no idioma da organização (U14).
+      // Lido só aqui, quando o item vai mesmo nascer; a leitura não lança e cai
+      // no português se falhar — o aviso nunca deixa de sair por causa dela.
+      const idioma = await idiomaDaOrgPeloSupabase(admin, organizationId);
+      const { title, body } = textoDoAvisoDeReativacaoVencida(r.vencidas, idioma);
       const { data: item } = await admin
         .from("agent_inbox_items")
         .insert({
           organization_id: organizationId,
           kind: "reactivation_expired",
           severity: "warn",
-          title: `Decida sobre ${r.vencidas} ${r.vencidas === 1 ? "negócio parado" : "negócios parados"} — a sugestão de retomar venceu`,
-          body:
-            `${r.vencidas === 1 ? "Um negócio esfriou" : `${r.vencidas} negócios esfriaram`} e a sugestão de ` +
-            `retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não ` +
-            `parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como ` +
-            `está é a única que não é.`,
+          title,
+          body,
           ref_kind: "organization",
           ref_id: organizationId,
         })

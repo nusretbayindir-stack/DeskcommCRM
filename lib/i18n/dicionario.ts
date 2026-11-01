@@ -12924,6 +12924,19 @@ export const DICIONARIO: Traducoes = {
   "Não é preciso fazer nada: as respostas saem sozinhas na abertura.": {
     es: "No hace falta hacer nada: las respuestas salen solas en la apertura.",
   },
+  // O aviso de reativação vencida (lib/leads/reactivation.ts): uma chave por forma.
+  "Decida sobre 1 negócio parado — a sugestão de retomar venceu": {
+    es: "Decide sobre 1 negocio detenido — la sugerencia de retomar venció",
+  },
+  "Decida sobre {n} negócios parados — a sugestão de retomar venceu": {
+    es: "Decide sobre {n} negocios detenidos — la sugerencia de retomar venció",
+  },
+  "Um negócio esfriou e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": {
+    es: "Un negocio se enfrió y la sugerencia de retomar el contacto quedó sin respuesta hasta el plazo. Salió del tablero para no parecer en curso. Retomar o cerrar: ambas son decisiones; dejarlo como está es la única que no lo es.",
+  },
+  "{n} negócios esfriaram e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": {
+    es: "{n} negocios se enfriaron y la sugerencia de retomar el contacto quedó sin respuesta hasta el plazo. Salieron del tablero para no parecer en curso. Retomar o cerrar: ambas son decisiones; dejarlo como está es la única que no lo es.",
+  },
   // O aviso da resposta a caso obsoleto (lib/atendimento/aviso-caso-obsoleto.ts);
   // o corpo já estava acima, com a tela.
   "Resposta registrada; atendimento mudou": { es: "Respuesta registrada; la atención cambió" },
