@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { useActivityReport } from "@/hooks/reports/useActivityReport";
 import type {
@@ -85,6 +86,7 @@ function SerieDiaria({ dias }: { dias: LinhaDoDia[] }) {
 
 export function ActivityReportClient() {
   const t = useT();
+  const tagDoIdioma = useTagDeIdioma();
   const [dias, setDias] = useState<number>(7);
   const { data, isLoading, isError } = useActivityReport(dias);
 
@@ -227,7 +229,7 @@ export function ActivityReportClient() {
                     className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-md border border-border p-2 text-sm"
                   >
                     <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
-                      {quandoLegivel(i.quando, "pt-BR")}
+                      {quandoLegivel(i.quando, tagDoIdioma)}
                     </span>
                     <MarcadorDeAtor forma={i.atorForma} />
                     <span className="font-medium">{i.rotulo}</span>
