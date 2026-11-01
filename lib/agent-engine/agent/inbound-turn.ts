@@ -236,6 +236,7 @@ import { corposEnviadosDesdeUltimaInbound } from './memoria-envio';
 import { emitAgentActivityForContact } from '@/lib/leads/agent-activity';
 import { resolveActiveLeadForContact, type LeadCandidate } from '@/lib/leads/active-lead';
 import { aplicaDestinoDaIntencao, funisDeProdutoDoRoteador } from './destino-da-intencao';
+import { alinhaPassoAoCardNovo } from './passo-do-card-novo';
 import { recalculaScoreDoLead } from '@/lib/leads/score-writer';
 import {
   JAILBREAK_ESCALATION_LEVEL,
@@ -2496,6 +2497,28 @@ async function executarTurnoDoAgente(
         ...(destino.origemId === undefined ? {} : { origem: destino.origemId }),
         ...(destino.cloneId === undefined ? {} : { clone: destino.cloneId }),
       });
+      // O card A MAIS em outro funil de produto começa no passo DELE (U25): o
+      // passo do agente é por contato e só anda para a frente, então o card novo
+      // ficava parado atrás do passo que o contato já tinha no outro produto.
+      // ANTES do turno do agente, que lê o `lead_state` logo abaixo. A
+      // transferência (`transferido`) não entra: lá o negócio é o mesmo.
+      if (destino.status === 'card_adicional' && destino.cloneId) {
+        try {
+          const passo = await alinhaPassoAoCardNovo(deps.crmCfg.supabase, pool, {
+            organizationId: tenantId,
+            contactId: leadId,
+            cardId: destino.cloneId,
+          });
+          runLog.info('passo do contato alinhado ao card novo', { clone: destino.cloneId, ...passo });
+        } catch (err) {
+          // Nunca derruba a resposta ao lead: o pior caso é o de antes (o card
+          // novo parado atrás do passo antigo).
+          runLog.warn('passo do contato não alinhado ao card novo', {
+            error: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+            clone: destino.cloneId,
+          });
+        }
+      }
     } catch (err) {
       // Nunca derruba a resposta ao lead por causa do destino do card.
       //
