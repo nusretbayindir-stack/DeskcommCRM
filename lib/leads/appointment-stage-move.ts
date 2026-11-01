@@ -36,6 +36,14 @@ export interface ResultadoDoMovimentoDeAgendamento {
     | "transicao_nao_mapeada"
     | "sem_etapa_mapeada"
     | "ja_esta_la"
+    /**
+     * O card já está DEPOIS da etapa de agendamento (`position` maior): num
+     * funil com etapa aberta após a do horário ("Keşif randevusu" → "Teklif
+     * verildi"), um segundo agendamento puxava de volta o card que já estava
+     * na proposta. Mesma régua do espelho do agente (`card_a_frente` de
+     * `agent-stage-sync.ts`): o agendamento só leva o card para a frente.
+     */
+    | "card_a_frente"
     | "lead_nao_encontrado"
     | "lead_fechado"
     | "conflito_humano"
@@ -102,7 +110,7 @@ export async function moverLeadParaEtapaDeAgendamento(
 
   const { data: etapaData, error: erroEtapa } = await admin
     .from("crm_stages")
-    .select("id, name, is_won, is_lost")
+    .select("id, name, is_won, is_lost, position")
     .eq("pipeline_id", leadRow.pipeline_id)
     .eq("slug", slugAlvo)
     .eq("is_archived", false)
@@ -119,7 +127,7 @@ export async function moverLeadParaEtapaDeAgendamento(
   if (!etapa && slugAlvo.includes("-")) {
     const { data: etapaLegada, error: erroLegada } = await admin
       .from("crm_stages")
-      .select("id, name, is_won, is_lost")
+      .select("id, name, is_won, is_lost, position")
       .eq("pipeline_id", leadRow.pipeline_id)
       .eq("slug", slugAlvo.replace(/-/g, "_"))
       .eq("is_archived", false)
@@ -144,10 +152,37 @@ export async function moverLeadParaEtapaDeAgendamento(
     name: string;
     is_won?: boolean | null;
     is_lost?: boolean | null;
+    position?: number | string | null;
   };
 
   if (leadRow.stage_id === etapaRow.id) {
     return { moveu: false, motivo: "ja_esta_la" };
+  }
+
+  // A etapa ONDE O CARD ESTÁ: o nome enfeita o texto da timeline e a
+  // `position` decide se o agendamento ainda leva o card para a frente. Erro
+  // descartado de propósito (mesmo raciocínio de `agent-stage-sync.ts` e
+  // `handoff-stage-move.ts`): sem a leitura, vale a regra de antes — uma
+  // leitura que falha não trava o agendamento.
+  const { data: origem } = await admin
+    .from("crm_stages")
+    .select("name, position")
+    .eq("id", leadRow.stage_id)
+    .maybeSingle();
+
+  // ── O AGENDAMENTO SÓ LEVA O CARD PARA A FRENTE (U27) ────────────────────────
+  //
+  // `position` chega como `numeric` do Postgres (texto no PostgREST). Sem as
+  // duas posições, a regra de antes.
+  const posicaoDoAlvo = posicao(etapaRow.position);
+  const posicaoDoCard = posicao((origem as { position?: unknown } | null)?.position);
+  if (posicaoDoAlvo !== null && posicaoDoCard !== null && posicaoDoAlvo < posicaoDoCard) {
+    logger.info("[appointment-stage-move] card já está depois da etapa de agendamento; fica", {
+      lead_id: leadRow.id,
+      organization_id: input.organizationId,
+      transicao: input.transicao,
+    });
+    return { moveu: false, motivo: "card_a_frente" };
   }
 
   // ── A RÉGUA DE CAMPOS OBRIGATÓRIOS (issue #1536) ────────────────────────────
@@ -178,14 +213,6 @@ export async function moverLeadParaEtapaDeAgendamento(
     });
     return { moveu: false, motivo: "campos_obrigatorios", detalhe };
   }
-
-  // Nome da origem só enfeita o texto da timeline — erro descartado de
-  // propósito, mesmo raciocínio de `agent-stage-sync.ts` e `handoff-stage-move.ts`.
-  const { data: origem } = await admin
-    .from("crm_stages")
-    .select("name")
-    .eq("id", leadRow.stage_id)
-    .maybeSingle();
 
   const serviceOrigin = await observeServiceOrigin(admin, input.organizationId, leadRow.contact_id);
   const { data: atualizadas, error: erroUpdate } = await admin
@@ -255,4 +282,14 @@ export async function moverLeadParaEtapaDeAgendamento(
   }
 
   return { moveu: true, motivo: "movido" };
+}
+
+/** `crm_stages.position` é `numeric`: número no PostgREST, texto em outros caminhos. */
+function posicao(v: unknown): number | null {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
