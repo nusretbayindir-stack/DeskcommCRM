@@ -106,10 +106,12 @@ import {
   checkpointContentSchema,
   fecharOTurno,
   insertCheckpoint,
+  instrucaoDeIdiomaDoFechamento,
   parseCheckpointText,
   type CheckpointContent,
   type LeadCheckpointRow,
 } from "./abertura/checkpoint";
+import { idiomaDaOrgPeloPg } from "@/lib/ai/agents/idioma-da-org";
 import { buildOpeningMessage, ritualBlocks } from "./abertura/ritual";
 import { applySaveLeadNote, buildNotesIndexBlock, getLeadNoteBody } from './lead-notes';
 import { buildCompromissosBlock } from './compromissos-do-contato';
@@ -234,6 +236,7 @@ import { corposEnviadosDesdeUltimaInbound } from './memoria-envio';
 import { emitAgentActivityForContact } from '@/lib/leads/agent-activity';
 import { resolveActiveLeadForContact, type LeadCandidate } from '@/lib/leads/active-lead';
 import { aplicaDestinoDaIntencao, funisDeProdutoDoRoteador } from './destino-da-intencao';
+import { alinhaPassoAoCardNovo } from './passo-do-card-novo';
 import { recalculaScoreDoLead } from '@/lib/leads/score-writer';
 import {
   JAILBREAK_ESCALATION_LEVEL,
@@ -2494,6 +2497,28 @@ async function executarTurnoDoAgente(
         ...(destino.origemId === undefined ? {} : { origem: destino.origemId }),
         ...(destino.cloneId === undefined ? {} : { clone: destino.cloneId }),
       });
+      // O card A MAIS em outro funil de produto começa no passo DELE (U25): o
+      // passo do agente é por contato e só anda para a frente, então o card novo
+      // ficava parado atrás do passo que o contato já tinha no outro produto.
+      // ANTES do turno do agente, que lê o `lead_state` logo abaixo. A
+      // transferência (`transferido`) não entra: lá o negócio é o mesmo.
+      if (destino.status === 'card_adicional' && destino.cloneId) {
+        try {
+          const passo = await alinhaPassoAoCardNovo(deps.crmCfg.supabase, pool, {
+            organizationId: tenantId,
+            contactId: leadId,
+            cardId: destino.cloneId,
+          });
+          runLog.info('passo do contato alinhado ao card novo', { clone: destino.cloneId, ...passo });
+        } catch (err) {
+          // Nunca derruba a resposta ao lead: o pior caso é o de antes (o card
+          // novo parado atrás do passo antigo).
+          runLog.warn('passo do contato não alinhado ao card novo', {
+            error: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+            clone: destino.cloneId,
+          });
+        }
+      }
     } catch (err) {
       // Nunca derruba a resposta ao lead por causa do destino do card.
       //
@@ -3634,6 +3659,8 @@ async function executarTurnoDoAgente(
               sourceModule: 'near-dup',
               sourceId: job?.id ?? null,
               ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+              // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+              ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
               reason: vetoReason('near_dup', 'duplicate_suppressed'),
               payload: {
                 gate: 'near_dup',
@@ -5540,6 +5567,11 @@ async function executarTurnoDoAgente(
     }
     // Uma correção antes de re-tentar o turno inteiro (`fecharOTurno`): o JSON
     // recusado volta ao modelo com o problema, numa 2ª chamada de fechamento.
+    // Os textos do fechamento no idioma da CONTA (U23, segundo assunto: numa
+    // conta em turco a próxima ação saía em português). `idiomaDaOrgPeloPg` não
+    // lança: sem leitura, vale o idioma do produto — e português não ganha
+    // mensagem nenhuma.
+    const fraseDoIdiomaDoFechamento = instrucaoDeIdiomaDoFechamento(await idiomaDaOrgPeloPg(pool, tenantId));
     const { content, resposta: closing } = await fecharOTurno({
       pedir: async (correcao) => {
         const chamada = await runModelCall(
@@ -5566,6 +5598,8 @@ async function executarTurnoDoAgente(
               ...openingTextOnly,
               ...responseMessages,
               ...(agendaAtual ? [{ role: 'user' as const, content: agendaAtual }] : []),
+              // O idioma vem ANTES: a correção tem de ficar colada na instrução.
+              ...(fraseDoIdiomaDoFechamento ? [{ role: 'user' as const, content: fraseDoIdiomaDoFechamento }] : []),
               { role: 'user', content: CHECKPOINT_INSTRUCTION },
               ...correcao,
             ],
@@ -5699,6 +5733,8 @@ async function executarTurnoDoAgente(
           // autoria justamente no evento mais "de IA" que existe.
           ...(closing.callId ? { evidence: { llm_call_ids: [closing.callId] } } : {}),
           ...(agentConfig?.agentId ? { agentId: agentConfig.agentId } : {}),
+          // Os funis de quem fala: a nota vai para o card do funil dele (U23).
+          ...(agentConfig ? { pipelineIds: agentConfig.pipelineIds } : {}),
           reason: mudanca.reason,
           payload: {
             added_commitments: mudanca.addedCommitments,

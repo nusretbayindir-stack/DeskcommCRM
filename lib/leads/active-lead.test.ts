@@ -204,3 +204,91 @@ describe("resolveActiveLeadForContact — tenancy", () => {
     ).not.toThrow();
   });
 });
+
+/**
+ * O funil de QUEM está falando (medido no demo de 31/10/2026, U23).
+ *
+ * O contato tinha negócios abertos em três funis (Oto galeri, Emlak, İnşaat).
+ * O assistente do Emlak respondeu e a nota do turno caiu no card do Oto galeri —
+ * só porque ele era o mais recentemente ativo. E a própria nota renovava o
+ * `last_activity_at` desse card (trigger da 0079), então o erro se reforçava a
+ * cada turno.
+ *
+ * O escopo é PREFERÊNCIA, não filtro: sem nenhum aberto no funil do assistente,
+ * a regra de antes decide. Filtrar transformaria "o único negócio está fora do
+ * escopo" em "não há negócio", e o veto `fora_do_escopo` (que explica ao dono)
+ * nunca mais apareceria.
+ */
+describe("resolveActiveLeadForContact — o funil do assistente que está falando", () => {
+  const EMLAK = "pipe-emlak";
+  const GALERI = "pipe-galeri";
+  const DEMO = "pipe-demo";
+
+  it("prefere o negócio no funil do assistente, mesmo que outro seja mais recente", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "galeri", pipeline_id: GALERI, last_activity_at: "2026-10-31T18:44:00.000Z" }),
+        lead({ id: "emlak", pipeline_id: EMLAK, last_activity_at: "2026-10-30T12:57:00.000Z" }),
+      ],
+      { defaultPipelineId: DEMO, pipelinesDoAgente: [EMLAK] },
+    );
+    expect(r).toEqual({ routed: true, leadId: "emlak" });
+  });
+
+  it("o funil do assistente vence a preferência pelo pipeline default", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "no-default", pipeline_id: DEFAULT_PIPE, last_activity_at: "2026-10-31T18:00:00.000Z" }),
+        lead({ id: "emlak", pipeline_id: EMLAK, last_activity_at: "2026-10-30T12:57:00.000Z" }),
+      ],
+      { defaultPipelineId: DEFAULT_PIPE, pipelinesDoAgente: [EMLAK] },
+    );
+    expect(r).toEqual({ routed: true, leadId: "emlak" });
+  });
+
+  it("dois abertos no funil do assistente: vence o mais recente DELES, não o de fora", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "emlak-velho", pipeline_id: EMLAK, last_activity_at: "2026-10-29T10:00:00.000Z" }),
+        lead({ id: "emlak-novo", pipeline_id: EMLAK, last_activity_at: "2026-10-30T10:00:00.000Z" }),
+        lead({ id: "galeri", pipeline_id: GALERI, last_activity_at: "2026-10-31T10:00:00.000Z" }),
+      ],
+      { defaultPipelineId: DEMO, pipelinesDoAgente: [EMLAK, DEMO] },
+    );
+    expect(r).toEqual({ routed: true, leadId: "emlak-novo" });
+  });
+
+  it("nenhum aberto no funil do assistente: decide como antes (o mais recente)", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "galeri", pipeline_id: GALERI, last_activity_at: "2026-10-31T10:00:00.000Z" }),
+        lead({ id: "emlak", pipeline_id: EMLAK, last_activity_at: "2026-10-30T10:00:00.000Z" }),
+      ],
+      { defaultPipelineId: DEMO, pipelinesDoAgente: [DEMO] },
+    );
+    expect(r).toEqual({ routed: true, leadId: "galeri" });
+  });
+
+  it("escopo vazio não muda a decisão de antes", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "default-antigo", last_activity_at: "2026-07-10T10:00:00.000Z" }),
+        lead({ id: "fora-recente", pipeline_id: OUTRO_PIPE, last_activity_at: "2026-07-24T10:00:00.000Z" }),
+      ],
+      { defaultPipelineId: DEFAULT_PIPE, pipelinesDoAgente: [] },
+    );
+    expect(r).toEqual({ routed: true, leadId: "default-antigo" });
+  });
+
+  it("empate dentro do funil do assistente continua ambíguo (não chuta)", () => {
+    const r = resolveActiveLeadForContact(
+      [
+        lead({ id: "emlak-1", pipeline_id: EMLAK, last_activity_at: "2026-10-30T10:00:00.000Z" }),
+        lead({ id: "emlak-2", pipeline_id: EMLAK, last_activity_at: "2026-10-30T10:00:00.000Z" }),
+        lead({ id: "galeri", pipeline_id: GALERI, last_activity_at: "2026-10-31T10:00:00.000Z" }),
+      ],
+      { defaultPipelineId: DEMO, pipelinesDoAgente: [EMLAK] },
+    );
+    expect(r).toEqual({ routed: false, reason: "ambiguous_open_leads", candidateIds: ["emlak-1", "emlak-2"] });
+  });
+});

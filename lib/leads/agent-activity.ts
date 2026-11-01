@@ -30,6 +30,14 @@ export interface AgentActivityInput {
    * `agentId` na decisão: quando os dois vierem, quem agiu foi a pessoa.
    */
   usuarioId?: string | null;
+  /**
+   * Os funis do assistente que está falando (`agentConfig.pipelineIds`).
+   *
+   * Com eles, a linha vai para o card aberto num desses funis, quando houver —
+   * e não para o card mais recente de outro funil (U23). Ausente (quem chama
+   * fora de um turno de assistente), a regra de antes decide.
+   */
+  pipelineIds?: readonly string[] | null;
   payload?: Record<string, unknown>;
 }
 
@@ -67,7 +75,10 @@ export async function emitAgentActivityForContact(
     [organizationId],
   );
 
-  const alvo = resolveActiveLeadForContact(rows, { defaultPipelineId: defaults[0]?.id ?? null });
+  const alvo = resolveActiveLeadForContact(rows, {
+    defaultPipelineId: defaults[0]?.id ?? null,
+    pipelinesDoAgente: input.pipelineIds ?? null,
+  });
 
   if (!alvo.routed) {
     await pool.query(

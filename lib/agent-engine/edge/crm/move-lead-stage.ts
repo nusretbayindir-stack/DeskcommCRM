@@ -27,6 +27,13 @@ export type MirrorReason =
   | 'not_configured'
   | 'human_conflict'
   /**
+   * A etapa do passo vem ANTES da etapa do card (`card_a_frente` do sync): o
+   * passo do contato ficou atrás do card — o card novo de outro produto
+   * recomeçou o passo (U25), ou um humano levou o card adiante. Warn-only: o
+   * card fica, ninguém errou, e o passo alcança o card ao avançar.
+   */
+  | 'card_a_frente'
+  /**
    * O negócio está num funil que este agente não cuida (spec 17 passo 3).
    *
    * ⚠️ FORA de MIRROR_WARN_ONLY, de propósito. É estado legítimo do produto —
@@ -82,6 +89,7 @@ export type MirrorResult =
 export const MIRROR_WARN_ONLY: ReadonlySet<MirrorReason> = new Set<MirrorReason>([
   'not_configured',
   'human_conflict',
+  'card_a_frente',
 ]);
 
 /** O aviso que vai para a Central quando o espelho recusa — `null` = warn-only. */
@@ -405,6 +413,10 @@ export async function mirrorLeadStageToCrm(
       conflito_humano: {
         reason: 'human_conflict',
         detail: 'um humano moveu o card durante a operação — a decisão dele prevalece',
+      },
+      card_a_frente: {
+        reason: 'card_a_frente',
+        detail: 'a etapa do passo vem antes da etapa do card — o card fica onde está',
       },
       falha_de_escrita: {
         reason: 'crm_error',

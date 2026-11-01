@@ -22,6 +22,7 @@ import {
   guardServiceEffect,
 } from "@/lib/atendimento/fronteira-server";
 import { extrairJsonDoTexto } from "@/lib/agent-engine/texto/extrair-json-do-texto";
+import type { Idioma } from "@/lib/i18n/idiomas";
 
 import type { Queryable } from "../../queue/queue";
 import {
@@ -104,6 +105,36 @@ export const CHECKPOINT_INSTRUCTION =
   'perguntando, a próxima ação é o que fazer COM a resposta quando ela chegar. ' +
   DECLARACAO_INSTRUCTION +
   ' Sem texto fora do JSON.';
+
+/**
+ * O idioma dos TEXTOS do fechamento, quando a conta não é em português.
+ *
+ * `CHECKPOINT_INSTRUCTION` é português e não diz em que língua escrever; numa
+ * conta em turco o modelo devolvia `next_action` em português ou misturado
+ * ("Aguardar resposta de Nusret sobre ilçe, metrekare…", demo de 31/10/2026).
+ * Esses textos vão para a linha do tempo do negócio, a próxima ação do quadro e
+ * o resumo da passagem para humano — leitura do dono, na língua da conta.
+ *
+ * Mensagem À PARTE, e não emenda na instrução: a instrução continua byte a byte
+ * (é o marcador dos testes e do recorte do #636), e conta em português não ganha
+ * mensagem nenhuma (`null`).
+ */
+// `Record<Idioma, …>` de propósito: quando um idioma passar a aparecer na tela,
+// o typecheck exige a frase dele aqui.
+const IDIOMA_DOS_TEXTOS_DO_FECHAMENTO: Record<Idioma, string | null> = {
+  "pt-BR": null,
+  es: "espanhol (español)",
+  tr: "turco (Türkçe)",
+};
+
+export function instrucaoDeIdiomaDoFechamento(idioma: Idioma): string | null {
+  const nome = IDIOMA_DOS_TEXTOS_DO_FECHAMENTO[idioma];
+  if (nome === null || nome === undefined) return null;
+  return (
+    `Escreva os textos do JSON (commitments, objections, next_action, rolling_summary) em ${nome}: ` +
+    "é o idioma de quem lê o painel desta conta. Os nomes dos campos e os valores fixos continuam como estão."
+  );
+}
 
 export async function insertCheckpoint(
   db: Queryable,
