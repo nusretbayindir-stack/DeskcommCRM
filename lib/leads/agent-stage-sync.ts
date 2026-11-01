@@ -35,6 +35,14 @@ export interface EstagioCandidato {
    * decide — nunca o NOME da etapa, que é do tenant e muda.
    */
   is_lost?: boolean | null;
+  /** Etapa de GANHO (`crm_stages.is_won`): fecha de qualquer ponto do funil. */
+  is_won?: boolean | null;
+  /**
+   * A ordem da etapa no funil (`crm_stages.position`). Opcional como `is_lost`:
+   * sem ela (candidato montado à mão, linha sem a coluna), a guarda de
+   * `card_a_frente` não tem o que comparar e vale a regra de antes.
+   */
+  position?: number | null;
 }
 
 export type DestinoDoAgente =
@@ -79,7 +87,18 @@ export type DestinoDoAgente =
    * cima, entrando pela porta do dado velho. Quem arrasta vê o card e decide; o
    * agente não vê o que mudou desde a primeira perda.
    */
-  | { move: false; motivo: "perda_sem_motivo"; passo: string };
+  | { move: false; motivo: "perda_sem_motivo"; passo: string }
+  /**
+   * A etapa do passo vem ANTES da etapa onde o card está (pela `position`).
+   *
+   * O passo do agente é por contato e só anda para a frente; o card é por
+   * negócio. Os dois descasam quando o card novo de outro produto recomeça o
+   * passo do contato (U25, `passo-do-card-novo.ts`) ou quando um humano leva o
+   * card adiante — e aí "ir para a etapa do passo" levaria o card para trás. O
+   * card fica onde está: ninguém errou, e o passo alcança o card ao avançar.
+   * Ganho fecha de qualquer ponto; perda tem a regra dela (acima).
+   */
+  | { move: false; motivo: "card_a_frente"; passo: string };
 
 /**
  * Para onde o negócio vai quando o agente avança para `passo`.
@@ -107,6 +126,16 @@ export function resolveDestinoDoAgente(
   // perda anterior de um negócio reaberto (ver `perda_sem_motivo` acima).
   const veredito = decideMotivoDaPerda({ etapaDeDestino: alvo });
   if (!veredito.ok) return { move: false, motivo: "perda_sem_motivo", passo };
+  // Nunca para trás (ver `card_a_frente`). Ganho fecha de qualquer ponto.
+  const atual = estagios.find((e) => e.id === estagioAtualId);
+  if (
+    !alvo.is_won &&
+    typeof alvo.position === "number" &&
+    typeof atual?.position === "number" &&
+    alvo.position < atual.position
+  ) {
+    return { move: false, motivo: "card_a_frente", passo };
+  }
   return { move: true, stageId: alvo.id, stageName: alvo.name };
 }
 
@@ -184,6 +213,11 @@ export interface ResultadoDaSincronizacao {
      * da #917 com outro nome.
      */
     | "campos_obrigatorios"
+    /**
+     * A etapa do passo vem antes da etapa do card (ver `DestinoDoAgente`).
+     * Estado legítimo, do primeiro grupo: o card não anda e ninguém errou.
+     */
+    | "card_a_frente"
     | "falha_de_escrita"
     | "indisponivel";
   leadId?: string;
@@ -295,7 +329,9 @@ export async function sincronizaEstagioDoAgente(
     // `is_lost` entra porque a decisão de perda (#917) é sobre esta coluna: sem
     // ela, etapa de perda é indistinguível de etapa comum e o agente escreveria a
     // etapa que o banco recusa — recusa que chega ao worker como falha de escrita.
-    .select("id, name, agent_stage_hint, is_archived, is_lost, is_won")
+    // `position` é a guarda de `card_a_frente`: sem ela o agente levaria o card
+    // para uma etapa anterior quando o passo do contato está atrás do card.
+    .select("id, name, agent_stage_hint, is_archived, is_lost, is_won, position")
     .eq("pipeline_id", lead.pipeline_id);
   // Mesmo motivo do SELECT acima: sem esta linha, banco fora = pipeline sem
   // hint nenhum = "sem_mapeamento", e o incidente se disfarça de configuração.
