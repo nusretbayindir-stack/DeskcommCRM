@@ -12924,6 +12924,19 @@ export const DICIONARIO: Traducoes = {
   "Não é preciso fazer nada: as respostas saem sozinhas na abertura.": {
     es: "No hace falta hacer nada: las respuestas salen solas en la apertura.",
   },
+  // O aviso da resposta a caso obsoleto (lib/atendimento/aviso-caso-obsoleto.ts);
+  // o corpo já estava acima, com a tela.
+  "Resposta registrada; atendimento mudou": { es: "Respuesta registrada; la atención cambió" },
+  // A escalação de manipulação do agente (lib/agent-engine/guardrails/jailbreak/classifier.ts).
+  "Possível manipulação do agente — revisar conversa": {
+    es: "Posible manipulación del agente — revisar la conversación",
+  },
+  "A última mensagem deste lead foi sinalizada com risco de jailbreak/injeção (nível: {nivel}) e, no MESMO turno, o agente tentou uma promessa fora da tabela do playbook. Revise a conversa: o padrão sugere tentativa de manipulação para arrancar oferta indevida.": {
+    es: "El último mensaje de este lead fue marcado con riesgo de jailbreak/inyección (nivel: {nivel}) y, en el MISMO turno, el agente intentó una promesa fuera de la tabla del playbook. Revisa la conversación: el patrón sugiere un intento de manipulación para arrancar una oferta indebida.",
+  },
+  nenhum: { es: "ninguno" },
+  baixo: { es: "bajo" },
+  alto: { es: "alto" },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",
