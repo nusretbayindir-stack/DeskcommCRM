@@ -42,6 +42,9 @@ function dublePool(rowCount = 1) {
   const executados: Executado[] = [];
   const db = {
     query: vi.fn(async (sql: string, params?: unknown[]) => {
+      // O idioma da organização (U14) é lido antes do aviso: sem linha, cai no
+      // português. Fica fora de `executados`, que é o que o aviso grava.
+      if (/from organizations/i.test(sql)) return { rows: [], rowCount: 0 };
       executados.push({ sql, params: params ?? [] });
       return { rows: [], rowCount };
     }),

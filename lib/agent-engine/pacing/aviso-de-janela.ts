@@ -45,6 +45,12 @@
  * clone que ainda não a aplicou. Quem distingue este aviso dos outros é o
  * `ref_kind`, que é texto livre.
  */
+import type pg from 'pg';
+
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { traduzir } from '@/lib/i18n/dicionario';
+import type { Idioma } from '@/lib/i18n/idiomas';
+
 import type { Queryable } from '../queue/queue';
 
 /** O `ref_kind` que identifica este aviso — a chave de dedup e de resolução. */
@@ -67,18 +73,35 @@ export interface AvisoDeJanelaInput {
   domingoDesligado: boolean;
 }
 
+/** Preenche os marcadores `{chave}` numa passada só; `$` no valor não vira padrão. */
+function preencher(frase: string, valores: Record<string, string>): string {
+  return frase.replace(/\{(\w+)\}/g, (marca, chave: string) => valores[chave] ?? marca);
+}
+
 /**
- * Abre o aviso de "as respostas estão esperando a janela abrir", uma vez por
- * canal enquanto durar o silêncio. Devolve quantos itens criou (0 = já havia um
- * aberto para este canal).
- *
- * Fire-and-forget no chamador: falha de telemetria nunca pode derrubar um turno
- * que já decidiu o que fazer com a mensagem do cliente.
+ * A janela como o dono a lê. `7h-22h` é a grafia do português; nos outros
+ * idiomas sai `07:00–22:00`, que se lê igual em qualquer um. Fora desse
+ * formato, fica como veio.
  */
-export async function avisarJanelaFechada(
-  db: Queryable,
-  input: AvisoDeJanelaInput,
-): Promise<number> {
+function janelaNoIdioma(janela: string, idioma: Idioma): string {
+  if (idioma === 'pt-BR') return janela;
+  const horas = /^(\d{1,2})h-(\d{1,2})h$/.exec(janela);
+  if (horas === null) return janela;
+  const hh = (h: string) => `${h.padStart(2, '0')}:00`;
+  return `${hh(horas[1]!)}–${hh(horas[2]!)}`;
+}
+
+/**
+ * O título e o corpo do aviso, no idioma da organização (U14): a Central mostra
+ * a frase gravada, e a empresa turca lia o aviso em português. Cada ramo tem o
+ * seu literal; a janela, o fuso e a hora entram por marcador. Em português o
+ * texto fica byte a byte como era. Os nomes da tela citados no corpo são os do
+ * idioma: em turco, o botão "Gönderim koruması" e a chave "Pazar günleri gönder".
+ */
+export function textoDoAvisoDeJanela(
+  input: Pick<AvisoDeJanelaInput, 'abertura' | 'janela' | 'timezone' | 'domingoDesligado'>,
+  idioma: Idioma,
+): { title: string; body: string } {
   // `sv-SE` e não `pt-BR`: o corpo do aviso é PERSISTIDO, e o produto tem duas
   // línguas — uma data gravada em português apareceria assim para quem escolheu
   // espanhol, e é o que `tests/unit/i18n-a-data-segue-o-idioma.test.ts` reprova.
@@ -89,15 +112,51 @@ export async function avisarJanelaFechada(
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(input.abertura);
+  const valores = { janela: janelaNoIdioma(input.janela, idioma), fuso: input.timezone, quando };
 
   const porque = input.domingoDesligado
-    ? `Este número está com **envio aos domingos desligado**, e a janela de horário é ${input.janela} ` +
-      `(fuso ${input.timezone}).`
-    : `A janela de envio deste número é ${input.janela} (fuso ${input.timezone}), e agora está fechada.`;
+    ? traduzir(
+        'Este número está com **envio aos domingos desligado**, e a janela de horário é {janela} (fuso {fuso}).',
+        idioma,
+      )
+    : traduzir('A janela de envio deste número é {janela} (fuso {fuso}), e agora está fechada.', idioma);
 
   const oQueFazer = input.domingoDesligado
-    ? 'Se quiser que o agente responda aos domingos, ligue "Enviar aos domingos" em Conexões › Anti-ban.'
-    : 'Não é preciso fazer nada: as respostas saem sozinhas na abertura.';
+    ? traduzir(
+        'Se quiser que o agente responda aos domingos, ligue "Enviar aos domingos" em Conexões › Anti-ban.',
+        idioma,
+      )
+    : traduzir('Não é preciso fazer nada: as respostas saem sozinhas na abertura.', idioma);
+
+  const meio = traduzir(
+    'Quem escrever agora recebe resposta a partir de {quando}. Nenhuma mensagem se perde — os turnos ficam na fila e saem na abertura.',
+    idioma,
+  );
+
+  return {
+    title: traduzir('As respostas da IA estão esperando a janela de envio abrir', idioma),
+    body: preencher(`${porque} ${meio} ${oQueFazer}`, valores),
+  };
+}
+
+/**
+ * Abre o aviso de "as respostas estão esperando a janela abrir", uma vez por
+ * canal enquanto durar o silêncio. Devolve quantos itens criou (0 = já havia um
+ * aberto para este canal).
+ *
+ * Fire-and-forget no chamador: falha de telemetria nunca pode derrubar um turno
+ * que já decidiu o que fazer com a mensagem do cliente.
+ */
+export async function avisarJanelaFechada(
+  // O pool do turno, como no `insertInboxItem`: o mesmo `db` lê o idioma
+  // (`idiomaDaOrgPeloPg`), que pede o `query` do `pg`, não o `Queryable` mínimo.
+  db: Pick<pg.Pool, 'query'>,
+  input: AvisoDeJanelaInput,
+): Promise<number> {
+  // O idioma da organização. Nunca lança: com a leitura fora, o aviso sai em
+  // português, mas sai — o silêncio invisível é o defeito que este arquivo conserta.
+  const idioma = await idiomaDaOrgPeloPg(db, input.tenantId);
+  const { title, body } = textoDoAvisoDeJanela(input, idioma);
 
   const { rowCount } = await db.query(
     `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
@@ -112,9 +171,8 @@ export async function avisarJanelaFechada(
      )`,
     [
       input.tenantId,
-      'As respostas da IA estão esperando a janela de envio abrir',
-      `${porque} Quem escrever agora recebe resposta a partir de ${quando}. ` +
-        `Nenhuma mensagem se perde — os turnos ficam na fila e saem na abertura. ${oQueFazer}`,
+      title,
+      body,
       REF_KIND_JANELA,
       input.channelSessionId,
     ],

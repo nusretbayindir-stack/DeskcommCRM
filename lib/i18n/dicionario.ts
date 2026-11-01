@@ -12904,6 +12904,26 @@ export const DICIONARIO: Traducoes = {
   "a etapa de destino exige campos que o negócio não tem preenchidos": {
     es: "la etapa de destino exige campos que el negocio no tiene completados",
   },
+  // O aviso de janela de envio fechada (lib/agent-engine/pacing/aviso-de-janela.ts),
+  // gravado no idioma da organização (U14). Cada idioma cita os nomes da SUA tela.
+  "As respostas da IA estão esperando a janela de envio abrir": {
+    es: "Las respuestas de la IA están esperando a que abra la ventana de envío",
+  },
+  "Este número está com **envio aos domingos desligado**, e a janela de horário é {janela} (fuso {fuso}).": {
+    es: "Este número tiene el **envío los domingos desactivado**, y la ventana de horario es {janela} (zona horaria {fuso}).",
+  },
+  "A janela de envio deste número é {janela} (fuso {fuso}), e agora está fechada.": {
+    es: "La ventana de envío de este número es {janela} (zona horaria {fuso}), y ahora está cerrada.",
+  },
+  "Quem escrever agora recebe resposta a partir de {quando}. Nenhuma mensagem se perde — os turnos ficam na fila e saem na abertura.": {
+    es: "Quien escriba ahora recibe respuesta a partir de {quando}. Ningún mensaje se pierde — los turnos quedan en la cola y salen en la apertura.",
+  },
+  "Se quiser que o agente responda aos domingos, ligue \"Enviar aos domingos\" em Conexões › Anti-ban.": {
+    es: "Si quieres que el agente responda los domingos, activa \"Enviar los domingos\" en Conexiones › \"Protección de envío\".",
+  },
+  "Não é preciso fazer nada: as respostas saem sozinhas na abertura.": {
+    es: "No hace falta hacer nada: las respuestas salen solas en la apertura.",
+  },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",
