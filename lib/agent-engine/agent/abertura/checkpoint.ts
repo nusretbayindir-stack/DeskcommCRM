@@ -169,7 +169,9 @@ export async function insertCheckpoint(
 /**
  * O fechamento veio fora do contrato. `problemas` diz O QUE falhou — caminho e
  * código de cada problema do Zod, ou a ausência de JSON —, nunca o texto do
- * modelo, que pode carregar PII da conversa: é o que vai para o log.
+ * modelo, que pode carregar PII da conversa: é o que vai para o log. No
+ * `invalid_type` ele diz também o FORMATO (`formatoDoTipoErrado`): o tipo
+ * esperado, o que veio e os nomes dos campos do objeto — nenhum valor.
  * `paraOModelo` acrescenta os nomes dos campos que não existem e só volta ao
  * próprio modelo, na correção (`fecharOTurno`).
  */
@@ -182,6 +184,65 @@ export class FechamentoRecusado extends Error {
     super(message);
     this.name = 'FechamentoRecusado';
   }
+}
+
+/** O tipo de um valor do JSON: o NOME do tipo, nunca o valor. */
+function tipoDoValor(valor: unknown): string {
+  if (valor === null) return 'null';
+  if (Array.isArray(valor)) return 'array';
+  return typeof valor;
+}
+
+function objetoSimples(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
+}
+
+/**
+ * Nome de campo que pode ir para o log: forma de identificador, curto. Uma
+ * "chave" com espaço ou comprida é TEXTO que o modelo pôs no lugar do nome — e
+ * texto do modelo pode carregar PII da conversa.
+ */
+const NOME_DE_CAMPO = /^[\p{L}_][\p{L}\p{N}_-]{0,39}$/u;
+const MAX_CAMPOS_NO_LOG = 12;
+
+function nomesDosCampos(objeto: Record<string, unknown>): string {
+  const nomes = Object.keys(objeto);
+  const vistos = nomes
+    .slice(0, MAX_CAMPOS_NO_LOG)
+    .map((nome) => (NOME_DE_CAMPO.test(nome) ? nome : '(nome fora do padrão)'));
+  const resto = nomes.length - vistos.length;
+  return (vistos.join(', ') || '(nenhum)') + (resto > 0 ? ` e mais ${resto}` : '');
+}
+
+/**
+ * O FORMATO do que veio no lugar errado — para o log separar as hipóteses.
+ *
+ * ⚠️ Medido em produção (01/11/2026, conta em turco, `claude-sonnet-5`): 9 de 14
+ * turnos com o 1º fechamento recusado, quase sempre em
+ * `declaracao.intencoes.0.o_que: invalid_type`. Só `caminho: código` não diz se
+ * o campo SUMIU (nome traduzido) ou veio com OUTRO TIPO — e os consertos são
+ * diferentes. Aqui: o tipo esperado, o que veio ("ausente" quando a chave não
+ * existe) e os nomes dos campos do objeto onde está o erro. Valor, nunca.
+ *
+ * O tipo que veio é lido do JSON bruto pelo caminho do Zod, e não da mensagem
+ * dele: a mensagem é texto do locale do Zod, o caminho é dado.
+ */
+function formatoDoTipoErrado(bruto: unknown, caminho: readonly PropertyKey[], esperado: string): string {
+  let pai: unknown = undefined;
+  let atual: unknown = bruto;
+  let achou = true;
+  for (const passo of caminho) {
+    pai = atual;
+    if (typeof atual === 'object' && atual !== null && Object.hasOwn(atual, passo)) {
+      atual = (atual as Record<PropertyKey, unknown>)[passo];
+    } else {
+      achou = false;
+      break;
+    }
+  }
+  const veio = achou ? tipoDoValor(atual) : 'ausente';
+  const campos = caminho.length > 0 && objetoSimples(pai) ? `; campos do objeto: ${nomesDosCampos(pai)}` : '';
+  return ` (esperado ${esperado}, veio ${veio}${campos})`;
 }
 
 /**
@@ -200,7 +261,12 @@ export function parseCheckpointText(text: string): CheckpointContent {
   const parsed = checkpointContentSchema.safeParse(bruto);
   if (!parsed.success) {
     const onde = (i: (typeof parsed.error.issues)[number]) => `${i.path.join('.') || '(raiz)'}: ${i.code}`;
-    const issues = parsed.error.issues.map(onde).join('; ');
+    // O formato entra SÓ no log (`problemas` e a mensagem); `paraOModelo` segue
+    // como foi medido (14 de 14, ver `correcaoDoFechamento`) — o conserto de
+    // verdade é escolhido depois de ler este log, não antes.
+    const issues = parsed.error.issues
+      .map((i) => (i.code === 'invalid_type' ? onde(i) + formatoDoTipoErrado(bruto, i.path, i.expected) : onde(i)))
+      .join('; ');
     const paraOModelo = parsed.error.issues
       .map((i) =>
         i.code === 'unrecognized_keys' ? `${onde(i)} (campos que não existem: ${i.keys.join(', ')})` : onde(i),
