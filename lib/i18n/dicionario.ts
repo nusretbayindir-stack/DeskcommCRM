@@ -12937,6 +12937,21 @@ export const DICIONARIO: Traducoes = {
   nenhum: { es: "ninguno" },
   baixo: { es: "bajo" },
   alto: { es: "alto" },
+  // O aviso de chamada perdida (lib/wacalls/motivo-da-chamada.ts), gravado no idioma da organização.
+  "Chamada perdida de {telefone}": { es: "Llamada perdida de {telefone}" },
+  "Quem ligou desligou antes de alguém atender.": { es: "Quien llamó colgó antes de que alguien atendiera." },
+  "A chamada foi recusada.": { es: "La llamada fue rechazada." },
+  "O telefone tocou e ninguém atendeu.": { es: "El teléfono sonó y nadie atendió." },
+  "A linha estava ocupada.": { es: "La línea estaba ocupada." },
+  "A chamada foi cancelada.": { es: "La llamada fue cancelada." },
+  "A chamada falhou antes de completar.": { es: "La llamada falló antes de completarse." },
+  "O aparelho estava no modo \"não perturbe\".": { es: "El teléfono estaba en modo \"no molestar\"." },
+  "A chamada terminou sem que o WhatsApp informasse o motivo.": {
+    es: "La llamada terminó sin que WhatsApp informara el motivo.",
+  },
+  "A chamada terminou por um motivo que ainda não sabemos traduzir ({motivo}).": {
+    es: "La llamada terminó por un motivo que aún no sabemos traducir ({motivo}).",
+  },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",
