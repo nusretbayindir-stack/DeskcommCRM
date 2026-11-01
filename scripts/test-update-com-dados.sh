@@ -289,6 +289,60 @@ caso_1998=$(docker exec "$CONTAINER" psql -U postgres -d postgres -tAc "
   exit 1
 }
 
+# A AUTORIA DA IA sobrevive ao update. O passo 6 do bloco 0071 ("cura": 'ai'
+# sem lastro vira 'system') media lastro só por run_ids/trace_ids; a 0072 pôs
+# llm_call_ids na constraint, e é o ÚNICO lastro que o turno do agente grava.
+# Cada update.sh rebaixava toda linha de IA (medido num clone em 01/11/2026: 38
+# de 38 `ai_turn` em 'system', nenhuma 'ai' no banco). Uma linha por forma:
+#   …001 ia-llm      'ai', lastro só em llm_call_ids       → fica 'ai'
+#   …002 rebaixada   'system' + assistente + llm_call_ids  → volta a 'ai'
+#   …003 sistema     'system' sem assistente, trace_ids    → fica 'system'
+#   …004 sem-lastro  'system' + assistente, sem lastro     → fica 'system'
+psql_stop <<'SQL' >/dev/null
+insert into public.ai_agents (id, organization_id, name, system_prompt) values
+  ('44444444-0000-4000-8000-000000000001', '22222222-0000-4000-8000-00000000000a', 'Assistente', 'atende')
+  on conflict (id) do nothing;
+insert into public.crm_pipelines (id, organization_id, name, slug) values
+  ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-00000000000a', 'Funil do update', 'funil-do-update')
+  on conflict (id) do nothing;
+insert into public.crm_stages (id, organization_id, pipeline_id, name, slug, position) values
+  ('55555555-0000-4000-8000-000000000002', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000001', 'Novo', 'novo-do-update', 1000)
+  on conflict (id) do nothing;
+insert into public.crm_leads (id, organization_id, pipeline_id, stage_id, title, contact_id) values
+  ('55555555-0000-4000-8000-000000000003', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000001', '55555555-0000-4000-8000-000000000002',
+   'Negócio da Maria', '33333333-0000-4000-8000-000000000001')
+  on conflict (id) do nothing;
+insert into public.crm_lead_activities
+  (id, organization_id, lead_id, type, source_module, actor_kind, actor_agent_id, evidence, reason)
+values
+  ('66666666-0000-4000-8000-000000000001', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000003', 'ai_turn', 'agent', 'ai',
+   '44444444-0000-4000-8000-000000000001', '{"llm_call_ids": ["77777777-0000-4000-8000-000000000001"]}', 'turno'),
+  ('66666666-0000-4000-8000-000000000002', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000003', 'ai_turn', 'agent', 'system',
+   '44444444-0000-4000-8000-000000000001', '{"llm_call_ids": ["77777777-0000-4000-8000-000000000002"]}', 'turno'),
+  ('66666666-0000-4000-8000-000000000003', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000003', 'send_vetoed', 'agent_guardrails', 'system',
+   null, '{"trace_ids": ["77777777-0000-4000-8000-000000000003"]}', 'veto'),
+  ('66666666-0000-4000-8000-000000000004', '22222222-0000-4000-8000-00000000000a',
+   '55555555-0000-4000-8000-000000000003', 'appointment_scheduled', 'agenda', 'system',
+   '44444444-0000-4000-8000-000000000001', null, 'agenda')
+  on conflict (id) do nothing;
+SQL
+autoria() {
+  docker exec "$CONTAINER" psql -U postgres -d postgres -tAc "
+    select string_agg(actor_kind, ',' order by id) from public.crm_lead_activities
+     where id::text like '66666666-0000-4000-8000-%';"
+}
+autoria_antes=$(autoria)
+[ "$autoria_antes" = "ai,system,system,system" ] || {
+  echo "FATAL: as 4 atividades da autoria não foram plantadas como esperado ($autoria_antes)." >&2
+  echo "       Sem elas, o update não exercita a cura do bloco 0071 sobre llm_call_ids." >&2
+  exit 1
+}
+
 echo "==> UPDATE: re-aplicando baseline.sql SOBRE OS DADOS, com ON_ERROR_STOP=1"
 # O OID é lido ANTES da passada que o aceite da issue #1086 mede: este banco já
 # está no estado final (o install acabou de rodar), então a view não pode ser
@@ -310,6 +364,14 @@ preco_1998=$(docker exec "$CONTAINER" psql -U postgres -d postgres -tAc "
   exit 1
 }
 echo "    ✓ #1998: model_id em dois provedores virou UMA linha de preço ($preco_1998)"
+autoria_depois=$(autoria)
+[ "$autoria_depois" = "ai,ai,system,system" ] || {
+  echo "FATAL: depois do update a autoria das atividades ficou $autoria_depois;" >&2
+  echo "       o esperado é ai,ai,system,system: a IA com lastro em llm_call_ids continua" >&2
+  echo "       'ai', a que um update antigo rebaixou volta, e as de sistema ficam." >&2
+  exit 1
+}
+echo "    ✓ autoria da IA: lastro em llm_call_ids não é rebaixado, e o rebaixado volta ($autoria_depois)"
 
 echo "==> a view de ocupação não pode ser derrubada nem recriada pelo update (issue #1086)"
 oid_depois=$(oid_da_view)

@@ -8306,11 +8306,32 @@ update public.crm_lead_activities
 -- 6. Cura de banco onde a constraint ainda não existia e uma linha 'ai' entrou
 --    sem lastro (não alcançável depois que a constraint existe — por isso vem
 --    por último e é no-op no caminho feliz).
+--
+--    ⚠️ Lastro aqui é o MESMO que a constraint final aceita (0072), com
+--    `llm_call_ids`. Sem ele, esta cura não era no-op: o `update.sh` re-aplica o
+--    arquivo inteiro, e toda atividade do turno do agente — cujo lastro é só
+--    `llm_call_ids` — virava 'system' a cada atualização (medido num clone em
+--    01/11/2026: 38 de 38 `ai_turn` em 'system', nenhuma 'ai' no banco; a tela
+--    de atividades dizia "Sistema" e "Agentes: 0").
+--    Guarda: tests/unit/baseline-nao-rebaixa-a-ia-com-lastro.test.ts.
 update public.crm_lead_activities
    set actor_kind = 'system'
  where actor_kind = 'ai'
    and coalesce(jsonb_array_length(evidence->'run_ids'), 0) = 0
-   and coalesce(jsonb_array_length(evidence->'trace_ids'), 0) = 0;
+   and coalesce(jsonb_array_length(evidence->'trace_ids'), 0) = 0
+   and coalesce(jsonb_array_length(evidence->'llm_call_ids'), 0) = 0;
+
+-- 7. A volta do que a cura de antes rebaixou por engano. 'system' COM
+--    assistente, SEM pessoa e COM `llm_call_ids` é exatamente a forma que só o
+--    rebaixamento produz: o app (`buildLeadActivityRow`) nunca grava 'system'
+--    com assistente e lastro — sem lastro ele zera a evidência, com lastro grava
+--    'ai'. Idempotente: depois da primeira passada não sobra linha nessa forma.
+update public.crm_lead_activities
+   set actor_kind = 'ai'
+ where actor_kind = 'system'
+   and actor_agent_id is not null
+   and performed_by_user_id is null
+   and coalesce(jsonb_array_length(evidence->'llm_call_ids'), 0) > 0;
 
 -- ---------------------------------------------------------------------------
 -- C. Constraint de lastro (drop+add — re-aplicável)
