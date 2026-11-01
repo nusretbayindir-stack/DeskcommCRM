@@ -254,10 +254,11 @@ const FECHOS_TR = {
     "Her şeyi not ettim; size en kısa zamanda dönüş yapacağız.",
     "Kaydınızı aldım, ilk fırsatta biri size yanıt verecek.",
   ],
+  // UMA frase, escolhida pelo dono (U24, demo de 31/10/2026): "ninguém
+  // disponível" soava frio logo depois de "estou chamando alguém". A variação
+  // contra o spinning continua vindo das três aberturas.
   fora_de_expediente: [
-    "Şu anda müsait kimse yok, ancak talebiniz kaydedildi.",
-    "Şu an boşta kimse yok; talebinizi ekip için not ettim.",
-    "Şu anda müsait bir çalışan yok; konuşmanız sıraya alındı.",
+    "Ekibimiz şu an yanıt veremiyor; talebinizi not ettim, ilk fırsatta size dönüş yapacağız.",
   ],
   com_equipe: [
     "Konuşmada kısa bir süre beklemeniz yeterli.",

@@ -61,3 +61,30 @@ describe("o aviso sai em turco para organização em turco", () => {
     }
   });
 });
+
+/**
+ * U24 (demo de 31/10/2026): quem pediu uma pessoa ouviu "Tabii! Sizinle görüşmesi
+ * için ekibimizden birini çağırıyorum. Şu anda müsait kimse yok, ancak talebiniz
+ * kaydedildi." — "ninguém disponível" soa frio, e logo depois de "estou chamando
+ * alguém". O dono escolheu UMA frase: sem prazo curto (a régua do português),
+ * dizendo que o pedido ficou anotado e que a equipe volta a falar.
+ */
+describe("o fecho de expediente em turco é a frase escolhida pelo dono", () => {
+  const FRASE = "Ekibimiz şu an yanıt veremiyor; talebinizi not ettim, ilk fırsatta size dönüş yapacağız.";
+  const FORA = { disponiveis: 0, total: 3 };
+
+  it.each(["pediu_humano", "orcamento_de_ia", "outro"] as MotivoDoAviso[])(
+    "%s: fecha com a frase escolhida, em qualquer lead",
+    (motivo) => {
+      for (let i = 0; i < 30; i++) {
+        expect(textoDoAviso(motivo, FORA, `lead-${i}`, "tr")).toContain(FRASE);
+      }
+    },
+  );
+
+  it("nenhuma variante diz que não há ninguém disponível", () => {
+    for (let i = 0; i < 30; i++) {
+      expect(textoDoAviso("pediu_humano", FORA, `lead-${i}`, "tr")).not.toMatch(/müsait|boşta|kimse/);
+    }
+  });
+});

@@ -12859,6 +12859,71 @@ export const DICIONARIO: Traducoes = {
   "Novo compromisso: {texto}": { es: "Nuevo compromiso: {texto}" },
   "{n} novos compromissos: {texto}": { es: "{n} nuevos compromisos: {texto}" },
   "Próxima ação: {texto}": { es: "Próxima acción: {texto}" },
+  // O código interno do agendamento (`_handler.ts`: "{tipo} — appointment_*")
+  // sai da tela; fica o nome do tipo (U26).
+  "{tipo} — appointment_scheduled": { es: "{tipo}" },
+  "{tipo} — appointment_rescheduled": { es: "{tipo}" },
+  "{tipo} — appointment_cancelled": { es: "{tipo}" },
+  "{tipo} — appointment_completed": { es: "{tipo}" },
+  "{tipo} — appointment_no_show": { es: "{tipo}" },
+  // A aba da ficha do contato (app/app/contacts/[id]/_client.tsx); "LGPD" já existe acima.
+  "Timeline": { es: "Cronología" },
+  // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
+  // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
+  "O assistente quis organizar um negócio de um funil que não é dele": {
+    es: "El asistente quiso organizar un negocio de un embudo que no es suyo",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", mas ele não cuida do funil onde o negócio está ({detalhe}). Ninguém mexeu no card. Se ele deveria cuidar desse funil, marque isso na configuração do assistente; se não, não há nada a fazer.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", pero no se encarga del embudo donde está el negocio ({detalhe}). Nadie movió la tarjeta. Si debería encargarse de ese embudo, márcalo en la configuración del asistente; si no, no hay nada que hacer.",
+  },
+  "O assistente quis marcar um negócio como perdido — e isso exige um motivo": {
+    es: "El asistente quiso marcar un negocio como perdido — y eso exige un motivo",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", que no seu funil é uma etapa de perda. Perder um negócio exige um motivo, e o motivo é a razão que quem está no negócio reconhece — o assistente não inventa uma. Ninguém mexeu no card: ele continua onde estava. Se o negócio realmente se perdeu, abra o card no funil, use \"Marcar como perdido\" e informe o motivo; se não, não há nada a fazer.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", que en tu embudo es una etapa de pérdida. Perder un negocio exige un motivo, y el motivo es la razón que reconoce quien está en el negocio — el asistente no inventa uno. Nadie movió la tarjeta: sigue donde estaba. Si el negocio realmente se perdió, abre la tarjeta en el embudo, usa \"Marcar como perdido\" e informa el motivo; si no, no hay nada que hacer.",
+  },
+  "O assistente quis mover um negócio — o funil exige campos antes": {
+    es: "El asistente quiso mover un negocio — el embudo exige campos antes",
+  },
+  "O assistente concluiu que este negócio deveria ir para \"{etapa}\", mas o seu funil exige o preenchimento de alguns campos antes de entrar nela. {detalhe} Ninguém mexeu no card: ele continua onde estava. Abra o negócio, preencha o que falta no dossiê e mova o card normalmente.": {
+    es: "El asistente concluyó que este negocio debería ir a \"{etapa}\", pero tu embudo exige completar algunos campos antes de entrar en ella. {detalhe} Nadie movió la tarjeta: sigue donde estaba. Abre el negocio, completa lo que falta en el expediente y mueve la tarjeta normalmente.",
+  },
+  "Espelho de stage no CRM falhou — funil possivelmente inconsistente": {
+    es: "La sincronización de etapa con el CRM falló — embudo posiblemente inconsistente",
+  },
+  "lead_state avançou para \"{etapa}\" no harness, mas crm_move_lead_stage falhou ({motivo}: {detalhe}). Reconcilie o stage no CRM manualmente.": {
+    es: "lead_state avanzó a \"{etapa}\" en el harness, pero crm_move_lead_stage falló ({motivo}: {detalhe}). Reconcilia la etapa en el CRM manualmente.",
+  },
+  "nenhum funil liberado para este assistente": { es: "ningún embudo habilitado para este asistente" },
+  "o negócio está num funil que este assistente não cuida": {
+    es: "el negocio está en un embudo del que este asistente no se encarga",
+  },
+  "este assistente não cuida do funil onde o negócio está": {
+    es: "este asistente no se encarga del embudo donde está el negocio",
+  },
+  "a etapa de destino exige campos que o negócio não tem preenchidos": {
+    es: "la etapa de destino exige campos que el negocio no tiene completados",
+  },
+  // O aviso de janela de envio fechada (lib/agent-engine/pacing/aviso-de-janela.ts),
+  // gravado no idioma da organização (U14). Cada idioma cita os nomes da SUA tela.
+  "As respostas da IA estão esperando a janela de envio abrir": {
+    es: "Las respuestas de la IA están esperando a que abra la ventana de envío",
+  },
+  "Este número está com **envio aos domingos desligado**, e a janela de horário é {janela} (fuso {fuso}).": {
+    es: "Este número tiene el **envío los domingos desactivado**, y la ventana de horario es {janela} (zona horaria {fuso}).",
+  },
+  "A janela de envio deste número é {janela} (fuso {fuso}), e agora está fechada.": {
+    es: "La ventana de envío de este número es {janela} (zona horaria {fuso}), y ahora está cerrada.",
+  },
+  "Quem escrever agora recebe resposta a partir de {quando}. Nenhuma mensagem se perde — os turnos ficam na fila e saem na abertura.": {
+    es: "Quien escriba ahora recibe respuesta a partir de {quando}. Ningún mensaje se pierde — los turnos quedan en la cola y salen en la apertura.",
+  },
+  "Se quiser que o agente responda aos domingos, ligue \"Enviar aos domingos\" em Conexões › Anti-ban.": {
+    es: "Si quieres que el agente responda los domingos, activa \"Enviar los domingos\" en Conexiones › \"Protección de envío\".",
+  },
+  "Não é preciso fazer nada: as respostas saem sozinhas na abertura.": {
+    es: "No hace falta hacer nada: las respuestas salen solas en la apertura.",
+  },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",
