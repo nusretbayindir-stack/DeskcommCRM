@@ -12924,6 +12924,47 @@ export const DICIONARIO: Traducoes = {
   "Não é preciso fazer nada: as respostas saem sozinhas na abertura.": {
     es: "No hace falta hacer nada: las respuestas salen solas en la apertura.",
   },
+  // O aviso de reativação vencida (lib/leads/reactivation.ts): uma chave por forma.
+  "Decida sobre 1 negócio parado — a sugestão de retomar venceu": {
+    es: "Decide sobre 1 negocio detenido — la sugerencia de retomar venció",
+  },
+  "Decida sobre {n} negócios parados — a sugestão de retomar venceu": {
+    es: "Decide sobre {n} negocios detenidos — la sugerencia de retomar venció",
+  },
+  "Um negócio esfriou e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": {
+    es: "Un negocio se enfrió y la sugerencia de retomar el contacto quedó sin respuesta hasta el plazo. Salió del tablero para no parecer en curso. Retomar o cerrar: ambas son decisiones; dejarlo como está es la única que no lo es.",
+  },
+  "{n} negócios esfriaram e a sugestão de retomar contato ficou sem resposta até o prazo. Eles saíram do quadro para não parecerem em andamento. Retomar ou encerrar — as duas são decisões; deixar como está é a única que não é.": {
+    es: "{n} negocios se enfriaron y la sugerencia de retomar el contacto quedó sin respuesta hasta el plazo. Salieron del tablero para no parecer en curso. Retomar o cerrar: ambas son decisiones; dejarlo como está es la única que no lo es.",
+  },
+  // O aviso da resposta a caso obsoleto (lib/atendimento/aviso-caso-obsoleto.ts);
+  // o corpo já estava acima, com a tela.
+  "Resposta registrada; atendimento mudou": { es: "Respuesta registrada; la atención cambió" },
+  // A escalação de manipulação do agente (lib/agent-engine/guardrails/jailbreak/classifier.ts).
+  "Possível manipulação do agente — revisar conversa": {
+    es: "Posible manipulación del agente — revisar la conversación",
+  },
+  "A última mensagem deste lead foi sinalizada com risco de jailbreak/injeção (nível: {nivel}) e, no MESMO turno, o agente tentou uma promessa fora da tabela do playbook. Revise a conversa: o padrão sugere tentativa de manipulação para arrancar oferta indevida.": {
+    es: "El último mensaje de este lead fue marcado con riesgo de jailbreak/inyección (nivel: {nivel}) y, en el MISMO turno, el agente intentó una promesa fuera de la tabla del playbook. Revisa la conversación: el patrón sugiere un intento de manipulación para arrancar una oferta indebida.",
+  },
+  nenhum: { es: "ninguno" },
+  baixo: { es: "bajo" },
+  alto: { es: "alto" },
+  // O aviso de chamada perdida (lib/wacalls/motivo-da-chamada.ts), gravado no idioma da organização.
+  "Chamada perdida de {telefone}": { es: "Llamada perdida de {telefone}" },
+  "Quem ligou desligou antes de alguém atender.": { es: "Quien llamó colgó antes de que alguien atendiera." },
+  "A chamada foi recusada.": { es: "La llamada fue rechazada." },
+  "O telefone tocou e ninguém atendeu.": { es: "El teléfono sonó y nadie atendió." },
+  "A linha estava ocupada.": { es: "La línea estaba ocupada." },
+  "A chamada foi cancelada.": { es: "La llamada fue cancelada." },
+  "A chamada falhou antes de completar.": { es: "La llamada falló antes de completarse." },
+  "O aparelho estava no modo \"não perturbe\".": { es: "El teléfono estaba en modo \"no molestar\"." },
+  "A chamada terminou sem que o WhatsApp informasse o motivo.": {
+    es: "La llamada terminó sin que WhatsApp informara el motivo.",
+  },
+  "A chamada terminou por um motivo que ainda não sabemos traduzir ({motivo}).": {
+    es: "La llamada terminó por un motivo que aún no sabemos traducir ({motivo}).",
+  },
   // O aviso da conexão de WhatsApp (lib/channels/health.ts), gravado no idioma da organização.
   "Conexão \"{apelido}\": o servidor de WhatsApp recusou a chave de acesso": {
     es: "Conexión \"{apelido}\": el servidor de WhatsApp rechazó la clave de acceso",

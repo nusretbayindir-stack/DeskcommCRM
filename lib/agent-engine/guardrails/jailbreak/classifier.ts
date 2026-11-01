@@ -17,6 +17,10 @@
  */
 import type pg from 'pg';
 
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { traduzir } from '@/lib/i18n/dicionario';
+import type { Idioma } from '@/lib/i18n/idiomas';
+
 import type { Logger } from '../../obs/logger';
 import type { ProviderRegistry } from '../../edge/llm/providers';
 import { LlmBudgetExceededError, runModelCall, type LlmEdgeConfig } from '../../edge/llm/run-model-call';
@@ -174,6 +178,10 @@ export async function escalateJailbreakPromise(
   db: pg.Pool,
   input: { tenantId: string; leadId: string; level: JailbreakLevel },
 ): Promise<number> {
+  // O título e o corpo no idioma da organização (U14): a Central mostra a frase
+  // gravada. `idiomaDaOrgPeloPg` não lança — com a leitura fora, sai em português.
+  const idioma = await idiomaDaOrgPeloPg(db, input.tenantId);
+  const { title, body } = textoDaEscalacaoDeJailbreak(input.level, idioma);
   const { rowCount } = await db.query(
     `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
      select $1, 'other', 'critical', $2, $3, 'jailbreak_escalation', $4
@@ -181,14 +189,32 @@ export async function escalateJailbreakPromise(
        select 1 from agent_inbox_items
        where organization_id = $1 and ref_kind = 'jailbreak_escalation' and ref_id = $4 and status = 'open'
      )`,
-    [
-      input.tenantId,
-      'Possível manipulação do agente — revisar conversa',
-      `A última mensagem deste lead foi sinalizada com risco de jailbreak/injeção (nível: ${input.level}) ` +
-        'e, no MESMO turno, o agente tentou uma promessa fora da tabela do playbook. ' +
-        'Revise a conversa: o padrão sugere tentativa de manipulação para arrancar oferta indevida.',
-      input.leadId,
-    ],
+    [input.tenantId, title, body, input.leadId],
   );
   return rowCount ?? 0;
+}
+
+/**
+ * O nível como o dono lê. Em português fica o valor cru (byte a byte como era);
+ * nos outros idiomas, a palavra — cada uma com o seu literal.
+ */
+const NIVEL_NO_IDIOMA: Record<JailbreakLevel, (idioma: Idioma) => string> = {
+  none: (i) => traduzir('nenhum', i),
+  low: (i) => traduzir('baixo', i),
+  high: (i) => traduzir('alto', i),
+};
+
+/** Título e corpo da escalação, sem PII: só o nível e a descrição do padrão. */
+function textoDaEscalacaoDeJailbreak(
+  level: JailbreakLevel,
+  idioma: Idioma,
+): { title: string; body: string } {
+  const nivel = idioma === 'pt-BR' ? level : NIVEL_NO_IDIOMA[level](idioma);
+  return {
+    title: traduzir('Possível manipulação do agente — revisar conversa', idioma),
+    body: traduzir(
+      'A última mensagem deste lead foi sinalizada com risco de jailbreak/injeção (nível: {nivel}) e, no MESMO turno, o agente tentou uma promessa fora da tabela do playbook. Revise a conversa: o padrão sugere tentativa de manipulação para arrancar oferta indevida.',
+      idioma,
+    ).replace('{nivel}', () => nivel),
+  };
 }

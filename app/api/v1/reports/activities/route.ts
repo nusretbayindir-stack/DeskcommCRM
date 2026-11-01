@@ -40,6 +40,7 @@ import {
 } from "@/lib/reports/atividades";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
 
@@ -125,7 +126,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     .eq("is_default", true)
     .maybeSingle();
 
+  // Tipo, autor e porquê no idioma de quem lê (U29): sem `t`, `montarRelatorio`
+  // usa a identidade e a tela recebia o miolo em português.
   const relatorio = montarRelatorio(bruto, {
+    t: (texto: string) => traduzir(texto, authz.user.idioma),
     nomes,
     vocabulary: (funil?.vocabulary ?? null) as PipelineVocabulary | null,
   });

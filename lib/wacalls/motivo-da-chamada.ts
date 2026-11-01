@@ -16,6 +16,9 @@
  * única pista que existe, e uma frase tranquilizadora onde não há informação é
  * pior que a informação estranha.
  */
+import { traduzir } from '@/lib/i18n/dicionario';
+import type { Idioma } from '@/lib/i18n/idiomas';
+
 const MOTIVOS: Record<string, string> = {
   user_ended: 'Quem ligou desligou antes de alguém atender.',
   declined: 'A chamada foi recusada.',
@@ -36,4 +39,48 @@ export function motivoDaChamadaEmPortugues(motivo: string | null | undefined): s
   const conhecido = MOTIVOS[cru.toLowerCase()];
   if (conhecido) return conhecido;
   return `A chamada terminou por um motivo que ainda não sabemos traduzir (${cru}).`;
+}
+
+/**
+ * As mesmas frases de `MOTIVOS`, no idioma pedido (U14) — cada uma com o seu
+ * literal, porque o aviso da Central é gravado no idioma da organização. A
+ * tabela em português continua sendo a de cima, que a linha do tempo do
+ * negócio também usa.
+ */
+const MOTIVOS_NO_IDIOMA: Record<string, (idioma: Idioma) => string> = {
+  user_ended: (i) => traduzir('Quem ligou desligou antes de alguém atender.', i),
+  declined: (i) => traduzir('A chamada foi recusada.', i),
+  rejected: (i) => traduzir('A chamada foi recusada.', i),
+  timeout: (i) => traduzir('O telefone tocou e ninguém atendeu.', i),
+  busy: (i) => traduzir('A linha estava ocupada.', i),
+  cancelled: (i) => traduzir('A chamada foi cancelada.', i),
+  canceled: (i) => traduzir('A chamada foi cancelada.', i),
+  failed: (i) => traduzir('A chamada falhou antes de completar.', i),
+  do_not_disturb: (i) => traduzir('O aparelho estava no modo "não perturbe".', i),
+  unknown: (i) => traduzir('A chamada terminou sem que o WhatsApp informasse o motivo.', i),
+};
+
+/** O motivo da chamada no idioma pedido; em português, byte a byte o de `motivoDaChamadaEmPortugues`. */
+export function motivoDaChamadaNoIdioma(motivo: string | null | undefined, idioma: Idioma): string {
+  if (idioma === 'pt-BR') return motivoDaChamadaEmPortugues(motivo);
+  const cru = (motivo ?? '').trim();
+  if (!cru) return MOTIVOS_NO_IDIOMA['unknown']!(idioma);
+  const conhecido = MOTIVOS_NO_IDIOMA[cru.toLowerCase()];
+  if (conhecido) return conhecido(idioma);
+  return traduzir('A chamada terminou por um motivo que ainda não sabemos traduzir ({motivo}).', idioma).replace(
+    '{motivo}',
+    () => cru,
+  );
+}
+
+/** O aviso de chamada perdida da Central (`voice_call_missed`), no idioma da organização. */
+export function avisoDeChamadaPerdida(
+  telefone: string,
+  motivo: string | null | undefined,
+  idioma: Idioma,
+): { title: string; body: string } {
+  return {
+    title: traduzir('Chamada perdida de {telefone}', idioma).replace('{telefone}', () => telefone),
+    body: motivoDaChamadaNoIdioma(motivo, idioma),
+  };
 }

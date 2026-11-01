@@ -22,7 +22,7 @@ import {
   type MarcaResolvida,
 } from "@/lib/branding/resolve";
 import { env } from "@/lib/env";
-import { tradutorDaRequisicao } from "@/lib/i18n/titulo-da-aba";
+import { idiomaDaRequisicao, tradutorDaRequisicao } from "@/lib/i18n/titulo-da-aba";
 import { logger } from "@/lib/logger";
 import { ThemeProvider } from "@/lib/theme";
 import { Providers } from "./providers";
@@ -336,10 +336,17 @@ async function MarcaDosClientComponents({ children }: { children: React.ReactNod
   );
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // O `lang` do HTML que o SERVIDOR manda (U10): era `pt-BR` fixo, e só o
+  // `IdiomaProvider` corrigia no cliente, depois da hidratação — até lá, a conta
+  // em turco recebia HTML turco marcado como português (o navegador oferecia
+  // "traduzir do português", o leitor de tela começava com a voz errada). A
+  // mesma cadeia do título da aba; `loadAuthUser` é `cache()` por requisição, e
+  // o `generateMetadata` acima já faz a mesma leitura.
+  const idioma = await idiomaDaRequisicao();
   return (
     <html
-      lang="pt-BR"
+      lang={idioma}
       data-theme="light"
       suppressHydrationWarning
       className={`${atkinson.variable} ${plexMono.variable}`}

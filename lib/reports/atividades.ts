@@ -32,6 +32,7 @@
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import type { PipelineVocabulary } from "@/lib/kanban/types";
 import { resolveVocabulary } from "@/lib/kanban/vocabulary";
+import { motivoNoIdioma } from "@/lib/leads/motivo-no-idioma";
 import {
   activityLabel,
   actorName,
@@ -279,7 +280,11 @@ export function montarRelatorio(
     quando: i.performed_at,
     atorNome: nomeDoAtor(i.actor_kind, i.user_id, i.agent_id),
     atorForma: actorShape(i.actor_kind),
-    motivo: i.reason,
+    // O porquê é gravado em português canônico e traduzido na LEITURA, pela
+    // mesma régua da linha do tempo do contato (`TimelineView`): as frases
+    // montadas com dado por `motivoNoIdioma`, o resto inteiro pelo dicionário.
+    // Em português, byte a byte o texto gravado (U29).
+    motivo: i.reason ? (motivoNoIdioma(i.reason, t) ?? t(i.reason)) : i.reason,
     negocioId: i.lead_id,
     negocioTitulo: i.lead_title,
     contatoId: i.contact_id,
