@@ -174,6 +174,11 @@ describe("tela alcançável não come dado de mentira", () => {
     expect(arquivos.length).toBeGreaterThan(50);
   });
 
+  // Tempo próprio: a varredura percorre a cadeia de imports de CADA tela do zero
+  // (`vistos` novo por tela), então cresce com o código. Em 02/11/2026 este teste
+  // estourou os 15 s do padrão duas vezes seguidas no CI (`verify-parte (7)`) sem
+  // achar infrator — o mesmo código passou em 9,7 s no PR e em 11,3 s na
+  // re-execução. O tempo maior não afrouxa a regra: o que a cerca procura é igual.
   it("nenhuma tela do tenant CHEGA a uma fixture, nem por caminho indireto", () => {
     const infratores: string[] = [];
     for (const arquivo of arquivos) {
@@ -191,7 +196,7 @@ describe("tela alcançável não come dado de mentira", () => {
         '"estou vendo paciente de outra clínica na minha agenda". Caia no estado ' +
         "vazio até a API existir, ou tire a porta do registry com justificativa.",
     ).toEqual([]);
-  });
+  }, 60_000);
 
   it("toda exceção explica o porquê", () => {
     for (const [rota, motivo] of Object.entries(PERMITIDOS)) {
