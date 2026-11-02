@@ -12969,6 +12969,29 @@ export const DICIONARIO: Traducoes = {
   },
   // O aviso do snooze vencido (app/api/v1/cron/snooze-watcher/route.ts).
   "Lead não respondeu no prazo": { es: "El lead no respondió a tiempo" },
+  // O aviso da automação que não falou com o cliente (lib/automation/desfecho-do-envio.ts).
+  "Uma automação não conseguiu falar com o cliente": { es: "Una automatización no logró hablar con el cliente" },
+  'A automação "{regra}" disparou e a mensagem não chegou.': {
+    es: 'La automatización "{regra}" se disparó y el mensaje no llegó.',
+  },
+  "A mensagem não saiu.": { es: "El mensaje no salió." },
+  "Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.": {
+    es: "No se reenvió nada automáticamente: reenviar sin conocer la causa puede mandar el mismo mensaje dos veces.",
+  },
+  // O aviso do follow-up que nenhum agente arma (app/api/v1/cron/followup-sem-agente/route.ts).
+  "O follow-up «{nome}» não está disparando": { es: "El follow-up «{nome}» no se está disparando" },
+  'O fluxo «{nome}» está publicado e dispararia {quando} — mas nenhum agente publicado arma ele, e por isso nenhum contato entra. Abra IA › Agentes, escolha o agente que atende esse número, marque «{nome}» em "follow-ups que arma" e publique a versão. Este aviso se resolve sozinho quando o vínculo existir.': {
+    es: "El flujo «{nome}» está publicado y se dispararía {quando}, pero ningún agente publicado lo arma, y por eso ningún contacto entra. Abre IA › Agentes, elige el agente que atiende ese número, marca «{nome}» en «follow-ups que arma» y publica la versión. Este aviso se resuelve solo cuando exista el vínculo.",
+  },
+  "depois de um tempo sem o contato responder": { es: "después de un tiempo sin que el contacto responda" },
+  "quando um negócio entra numa etapa do funil": { es: "cuando un negocio entra en una etapa del embudo" },
+  "quando um atendimento é aberto": { es: "cuando se abre una atención" },
+  "quando alguém confirma que o contato não compareceu": { es: "cuando alguien confirma que el contacto no asistió" },
+  "quando o contato volta a escrever depois de um tempo sem falar": {
+    es: "cuando el contacto vuelve a escribir después de un tiempo sin hablar",
+  },
+  "quando um negócio nasce": { es: "cuando nace un negocio" },
+  "pelo gatilho configurado": { es: "por el disparador configurado" },
   // A escalação de manipulação do agente (lib/agent-engine/guardrails/jailbreak/classifier.ts).
   "Possível manipulação do agente — revisar conversa": {
     es: "Posible manipulación del agente — revisar la conversación",

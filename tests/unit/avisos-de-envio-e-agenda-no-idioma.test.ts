@@ -26,6 +26,7 @@ vi.mock("@/lib/messaging/falha-de-entrega", async (orig) => ({
 import { recoverStuckMessages } from "@/app/api/v1/cron/recover-stuck-messages/route";
 import { GET as snoozeWatcher } from "@/app/api/v1/cron/snooze-watcher/route";
 import { atualizarAvisoDeRemetente } from "@/lib/agenda/aviso-de-remetente";
+import { avisarEnvioQueFalhou } from "@/lib/automation/desfecho-do-envio";
 
 const ORG = "22222222-2222-4222-8222-222222222222";
 
@@ -74,6 +75,7 @@ function fakeAdmin(o: {
         in: () => b,
         lt: () => b,
         lte: () => b,
+        gte: () => b,
         not: () => b,
         limit: () => Promise.resolve(devolve()),
         maybeSingle: () => {
@@ -194,6 +196,42 @@ describe("o aviso do lembrete sem canal no idioma da organização", () => {
       const body = String(f.inseridos[0]!.body);
       expect(body, motivo).not.toMatch(/\b(não|canal de|reserva|conversa|próxima)\b/);
     }
+  });
+});
+
+describe("o aviso da automação que não falou com o cliente no idioma da organização", () => {
+  const entrada = (motivo: string) => ({
+    organizationId: ORG,
+    ruleName: "Boas-vindas",
+    conversationId: "conv-1",
+    motivo,
+  });
+
+  it("⭐ conta em turco: título, frase e a causa do canal (que o catálogo já tem) em turco", async () => {
+    const f = fakeAdmin({ locale: "tr" });
+    await avisarEnvioQueFalhou(f.admin as never, entrada("O contato não tem telefone para receber a mensagem."), AGORA);
+    expect(f.inseridos).toHaveLength(1);
+    expect(f.inseridos[0]!.title).toBe("Bir otomasyon müşteriye ulaşamadı");
+    expect(f.inseridos[0]!.body).toBe(
+      "\"Boas-vindas\" otomasyonu çalıştı ama mesaj ulaşmadı. Kişinin mesajı alacak telefonu yok. " +
+        "Hiçbir şey kendiliğinden yeniden gönderilmedi: sebebi bilmeden yeniden göndermek aynı mesajın iki kez gitmesine yol açabilir.",
+    );
+  });
+
+  it("a causa padrão também sai em turco", async () => {
+    const f = fakeAdmin({ locale: "tr" });
+    await avisarEnvioQueFalhou(f.admin as never, entrada("A mensagem não saiu."), AGORA);
+    expect(String(f.inseridos[0]!.body)).toContain(" Mesaj gönderilmedi. ");
+  });
+
+  it("conta em português: o mesmo texto de antes, byte a byte", async () => {
+    const f = fakeAdmin({ locale: "pt-BR" });
+    await avisarEnvioQueFalhou(f.admin as never, entrada("A mensagem não saiu."), AGORA);
+    expect(f.inseridos[0]!.title).toBe("Uma automação não conseguiu falar com o cliente");
+    expect(f.inseridos[0]!.body).toBe(
+      'A automação "Boas-vindas" disparou e a mensagem não chegou. A mensagem não saiu. ' +
+        "Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.",
+    );
   });
 });
 

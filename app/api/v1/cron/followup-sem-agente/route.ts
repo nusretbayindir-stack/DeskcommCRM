@@ -56,6 +56,9 @@ import {
   fluxoPedeAgente,
   type FollowupGateDb,
 } from "@/lib/followup/agent-followup-gate";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import type { Idioma } from "@/lib/i18n/idiomas";
 
 export const dynamic = "force-dynamic";
 
@@ -82,14 +85,26 @@ interface PonteiroDesarmado {
   active_version_id: string | null;
 }
 
-export function corpoDoAviso(nome: string, kind: string): string {
-  const quando = COMO_DISPARA[kind] ?? "pelo gatilho configurado";
-  return (
-    `O fluxo «${nome}» está publicado e dispararia ${quando} — mas nenhum agente publicado ` +
-    `arma ele, e por isso nenhum contato entra. Abra IA › Agentes, escolha o agente que ` +
-    `atende esse número, marque «${nome}» em "follow-ups que arma" e publique a versão. ` +
-    `Este aviso se resolve sozinho quando o vínculo existir.`
-  );
+/**
+ * O corpo do aviso, no idioma da organização (U14): a Central mostra a frase
+ * gravada. Português sem mudança de byte. O nome do fluxo entra por marcador
+ * DEPOIS de traduzir — é dado do cliente, não texto do produto.
+ */
+export function corpoDoAviso(nome: string, kind: string, idioma: Idioma = "pt-BR"): string {
+  const quando = traduzir(COMO_DISPARA[kind] ?? "pelo gatilho configurado", idioma);
+  return traduzir(
+    "O fluxo «{nome}» está publicado e dispararia {quando} — mas nenhum agente publicado " +
+      "arma ele, e por isso nenhum contato entra. Abra IA › Agentes, escolha o agente que " +
+      'atende esse número, marque «{nome}» em "follow-ups que arma" e publique a versão. ' +
+      "Este aviso se resolve sozinho quando o vínculo existir.",
+    idioma,
+  )
+    .replace("{quando}", () => quando)
+    .replaceAll("{nome}", () => nome);
+}
+
+function tituloDoAviso(nome: string, idioma: Idioma = "pt-BR"): string {
+  return traduzir("O follow-up «{nome}» não está disparando", idioma).replace("{nome}", () => nome);
 }
 
 /** Sem grafo (ou grafo ilegível) falha fechado: o aviso continua sendo o certo. */
@@ -179,6 +194,16 @@ async function handle(req: NextRequest): Promise<Response> {
   let abertos = 0;
   let jaAbertos = 0;
   let fechados = 0;
+  // O idioma do aviso, uma leitura por organização na rodada (U14).
+  const idiomaDaOrg = new Map<string, Promise<Idioma>>();
+  const idiomaDe = (org: string): Promise<Idioma> => {
+    let p = idiomaDaOrg.get(org);
+    if (!p) {
+      p = idiomaDaOrgPeloSupabase(admin, org);
+      idiomaDaOrg.set(org, p);
+    }
+    return p;
+  };
 
   for (const ponteiro of candidatos) {
     const armados = armadosPorOrg.get(ponteiro.organization_id);
@@ -229,8 +254,8 @@ async function handle(req: NextRequest): Promise<Response> {
       // está. Mas também não é `info` — há gente que devia estar sendo
       // reengajada e não está, e isso pede uma ação de alguém.
       severity: "warn",
-      title: `O follow-up «${ponteiro.name}» não está disparando`,
-      body: corpoDoAviso(ponteiro.name, ponteiro.kind),
+      title: tituloDoAviso(ponteiro.name, await idiomaDe(ponteiro.organization_id)),
+      body: corpoDoAviso(ponteiro.name, ponteiro.kind, await idiomaDe(ponteiro.organization_id)),
       ref_kind: "followup_flow",
       ref_id: ponteiro.id,
     });

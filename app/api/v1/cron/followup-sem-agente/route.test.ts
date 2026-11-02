@@ -20,7 +20,7 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { GET } from "./route";
+import { corpoDoAviso, GET } from "./route";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const OUTRA_ORG = "22222222-2222-4222-8222-222222222222";
@@ -50,10 +50,19 @@ function admin(opts: {
   avisoAbertoDe?: Set<string>;
   versoes?: Array<{ id: string; graph: unknown }>;
   cap: Capturado;
+  /** `organizations.locale` — o idioma do aviso (U14). Ausente: português. */
+  locale?: string;
 }) {
   const { ponteiros, followupPorOrg = {}, avisoAbertoDe = new Set<string>(), versoes = [], cap } = opts;
   return {
     from(tabela: string) {
+      if (tabela === "organizations") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data: { locale: opts.locale ?? null }, error: null }) }),
+          }),
+        };
+      }
       if (tabela === "followup_flow_pointers") {
         return {
           select: () => ({
@@ -155,6 +164,44 @@ describe("GET /api/v1/cron/followup-sem-agente", () => {
     expect(cap.avisos[0]!.title).toContain("Consulta · retomar quem sumiu");
     expect(cap.avisos[0]!.body).toContain("sem o contato responder");
     expect(cap.avisos[0]!.body).toContain("follow-ups que arma");
+  });
+
+  it("⭐ conta em turco: título e corpo em turco, com o nome do fluxo e os nomes das telas (U14)", async () => {
+    const cap = vazio();
+    vi.mocked(createAdminClient).mockReturnValue(
+      admin({ ponteiros: [fluxo("f1", "silence", ORG, "Consulta · retomar quem sumiu")], cap, locale: "tr" }) as never,
+    );
+
+    await GET(req());
+    expect(cap.avisos[0]!.title).toBe("«Consulta · retomar quem sumiu» takip akışı çalışmıyor");
+    expect(cap.avisos[0]!.body).toBe(
+      "«Consulta · retomar quem sumiu» akışı yayında ve kişi bir süre yanıt vermeyince çalışacaktı; ama yayındaki hiçbir asistan onu kurmuyor, bu yüzden akışa hiçbir kişi girmiyor. " +
+        "AI › Asistanlar'ı açın, bu numaraya yanıt veren asistanı seçin, «kurduğu takip mesajları» bölümünde «Consulta · retomar quem sumiu» akışını işaretleyin ve sürümü yayınlayın. " +
+        "Bağlantı kurulunca bu bildirim kendiliğinden kapanır.",
+    );
+  });
+
+  it.each(["stage_change", "case_opened", "appointment_no_show", "inbound_after_silence", "lead_created"])(
+    "conta em turco: o gatilho %s também sai em turco",
+    async (kind) => {
+      const cap = vazio();
+      vi.mocked(createAdminClient).mockReturnValue(
+        admin({ ponteiros: [fluxo("f1", kind)], cap, locale: "tr" }) as never,
+      );
+
+      await GET(req());
+      expect(cap.avisos[0]!.body).not.toMatch(/\b(quando|depois|pelo|contato|negócio)\b/);
+    },
+  );
+
+  it("o gatilho sem frase própria também sai no idioma, e o português fica byte a byte", () => {
+    expect(corpoDoAviso("X", "outro", "tr")).toContain("ayarlanan tetikleyiciyle çalışacaktı");
+    expect(corpoDoAviso("X", "outro")).toBe(
+      "O fluxo «X» está publicado e dispararia pelo gatilho configurado — mas nenhum agente publicado " +
+        "arma ele, e por isso nenhum contato entra. Abra IA › Agentes, escolha o agente que " +
+        'atende esse número, marque «X» em "follow-ups que arma" e publique a versão. ' +
+        "Este aviso se resolve sozinho quando o vínculo existir.",
+    );
   });
 
   it.each([
