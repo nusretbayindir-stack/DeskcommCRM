@@ -246,11 +246,59 @@ function formatoDoTipoErrado(bruto: unknown, caminho: readonly PropertyKey[], es
 }
 
 /**
+ * Nomes TRADUZIDOS que o fechamento aceita nos itens da declaração — só os
+ * medidos, e cada um só PREENCHE o campo que falta.
+ *
+ * ⚠️ Medido em produção (02/11/2026, Claude Sonnet 5, conta em turco): 3 de 6
+ * turnos com o fechamento recusado, os três por `o_what` no lugar de `o_que`
+ * (log da U28: "esperado string, veio ausente; campos do objeto: o_what,
+ * evidencia"). A correção conserta sempre — na segunda chamada, que custa
+ * 1,6–3,3¢ e 5–8 s —, e o ensino não atravessa turnos: o turno seguinte erra
+ * igual. Para um apelido sem ambiguidade, ela só compra o resultado que o
+ * parser dá de graça.
+ *
+ * Isto NÃO revoga "campo a mais é erro de ensino" (`../declaracao.ts`): o
+ * `.strict()` continua, e qualquer nome fora desta lista segue recusado e vira
+ * correção. E não mexe na instrução do fechamento: pedir "não traduza" PIOROU a
+ * primeira tentativa quando foi medido (`correcaoDoFechamento`).
+ */
+const APELIDOS_DOS_ITENS: Readonly<Record<string, string>> = { o_what: 'o_que' };
+
+/**
+ * Troca os apelidos medidos pelo nome certo, no JSON bruto, antes do Zod.
+ * Devolve o CAMINHO de cada troca (para o log) — nunca o valor.
+ */
+function aceitarApelidos(bruto: unknown): string[] {
+  const aceitos: string[] = [];
+  if (!objetoSimples(bruto) || !objetoSimples(bruto.declaracao)) return aceitos;
+  for (const lista of ['intencoes', 'promessas'] as const) {
+    const itens = bruto.declaracao[lista];
+    if (!Array.isArray(itens)) continue;
+    itens.forEach((item: unknown, i) => {
+      if (!objetoSimples(item)) return;
+      for (const [apelido, nome] of Object.entries(APELIDOS_DOS_ITENS)) {
+        if (Object.hasOwn(item, nome) || !Object.hasOwn(item, apelido)) continue;
+        item[nome] = item[apelido];
+        delete item[apelido];
+        aceitos.push(`declaracao.${lista}.${i}.${apelido} → ${nome}`);
+      }
+    });
+  }
+  return aceitos;
+}
+
+/**
  * Extrai e valida o JSON do fechamento. Tolerante a cerca de código, prosa em
  * volta e repetição (`extrairJsonDoTexto`); inválido → erro SEM o texto do
  * modelo na mensagem (pode carregar PII da conversa) — o job re-tenta.
+ *
+ * `aoAceitarApelidos` recebe os caminhos trocados por `aceitarApelidos`, para
+ * quem tem log contar quantas vezes o desvio medido ainda acontece.
  */
-export function parseCheckpointText(text: string): CheckpointContent {
+export function parseCheckpointText(
+  text: string,
+  aoAceitarApelidos?: (caminhos: string[]) => void,
+): CheckpointContent {
   const bruto = extrairJsonDoTexto(text);
   if (bruto === null) {
     throw new FechamentoRecusado(
@@ -258,7 +306,9 @@ export function parseCheckpointText(text: string): CheckpointContent {
       'a resposta não tinha um objeto JSON válido',
     );
   }
+  const apelidos = aceitarApelidos(bruto);
   const parsed = checkpointContentSchema.safeParse(bruto);
+  if (parsed.success && apelidos.length > 0) aoAceitarApelidos?.(apelidos);
   if (!parsed.success) {
     const onde = (i: (typeof parsed.error.issues)[number]) => `${i.path.join('.') || '(raiz)'}: ${i.code}`;
     // O formato entra SÓ no log (`problemas` e a mensagem); `paraOModelo` segue
@@ -340,9 +390,17 @@ export async function fecharOTurno<R extends { text: string; callId?: string | n
   log?: { warn(msg: string, fields?: Record<string, unknown>): void };
 }): Promise<{ content: CheckpointContent; resposta: R; corrigido: boolean }> {
   const ajustar = opcoes.ajustar ?? ((t: string) => t);
+  const aoAceitarApelidos = (caminhos: string[]) =>
+    opcoes.log?.warn('fechamento do turno aceito com nome de campo traduzido — sem segunda chamada', {
+      campos: caminhos.join('; '),
+    });
   const primeira = await opcoes.pedir([]);
   try {
-    return { content: parseCheckpointText(ajustar(primeira.text)), resposta: primeira, corrigido: false };
+    return {
+      content: parseCheckpointText(ajustar(primeira.text), aoAceitarApelidos),
+      resposta: primeira,
+      corrigido: false,
+    };
   } catch (err) {
     if (!(err instanceof FechamentoRecusado)) throw err;
     opcoes.log?.warn('fechamento do turno recusado — pedindo uma correção antes de re-tentar o turno', {
@@ -352,6 +410,10 @@ export async function fecharOTurno<R extends { text: string; callId?: string | n
       { role: 'assistant', content: primeira.text },
       { role: 'user', content: correcaoDoFechamento(err.paraOModelo) },
     ]);
-    return { content: parseCheckpointText(ajustar(segunda.text)), resposta: segunda, corrigido: true };
+    return {
+      content: parseCheckpointText(ajustar(segunda.text), aoAceitarApelidos),
+      resposta: segunda,
+      corrigido: true,
+    };
   }
 }

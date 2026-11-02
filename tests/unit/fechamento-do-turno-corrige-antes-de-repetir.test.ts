@@ -136,11 +136,14 @@ describe("o fechamento do turno corrige antes de repetir o turno", () => {
     expect(fonte).toMatch(/\{ role: 'user', content: CHECKPOINT_INSTRUCTION \},\s*\.\.\.correcao,/);
     expect(CHECKPOINT_INSTRUCTION).toContain("Sem texto fora do JSON.");
   });
-  it("corrige o_what no segundo compromisso sem apagar a promessa", async () => {
+  // `o_what` passou a ser aceito de primeira (02/11/2026, ver
+  // `fechamento-aceita-o-que-traduzido.test.ts`); a correção continua valendo
+  // para qualquer outro nome traduzido, e é ela que este teste prende.
+  it("corrige nome traduzido no segundo compromisso sem apagar a promessa", async () => {
     const promessa = { o_que: "retornar a resposta da equipe", prazo: null };
     const corrigido = { ...JSON.parse(VALIDO), declaracao: { intencoes: [], promessas: [{ o_que: "confirmar o pedido", prazo: null }, promessa], nada_a_declarar: false } };
     const invalido = JSON.parse(JSON.stringify(corrigido));
-    invalido.declaracao.promessas[1] = { o_what: promessa.o_que, prazo: null };
+    invalido.declaracao.promessas[1] = { what: promessa.o_que, prazo: null };
     const m = modelo(JSON.stringify(invalido), JSON.stringify(corrigido));
     const r = await fecharOTurno({ pedir: m.pedir });
     expect(m.pedir).toHaveBeenCalledTimes(2);
