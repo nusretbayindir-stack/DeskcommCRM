@@ -117,6 +117,7 @@ const STATUS_REATIVAVEIS = new Set(["open", "pending", "claimed", "ai_handling"]
 interface ConversaRow {
   id: string;
   contact_id: string | null;
+  channel_session_id: string | null;
   status: string | null;
   assigned_to_user_id: string | null;
   assignee_kind: string | null;
@@ -131,7 +132,7 @@ export async function devolverAtendimentoAoAgente(
 
   const { data: convData, error: convErr } = await supabase
     .from("conversations")
-    .select("id, contact_id, status, assigned_to_user_id, assignee_kind, bot_silenced_until")
+    .select("id, contact_id, channel_session_id, status, assigned_to_user_id, assignee_kind, bot_silenced_until")
     .eq("id", input.conversationId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -303,6 +304,16 @@ export async function devolverAtendimentoAoAgente(
     return { ok: false, erro: "resume_signal_failed", detalhe: emitErr.message };
   }
 
+  // (4b) QUEM ESCREVEU DURANTE O SILÊNCIO. Enquanto a conversa estava com uma
+  // pessoa, o drain recebeu o `ai_agent.dispatch_requested` de cada mensagem do
+  // cliente, viu a conversa não elegível e marcou o evento como processado SEM
+  // job — certo naquela hora. Sem este passo, a volta não acordava ninguém: o
+  // cliente que perguntou "ainda está aí?" ficava sem resposta até escrever de
+  // novo (medido em produção, 02/11/2026).
+  if (!jaEstavaComOAgente) {
+    await despacharSeOClienteEspera(deps, conv, input.conversationId);
+  }
+
   // (5) O input estruturado que a IA lê para retomar (invariante 2 da doutrina).
   if (conv.contact_id !== null && continuidade.houveAtendimentoHumano) {
     await gravarCheckpointDeRetomada(supabase, organizationId, conv.contact_id, continuidade);
@@ -339,6 +350,69 @@ export async function devolverAtendimentoAoAgente(
   });
 
   return { ok: true, conversationId: input.conversationId, jaEstavaComOAgente, continuidade };
+}
+
+/** A janela de atendimento do WhatsApp: mais velho que isso, a volta não responde sozinha. */
+const ESPERA_MAXIMA_MS = 24 * 3_600_000;
+
+/**
+ * Pede UM despacho do agente se a última mensagem da conversa é do cliente
+ * (ninguém respondeu depois dela) e tem menos de 24 h. É o MESMO evento e o
+ * MESMO payload da ingestão (`lib/channels/pos-entrada.ts`), então quem decide
+ * continua sendo o caminho de sempre: drain (canal desligado, grupo,
+ * elegibilidade, coalescência), e o turno, que lê o histórico inteiro e
+ * responde a todas as mensagens pendentes de uma vez.
+ *
+ * Nunca derruba a devolução: o comando já voltou para o agente, e a próxima
+ * mensagem do cliente acorda o agente de qualquer forma.
+ */
+async function despacharSeOClienteEspera(
+  deps: RetomadaDeps,
+  conv: ConversaRow,
+  conversationId: string,
+): Promise<void> {
+  const { supabase, organizationId } = deps;
+  if (conv.contact_id === null || conv.channel_session_id === null) return;
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("id, direction, created_at")
+    .eq("organization_id", organizationId)
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    logger.warn("[escalacao.retomada] última mensagem não foi lida — sem despacho", {
+      conversation_id: conversationId,
+      error: error.message,
+    });
+    return;
+  }
+  const ultima = data as { id: string; direction: string; created_at: string } | null;
+  if (!ultima || ultima.direction !== "inbound") return;
+  if (Date.now() - new Date(ultima.created_at).getTime() > ESPERA_MAXIMA_MS) return;
+
+  const { error: emitErr } = await supabase.rpc("emit_event", {
+    p_event_type: "ai_agent.dispatch_requested",
+    p_entity_kind: "message",
+    p_entity_id: ultima.id,
+    p_payload: {
+      organization_id: organizationId,
+      conversation_id: conversationId,
+      contact_id: conv.contact_id,
+      channel_session_id: conv.channel_session_id,
+      inbound_message_id: ultima.id,
+    },
+    p_metadata: { source: "escalacao.retomada", request_id: deps.requestId },
+    p_organization_id: organizationId,
+  });
+  if (emitErr) {
+    logger.warn("[escalacao.retomada] despacho do agente para quem esperava falhou", {
+      conversation_id: conversationId,
+      error: emitErr.message,
+    });
+  }
 }
 
 function recusarSempreHumano(
