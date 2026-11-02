@@ -91,9 +91,12 @@ describe("o fechamento do turno corrige antes de repetir o turno", () => {
     expect(r.content.declaracao).toEqual({ intencoes: [], promessas: [], nada_a_declarar: true });
 
     // O log diz O QUE falhou — nunca o texto do modelo (pode carregar PII da conversa).
+    // Desde 02/11/2026 ele diz também o NOME da chave a mais, pelo filtro de nome de
+    // campo (`fechamento-recusado-diz-a-chave-a-mais.test.ts`): sem o nome, a recusa
+    // que sobrou em produção não tinha conserto escolhível. O VALOR continua fora.
     expect(log.warn).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(log.warn.mock.calls[0])).not.toContain("resumo");
-    expect(JSON.stringify(log.warn.mock.calls[0])).not.toContain("observacoes");
+    expect(JSON.stringify(log.warn.mock.calls[0])).toContain("(campos que não existem: observacoes)");
   });
 
   it("recusado duas vezes: sobe o mesmo erro de antes, e a fila re-tenta o turno como sempre", async () => {
