@@ -25,6 +25,8 @@ const CONTATO = "55555555-5555-4555-8555-555555555555";
 const NEGOCIO = "66666666-6666-4666-8666-666666666666";
 const ATENDENTE = "11111111-1111-4111-8111-111111111111";
 const CHAMADO = "33333333-3333-4333-8333-333333333333";
+const CANAL = "77777777-7777-4777-8777-777777777777";
+const MENSAGEM = "88888888-8888-4888-8888-888888888888";
 
 const USUARIO: Actor = { type: "user", id: ATENDENTE, role: "manager" };
 
@@ -67,6 +69,13 @@ interface CenarioBanco {
    * como o Postgres faria.
    */
   marcaNaEscrita?: boolean;
+  /**
+   * A mensagem mais recente da conversa (`messages`, por `created_at desc`).
+   * Ausente = conversa sem mensagem lida (o caso dos testes antigos).
+   */
+  ultimaMensagem?: Record<string, unknown> | null;
+  /** Falha só no `emit_event` do despacho do agente (`ai_agent.dispatch_requested`). */
+  erroDoDespacho?: { message: string } | null;
 }
 
 /**
@@ -123,6 +132,9 @@ function fazerSupabase(cenario: CenarioBanco, cap: Captura) {
         if (tabela === "lead_checkpoints") {
           return Promise.resolve({ data: cenario.checkpointAnterior ?? null, error: null });
         }
+        if (tabela === "messages") {
+          return Promise.resolve({ data: cenario.ultimaMensagem ?? null, error: null });
+        }
         if (tabela === "crm_pipelines") {
           return Promise.resolve({ data: { id: "pipe-1" }, error: null });
         }
@@ -145,6 +157,9 @@ function fazerSupabase(cenario: CenarioBanco, cap: Captura) {
     from,
     rpc: (fn: string, args: Record<string, unknown>) => {
       cap.rpc.push({ fn, args });
+      if (fn === "emit_event" && args.p_event_type === "ai_agent.dispatch_requested") {
+        return Promise.resolve({ data: null, error: cenario.erroDoDespacho ?? null });
+      }
       if (fn === "emit_event") {
         return Promise.resolve({ data: null, error: cenario.erroDoEmitEvent ?? null });
       }
@@ -157,6 +172,7 @@ function conversaPassadaAHumano(over: Record<string, unknown> = {}) {
   return {
     id: CONV,
     contact_id: CONTATO,
+    channel_session_id: CANAL,
     status: "claimed",
     assigned_to_user_id: ATENDENTE,
     assignee_kind: "user",
@@ -593,5 +609,123 @@ describe("devolver o atendimento ao agente", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.erro).toBe("contact_state_unreadable");
     expect(cap.updates).toEqual([]);
+  });
+});
+
+/**
+ * QUEM ESCREVEU DURANTE O SILÊNCIO RECEBE RESPOSTA QUANDO O AGENTE VOLTA.
+ *
+ * Medido em produção (02/11/2026, v1.88.14): uma resposta pelo aparelho (fora do
+ * CRM) silenciou o agente por 1 h; o cliente escreveu duas vezes nesse meio-tempo
+ * ("12:30 olsun iyi mi böyle?", "Ordamısın?"). O drain viu a conversa não
+ * elegível e marcou os dois `ai_agent.dispatch_requested` como processados SEM
+ * job — certo naquela hora. Depois a pessoa clicou em "Devolver ao automático" e
+ * nada aconteceu: ninguém re-despachava, e o cliente ficou sem resposta até
+ * escrever de novo.
+ *
+ * A volta agora pede UM despacho quando a última mensagem da conversa é do
+ * cliente (ninguém respondeu depois dela) e tem menos de 24 h. O turno lê o
+ * histórico inteiro e responde a tudo; drain, elegibilidade e turno continuam
+ * decidindo como sempre.
+ */
+describe("a volta responde quem escreveu durante o silêncio", () => {
+  const recente = () => new Date(Date.now() - 10 * 60_000).toISOString();
+  const despachos = (cap: Captura) =>
+    cap.rpc.filter((r) => r.fn === "emit_event" && r.args.p_event_type === "ai_agent.dispatch_requested");
+
+  it("⭐ última mensagem é do cliente: pede o despacho do agente para ela", async () => {
+    const cap = novaCaptura();
+    const res = await retomar(
+      cenarioComAtendimentoHumano({
+        ultimaMensagem: { id: MENSAGEM, direction: "inbound", created_at: recente() },
+      }),
+      cap,
+    );
+
+    expect(res.ok).toBe(true);
+    const ds = despachos(cap);
+    expect(ds).toHaveLength(1);
+    expect(ds[0]!.args).toMatchObject({
+      p_entity_kind: "message",
+      p_entity_id: MENSAGEM,
+      p_organization_id: ORG,
+      p_payload: {
+        organization_id: ORG,
+        conversation_id: CONV,
+        contact_id: CONTATO,
+        channel_session_id: CANAL,
+        inbound_message_id: MENSAGEM,
+      },
+      p_metadata: { source: "escalacao.retomada", request_id: "req-1" },
+    });
+  });
+
+  it("a pessoa já respondeu (última mensagem é nossa): não despacha", async () => {
+    const cap = novaCaptura();
+    await retomar(
+      cenarioComAtendimentoHumano({
+        ultimaMensagem: { id: MENSAGEM, direction: "outbound", created_at: recente() },
+      }),
+      cap,
+    );
+    expect(despachos(cap)).toEqual([]);
+  });
+
+  it("já estava com o agente: não despacha (o turno daquela mensagem já foi pedido)", async () => {
+    const cap = novaCaptura();
+    await retomar(
+      {
+        conversa: conversaPassadaAHumano({
+          status: "ai_handling",
+          assigned_to_user_id: null,
+          assignee_kind: "ai",
+          bot_silenced_until: null,
+        }),
+        ultimaMensagem: { id: MENSAGEM, direction: "inbound", created_at: recente() },
+      },
+      cap,
+    );
+    expect(despachos(cap)).toEqual([]);
+  });
+
+  it("mensagem do cliente com mais de 24 h: não despacha", async () => {
+    const cap = novaCaptura();
+    await retomar(
+      cenarioComAtendimentoHumano({
+        ultimaMensagem: {
+          id: MENSAGEM,
+          direction: "inbound",
+          created_at: new Date(Date.now() - 25 * 3_600_000).toISOString(),
+        },
+      }),
+      cap,
+    );
+    expect(despachos(cap)).toEqual([]);
+  });
+
+  it("o despacho falhou: a devolução continua valendo", async () => {
+    const cap = novaCaptura();
+    const res = await retomar(
+      cenarioComAtendimentoHumano({
+        ultimaMensagem: { id: MENSAGEM, direction: "inbound", created_at: recente() },
+        erroDoDespacho: { message: "boom" },
+      }),
+      cap,
+    );
+    expect(res.ok).toBe(true);
+    expect(despachos(cap)).toHaveLength(1);
+  });
+
+  it("contato sempre humano: recusa antes e não despacha", async () => {
+    const cap = novaCaptura();
+    const res = await retomar(
+      cenarioComAtendimentoHumano({
+        contato: { ai_opt_out: true, force_human: true },
+        ultimaMensagem: { id: MENSAGEM, direction: "inbound", created_at: recente() },
+      }),
+      cap,
+    );
+    expect(res.ok).toBe(false);
+    expect(despachos(cap)).toEqual([]);
   });
 });
