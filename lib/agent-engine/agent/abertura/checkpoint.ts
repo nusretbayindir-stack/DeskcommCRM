@@ -171,7 +171,8 @@ export async function insertCheckpoint(
  * código de cada problema do Zod, ou a ausência de JSON —, nunca o texto do
  * modelo, que pode carregar PII da conversa: é o que vai para o log. No
  * `invalid_type` ele diz também o FORMATO (`formatoDoTipoErrado`): o tipo
- * esperado, o que veio e os nomes dos campos do objeto — nenhum valor.
+ * esperado, o que veio e os nomes dos campos do objeto — nenhum valor. No
+ * `unrecognized_keys`, os nomes das chaves que não existem, pelo mesmo filtro.
  * `paraOModelo` acrescenta os nomes dos campos que não existem e só volta ao
  * próprio modelo, na correção (`fecharOTurno`).
  */
@@ -206,7 +207,10 @@ const NOME_DE_CAMPO = /^[\p{L}_][\p{L}\p{N}_-]{0,39}$/u;
 const MAX_CAMPOS_NO_LOG = 12;
 
 function nomesDosCampos(objeto: Record<string, unknown>): string {
-  const nomes = Object.keys(objeto);
+  return nomesParaOLog(Object.keys(objeto));
+}
+
+function nomesParaOLog(nomes: readonly string[]): string {
   const vistos = nomes
     .slice(0, MAX_CAMPOS_NO_LOG)
     .map((nome) => (NOME_DE_CAMPO.test(nome) ? nome : '(nome fora do padrão)'));
@@ -314,8 +318,19 @@ export function parseCheckpointText(
     // O formato entra SÓ no log (`problemas` e a mensagem); `paraOModelo` segue
     // como foi medido (14 de 14, ver `correcaoDoFechamento`) — o conserto de
     // verdade é escolhido depois de ler este log, não antes.
+    //
+    // `unrecognized_keys` leva os NOMES das chaves pelo mesmo filtro dos campos
+    // (`nomesParaOLog`): medido em 02/11/2026 (v1.88.13), com o `o_what` já
+    // aceito, a recusa que sobrou foi `declaracao: unrecognized_keys` — e sem o
+    // nome não há como escolher o conserto.
     const issues = parsed.error.issues
-      .map((i) => (i.code === 'invalid_type' ? onde(i) + formatoDoTipoErrado(bruto, i.path, i.expected) : onde(i)))
+      .map((i) =>
+        i.code === 'invalid_type'
+          ? onde(i) + formatoDoTipoErrado(bruto, i.path, i.expected)
+          : i.code === 'unrecognized_keys'
+            ? `${onde(i)} (campos que não existem: ${nomesParaOLog(i.keys)})`
+            : onde(i),
+      )
       .join('; ');
     const paraOModelo = parsed.error.issues
       .map((i) =>
