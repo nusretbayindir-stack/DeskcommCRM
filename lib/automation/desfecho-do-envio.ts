@@ -27,6 +27,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
 import type { ActionResultDetail } from "@/lib/automation/types";
 import { fraseDaFalhaDeCanal } from "@/lib/channels/frases-de-falha";
@@ -198,14 +200,22 @@ export async function avisarEnvioQueFalhou(
     return;
   }
 
+  // No idioma da organização (U14): a Central mostra a frase gravada. O motivo
+  // passa pelo mesmo `traduzir` — as frases de falha de canal já estão no
+  // catálogo; um erro cru do provedor volta como veio.
+  const idioma = await idiomaDaOrgPeloSupabase(admin, entrada.organizationId);
   const { error } = await admin.from("agent_inbox_items").insert({
     organization_id: entrada.organizationId,
     kind: "message_send_stuck",
     severity: "critical",
-    title: "Uma automação não conseguiu falar com o cliente",
+    title: traduzir("Uma automação não conseguiu falar com o cliente", idioma),
     body:
-      `A automação "${entrada.ruleName}" disparou e a mensagem não chegou. ${entrada.motivo} ` +
-      `Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.`,
+      `${traduzir('A automação "{regra}" disparou e a mensagem não chegou.', idioma).replace("{regra}", () => entrada.ruleName)} ` +
+      `${traduzir(entrada.motivo, idioma)} ` +
+      traduzir(
+        "Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.",
+        idioma,
+      ),
     ref_kind: entrada.conversationId ? "conversation" : null,
     ref_id: entrada.conversationId ?? null,
   });

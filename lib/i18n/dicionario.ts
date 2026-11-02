@@ -12940,6 +12940,58 @@ export const DICIONARIO: Traducoes = {
   // O aviso da resposta a caso obsoleto (lib/atendimento/aviso-caso-obsoleto.ts);
   // o corpo já estava acima, com a tela.
   "Resposta registrada; atendimento mudou": { es: "Respuesta registrada; la atención cambió" },
+  // O aviso do envio travado (app/api/v1/cron/recover-stuck-messages/route.ts).
+  "Uma resposta não chegou ao cliente": { es: "Una respuesta no llegó al cliente" },
+  "{n} respostas não chegaram ao cliente": { es: "{n} respuestas no llegaron al cliente" },
+  "Ficaram mais de {minutos} minutos aguardando envio e foram marcadas como falha. Verifique se a conexão do WhatsApp está ativa e se o worker de envio está rodando. Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.": {
+    es: "Pasaron más de {minutos} minutos esperando el envío y se marcaron como fallidas. Verifica que la conexión de WhatsApp esté activa y que el worker de envío esté en marcha. No se reenvió nada automáticamente: reenviar sin conocer la causa puede mandar el mismo mensaje dos veces.",
+  },
+  // O aviso do lembrete sem canal (lib/agenda/aviso-de-remetente.ts).
+  "Lembrete aguardando definição do canal": { es: "Recordatorio a la espera de definir el canal" },
+  "O lembrete não foi enviado nem marcado como enviado. Confira a reserva na Agenda e o canal em Configurações → Tipos de agendamento. Corrigido dentro do prazo, a próxima rodada tenta enviar; avisos vencidos não são reenviados.": {
+    es: "El recordatorio no se envió ni se marcó como enviado. Revisa la reserva en la Agenda y el canal en Configuración → Tipos de cita. Si se corrige a tiempo, la próxima ronda intenta enviarlo; los avisos vencidos no se reenvían.",
+  },
+  "Há mais de um canal disponível e a reserva não indica qual usar.": {
+    es: "Hay más de un canal disponible y la reserva no indica cuál usar.",
+  },
+  "Não há canal de mensagem disponível.": { es: "No hay ningún canal de mensajes disponible." },
+  "O canal indicado está desconectado, pausado, arquivado ou não pode enviar mensagens.": {
+    es: "El canal indicado está desconectado, en pausa, archivado o no puede enviar mensajes.",
+  },
+  "A conversa da reserva não corresponde a este contato e organização, ou está sem canal.": {
+    es: "La conversación de la reserva no corresponde a este contacto y organización, o no tiene canal.",
+  },
+  "O canal indicado não pode enviar texto livre fora da janela de atendimento.": {
+    es: "El canal indicado no puede enviar texto libre fuera de la ventana de atención.",
+  },
+  "Não foi possível consultar o canal da reserva. A próxima rodada tentará novamente.": {
+    es: "No se pudo consultar el canal de la reserva. La próxima ronda lo intentará de nuevo.",
+  },
+  // O aviso do snooze vencido (app/api/v1/cron/snooze-watcher/route.ts).
+  "Lead não respondeu no prazo": { es: "El lead no respondió a tiempo" },
+  // O aviso da automação que não falou com o cliente (lib/automation/desfecho-do-envio.ts).
+  "Uma automação não conseguiu falar com o cliente": { es: "Una automatización no logró hablar con el cliente" },
+  'A automação "{regra}" disparou e a mensagem não chegou.': {
+    es: 'La automatización "{regra}" se disparó y el mensaje no llegó.',
+  },
+  "A mensagem não saiu.": { es: "El mensaje no salió." },
+  "Nada foi reenviado automaticamente — reenviar sem saber a causa arrisca mandar a mesma mensagem duas vezes.": {
+    es: "No se reenvió nada automáticamente: reenviar sin conocer la causa puede mandar el mismo mensaje dos veces.",
+  },
+  // O aviso do follow-up que nenhum agente arma (app/api/v1/cron/followup-sem-agente/route.ts).
+  "O follow-up «{nome}» não está disparando": { es: "El follow-up «{nome}» no se está disparando" },
+  'O fluxo «{nome}» está publicado e dispararia {quando} — mas nenhum agente publicado arma ele, e por isso nenhum contato entra. Abra IA › Agentes, escolha o agente que atende esse número, marque «{nome}» em "follow-ups que arma" e publique a versão. Este aviso se resolve sozinho quando o vínculo existir.': {
+    es: "El flujo «{nome}» está publicado y se dispararía {quando}, pero ningún agente publicado lo arma, y por eso ningún contacto entra. Abre IA › Agentes, elige el agente que atiende ese número, marca «{nome}» en «follow-ups que arma» y publica la versión. Este aviso se resuelve solo cuando exista el vínculo.",
+  },
+  "depois de um tempo sem o contato responder": { es: "después de un tiempo sin que el contacto responda" },
+  "quando um negócio entra numa etapa do funil": { es: "cuando un negocio entra en una etapa del embudo" },
+  "quando um atendimento é aberto": { es: "cuando se abre una atención" },
+  "quando alguém confirma que o contato não compareceu": { es: "cuando alguien confirma que el contacto no asistió" },
+  "quando o contato volta a escrever depois de um tempo sem falar": {
+    es: "cuando el contacto vuelve a escribir después de un tiempo sin hablar",
+  },
+  "quando um negócio nasce": { es: "cuando nace un negocio" },
+  "pelo gatilho configurado": { es: "por el disparador configurado" },
   // A escalação de manipulação do agente (lib/agent-engine/guardrails/jailbreak/classifier.ts).
   "Possível manipulação do agente — revisar conversa": {
     es: "Posible manipulación del agente — revisar la conversación",
