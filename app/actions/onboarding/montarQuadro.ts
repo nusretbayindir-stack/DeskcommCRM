@@ -17,7 +17,7 @@ import { buildModel, chaveDePlataforma } from "@/lib/ai/runtime/agent";
 import { loadCredential } from "@/lib/ai/credentials";
 import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { sementesNoIdioma } from "@/lib/organizacao/sementes-no-idioma";
-import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
+import { vocabularioDoFunilPadrao, vocabularioIntocadoDoBanco } from "@/lib/pipelines/vocabulario-padrao";
 import { slugDeNome } from "@/lib/leads/stage-editing";
 import {
   etapasParaGravar,
@@ -302,13 +302,7 @@ async function escreverVocabularioDoFunil(
       .eq("organization_id", orgId)
       .maybeSingle();
     const atual = (funil as { vocabulary?: Record<string, unknown> | null } | null)?.vocabulary;
-    const padraoDoBanco = vocabularioDoFunilPadrao("pt-BR");
-    const intocado =
-      !atual ||
-      (Object.keys(padraoDoBanco) as (keyof typeof padraoDoBanco)[]).every(
-        (k) => atual[k] === undefined || atual[k] === padraoDoBanco[k],
-      );
-    if (!intocado) return;
+    if (!vocabularioIntocadoDoBanco(atual)) return;
 
     const idioma = await idiomaDaOrgPeloSupabase(admin, orgId);
     const { error } = await admin
@@ -331,17 +325,17 @@ function explicarRecusa(motivo: string | undefined, quantos: number | undefined)
     case "funil_com_negocios":
       return (
         `Este quadro já tem ${quantos ?? "alguns"} cliente(s) dentro, então trocar as colunas agora ` +
-        `deixaria eles sem lugar. Você pode ajustar as colunas depois, em Configurações › Funis.`
+        `deixaria eles sem lugar. Você pode ajustar as colunas depois, em CRM › Ver tudo em CRM › Etapas do funil.`
       );
     case "etapa_em_uso_por_webhook":
       return (
         "Uma das colunas atuais está sendo usada por uma integração que traz clientes de fora. " +
-        "Trocar o quadro desligaria essa integração, então preferi não mexer — ajuste em Configurações › Funis."
+        "Trocar o quadro desligaria essa integração, então preferi não mexer — ajuste em CRM › Ver tudo em CRM › Etapas do funil."
       );
     case "funil_nao_encontrado":
       return "Não encontrei o quadro desta empresa. Recarregue a página.";
     default:
-      return "Não consegui montar o quadro agora. Você pode fazer isso depois em Configurações › Funis.";
+      return "Não consegui montar o quadro agora. Você pode fazer isso depois em CRM › Ver tudo em CRM › Etapas do funil.";
   }
 }
 

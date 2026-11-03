@@ -83,6 +83,9 @@ function fakeAdmin(o: Opcoes, updates: Array<Record<string, unknown>>) {
           filtros[k] = v;
           return b;
         },
+        // A leitura do topo da etapa de destino (v1.99.0, #3461): `.order().limit()`.
+        order: () => b,
+        limit: () => b,
         maybeSingle: () => {
           if (tabela === "crm_leads") return Promise.resolve({ data: soAsColunas(lead, colunas), error: null });
           if (tabela === "crm_pipelines") return Promise.resolve({ data: { settings: null }, error: null });
@@ -134,7 +137,14 @@ describe("o agendamento não leva o card para trás", () => {
   it("card antes da etapa de agendamento: anda para ela", async () => {
     const { r, updates } = await mover({ stageDoCard: "s-novo" });
     expect(r).toEqual({ moveu: true, motivo: "movido" });
-    expect(updates).toEqual([{ set: { stage_id: "s-agendado" }, onde: expect.objectContaining({ id: "lead-1", stage_id: "s-novo" }) }]);
+    // `set` também leva a posição de entrada (#3461), que tem teste próprio
+    // em appointment-stage-move.test.ts; aqui importa a etapa.
+    expect(updates).toEqual([
+      {
+        set: expect.objectContaining({ stage_id: "s-agendado" }),
+        onde: expect.objectContaining({ id: "lead-1", stage_id: "s-novo" }),
+      },
+    ]);
   });
 
   it("card já na etapa de agendamento: ja_esta_la, como antes", async () => {

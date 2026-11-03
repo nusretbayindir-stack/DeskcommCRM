@@ -16,12 +16,11 @@
 import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
 import { traduzir } from '@/lib/i18n/dicionario';
 import type { Idioma } from '@/lib/i18n/idiomas';
-import { ROTULO_DO_PASSO } from '@/lib/leads/agent-mapping';
 import { sincronizaEstagioDoAgente } from '@/lib/leads/agent-stage-sync';
 import { insertInboxItem, type InboxDedupe } from '../../db/repository';
 import type { Queryable } from '../../queue/queue';
 import type { CrmEdgeConfig } from './mcp-client';
-import { LEAD_STAGES, type LeadStage } from '../../agent/lead-state';
+import type { LeadStage } from '../../agent/lead-state';
 
 export type MirrorReason =
   | 'not_configured'
@@ -71,6 +70,21 @@ export type MirrorResult =
       ok: false;
       reason: MirrorReason;
       detail: string;
+      /**
+       * O NOME da etapa de destino no funil do DONO (issue #3148), quando o
+       * resolvedor o conhece.
+       *
+       * ⚠️ Distinto do passo interno do agente: `toStage`/`update.transition.to`
+       * é vocabulário da máquina de estados do atendimento ("lost",
+       * "qualifying"), enquanto `stageName` é o rótulo que o dono cadastrou no
+       * quadro ("Perdido", "Proposta enviada"). O aviso da Central nomeia a etapa
+       * do funil; o passo interno só serve ao log e ao ramo de incidente.
+       *
+       * Ausente na recusa de ESCOPO, que decide ANTES de ler as etapas — e é
+       * exatamente por isso que o aviso tem um texto de reserva legível, sem
+       * vazar o rótulo interno.
+       */
+      stageName?: string;
       /**
        * O NEGÓCIO (`crm_leads.id`) que o sync resolveu para o contato, quando
        * chegou a resolver. É ele — e não o contato — que o aviso da Central
@@ -127,18 +141,6 @@ function preencher(frase: string, valores: Record<string, string>): string {
   return frase.replace(/\{(\w+)\}/g, (marca, chave: string) => valores[chave] ?? marca);
 }
 
-/**
- * A etapa de destino como o dono a lê. O espelho recebe o PASSO do agente
- * (`qualified`), que em turco sai pelo nome do passo ("Nitelikli"), como na tela
- * (`EvolutionGaps`). Em português o texto gravado fica byte a byte como era.
- * Nome que não é passo é da etapa que o operador escreveu: fica como veio, nunca
- * vira chave de dicionário.
- */
-function etapaNoIdioma(etapa: string, idioma: Idioma): string {
-  if (idioma === 'pt-BR' || !(LEAD_STAGES as readonly string[]).includes(etapa)) return etapa;
-  return traduzir(ROTULO_DO_PASSO[etapa as LeadStage], idioma);
-}
-
 /** A frase da régua de campos (`recusaDeCamposObrigatorios`), gravada pelo sync em português. */
 const RECUSA_DE_CAMPOS = /^Preencha os campos obrigatórios antes de continuar: (?<campos>.+)\.$/s;
 
@@ -179,6 +181,28 @@ function detalheNoIdioma(detalhe: string, idioma: Idioma): string {
 }
 
 /**
+ * COMO O AVISO NOMEIA A ETAPA DE DESTINO — o nome que está no funil do DONO.
+ *
+ * ⚠️ NUNCA o passo interno do agente (issue #3148). Medido na issue: a Central
+ * abria `...deveria ir para "lost"`, e quem lê o aviso conhece só o nome que ele
+ * mesmo cadastrou no quadro ("Perdido"). O passo interno é vocabulário da máquina
+ * de estados do atendimento — serve ao `runLog.warn` (`to_stage`) e ao ramo de
+ * INCIDENTE, que é diagnóstico de quem depura, e nunca ao texto para humano.
+ *
+ * Sem nome resolvido, o aviso fala da etapa por extenso em vez de vazar o rótulo
+ * interno ou sair vazio. Acontece na recusa de ESCOPO, que decide ANTES de ler as
+ * etapas — não há consulta nova ao CRM só para nomear (ver `sincronizaEstagioDoAgente`).
+ *
+ * O nome entra como ESTÁ cadastrado (respeita maiúscula/acento do tenant): traduzir
+ * ou normalizar aqui seria inventar um rótulo que o dono não reconhece no quadro.
+ * Só o texto de reserva sai no idioma da organização (U14), porque é nosso.
+ */
+function etapaComoOChamadorLe(etapaDoFunil: string | undefined, idioma: Idioma): string {
+  const nome = etapaDoFunil?.trim();
+  return nome !== undefined && nome.length > 0 ? `"${nome}"` : traduzir('a etapa de destino do funil', idioma);
+}
+
+/**
  * QUAL aviso o não-movimento produz — a decisão, separada de quem a grava.
  *
  * ⚠️ Ela mora AQUI, e não no `inbound-turn`, por um motivo medido: enquanto o
@@ -197,17 +221,31 @@ function detalheNoIdioma(detalhe: string, idioma: Idioma): string {
 export function avisoDoEspelhoRecusado(input: {
   motivo: MirrorReason;
   detalhe: string;
-  /** A etapa para onde o assistente quis levar o negócio. */
+  /**
+   * O PASSO INTERNO do agente para onde ele quis levar o negócio
+   * (`update.transition.to`: "lost", "qualifying").
+   *
+   * ⚠️ NÃO é o texto para humano (issue #3148): os avisos de estado legítimo
+   * nomeiam a etapa do funil via `etapaDoFunil`. Este campo fica para o ramo de
+   * INCIDENTE, onde o rótulo interno é diagnóstico de quem depura o funil quebrado.
+   */
   etapaDeDestino: string;
+  /**
+   * O NOME da etapa no funil do DONO (issue #3148) — o que o aviso mostra.
+   *
+   * Ausente quando o resolvedor não o conhece (recusa de ESCOPO, que decide antes
+   * de ler as etapas): cai no texto de reserva legível, nunca no passo interno.
+   */
+  etapaDoFunil?: string;
   /**
    * O da organização: a Central mostra a frase gravada, e a empresa turca lia o
    * aviso em português (U14). O que decide SE avisa não depende dele.
    */
   idioma?: Idioma;
 }): AvisoDoEspelho | null {
-  const { motivo, detalhe, etapaDeDestino } = input;
+  const { motivo, detalhe, etapaDeDestino, etapaDoFunil } = input;
   const idioma = input.idioma ?? 'pt-BR';
-  const etapa = etapaNoIdioma(etapaDeDestino, idioma);
+  const etapa = etapaComoOChamadorLe(etapaDoFunil, idioma);
 
   if (motivo === 'fora_do_escopo') {
     // Aviso PRÓPRIO, e não o de falha: nada quebrou — a regra funcionou. Dizer
@@ -218,7 +256,7 @@ export function avisoDoEspelhoRecusado(input: {
       title: traduzir('O assistente quis organizar um negócio de um funil que não é dele', idioma),
       body: preencher(
         traduzir(
-          'O assistente concluiu que este negócio deveria ir para "{etapa}", mas ele não cuida do funil onde o negócio está ({detalhe}). Ninguém mexeu no card. Se ele deveria cuidar desse funil, marque isso na configuração do assistente; se não, não há nada a fazer.',
+          'O assistente concluiu que este negócio deveria ir para {etapa}, mas ele não cuida do funil onde o negócio está ({detalhe}). Ninguém mexeu no card. Se ele deveria cuidar desse funil, marque isso na configuração do assistente; se não, não há nada a fazer.',
           idioma,
         ),
         { etapa, detalhe: detalheNoIdioma(detalhe, idioma) },
@@ -251,7 +289,7 @@ export function avisoDoEspelhoRecusado(input: {
       title: traduzir('O assistente quis marcar um negócio como perdido — e isso exige um motivo', idioma),
       body: preencher(
         traduzir(
-          'O assistente concluiu que este negócio deveria ir para "{etapa}", que no seu funil é uma etapa de perda. Perder um negócio exige um motivo, e o motivo é a razão que quem está no negócio reconhece — o assistente não inventa uma. Ninguém mexeu no card: ele continua onde estava. Se o negócio realmente se perdeu, abra o card no funil, use "Marcar como perdido" e informe o motivo; se não, não há nada a fazer.',
+          'O assistente concluiu que este negócio deveria ir para {etapa}, que no seu funil é uma etapa de perda. Perder um negócio exige um motivo, e o motivo é a razão que quem está no negócio reconhece — o assistente não inventa uma. Ninguém mexeu no card: ele continua onde estava. Se o negócio realmente se perdeu, abra o card no funil, use "Marcar como perdido" e informe o motivo; se não, não há nada a fazer.',
           idioma,
         ),
         { etapa },
@@ -273,7 +311,7 @@ export function avisoDoEspelhoRecusado(input: {
       title: traduzir('O assistente quis mover um negócio — o funil exige campos antes', idioma),
       body: preencher(
         traduzir(
-          'O assistente concluiu que este negócio deveria ir para "{etapa}", mas o seu funil exige o preenchimento de alguns campos antes de entrar nela. {detalhe} Ninguém mexeu no card: ele continua onde estava. Abra o negócio, preencha o que falta no dossiê e mova o card normalmente.',
+          'O assistente concluiu que este negócio deveria ir para {etapa}, mas o seu funil exige o preenchimento de alguns campos antes de entrar nela. {detalhe} Ninguém mexeu no card: ele continua onde estava. Abra o negócio, preencha o que falta no dossiê e mova o card normalmente.',
           idioma,
         ),
         { etapa, detalhe: detalheNoIdioma(detalhe, idioma) },
@@ -285,15 +323,20 @@ export function avisoDoEspelhoRecusado(input: {
   if (MIRROR_WARN_ONLY.has(motivo)) return null;
 
   // Incidente: o motivo e o detalhe são técnicos (erro do banco, rótulo novo sem
-  // tradução) e ficam como vieram — quem investiga procura por eles.
+  // tradução) e ficam como vieram — quem investiga procura por eles. Só a frase
+  // em volta sai no idioma da organização.
   return {
     title: traduzir('Espelho de stage no CRM falhou — funil possivelmente inconsistente', idioma),
+    // ⚠️ AQUI o passo interno PODE continuar (issue #3148): este é o ramo de
+    // INCIDENTE, e `lead_state avançou para "lost"` é diagnóstico de quem depura
+    // — qual passo do agente pediu o movimento e não foi atendido. O texto de
+    // humano dos três avisos de estado legítimo é que nunca mostra o rótulo interno.
     body: preencher(
       traduzir(
         'lead_state avançou para "{etapa}" no harness, mas crm_move_lead_stage falhou ({motivo}: {detalhe}). Reconcilie o stage no CRM manualmente.',
         idioma,
       ),
-      { etapa, motivo, detalhe },
+      { etapa: etapaDeDestino, motivo, detalhe },
     ),
     // Incidente TAMBÉM deduplica: o funil quebrado se repete a cada turno, e mil
     // cópias do mesmo incidente escondem o resto da Central tão bem quanto mil
@@ -326,8 +369,13 @@ export async function abreAvisoDoEspelhoRecusado(
     negocioId?: string;
     motivo: MirrorReason;
     detalhe: string;
-    /** A etapa para onde o assistente quis levar o negócio. */
+    /**
+     * O PASSO INTERNO do agente (`update.transition.to`) — só diagnóstico de
+     * incidente, nunca o texto para humano (issue #3148).
+     */
     etapaDeDestino: string;
+    /** O NOME da etapa no funil do dono — o que o aviso mostra (issue #3148). */
+    etapaDoFunil?: string;
   },
 ): Promise<void> {
   // `null` é warn-only: estado legítimo do produto não vira item na Central — e
@@ -428,15 +476,19 @@ export async function mirrorLeadStageToCrm(
       },
     };
     const t = traduz[r.motivo];
+    // O nome da etapa do FUNIL acompanha a recusa quando o resolvedor o conhece
+    // (issue #3148) — é ele que o aviso da Central mostra. Sem isto, o caller só
+    // teria o passo interno (`toStage`) à mão e o difundiria ao dono.
+    const comNome = r.stageName !== undefined ? { stageName: r.stageName } : {};
     const negocio = r.leadId !== undefined ? { negocioId: r.leadId } : {};
     // O `detalhe` do sync VENCE o texto genérico da tabela quando existe: ele
     // sabe QUAL dos dois casos de escopo aconteceu, e o dono precisa dessa
     // diferença para saber se marca um funil ou não faz nada.
-    if (t && r.detalhe) return { ok: false, reason: t.reason, detail: r.detalhe, ...negocio };
+    if (t && r.detalhe) return { ok: false, reason: t.reason, detail: r.detalhe, ...negocio, ...comNome };
     // Motivo desconhecido NÃO pode virar warn-only silencioso: rótulo novo sem
     // tradução aqui é bug de programação, e o inbox é onde ele aparece.
     if (!t) return { ok: false, reason: 'crm_error', detail: `motivo não traduzido: ${r.motivo}`, ...negocio };
-    return { ok: false, ...t, ...negocio };
+    return { ok: false, ...t, ...negocio, ...comNome };
   } catch (err) {
     return {
       ok: false,

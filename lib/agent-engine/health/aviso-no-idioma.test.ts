@@ -22,8 +22,13 @@ describe("o aviso do número em turco", () => {
   it("go-live: título e corpo em turco", () => {
     const aviso = avisoDoNumero("go_live", TAXAS, K, "tr");
     expect(aviso.titulo).toBe("Yeni numara yayına alınmayı bekliyor (go-live)");
-    expect(aviso.corpo).toMatch(/^Yeni numara yayına alınmayı bekliyor \(go-live\)\. /);
-    expect(aviso.corpo).not.toMatch(/disparos|fila|Resolva/);
+    // O corpo da v1.99.0 (CORPO_DO_GO_LIVE: os retornos automáticos param).
+    expect(aviso.corpo).toBe(
+      "Bu numaranın otomatik takip mesajları siz serbest bırakana kadar duraklatıldı. Kuyrukta beklerler, " +
+        "hiçbir şey kaybolmaz ve sonraki saatlere yayılarak yeniden gönderilirler. Size yazanlara yanıt " +
+        "vermek normal şekilde çalışmaya devam eder. Numara gönderime hazır olduğunda bu kaydı çözüldü " +
+        "olarak işaretleyin.",
+    );
   });
 
   it("bloqueios: as contagens no lugar e o percentual à turca", () => {
@@ -46,15 +51,15 @@ describe("o aviso do número em turco", () => {
   });
 });
 
-describe("em português o aviso é byte a byte o de antes", () => {
-  it("go-live", () => {
+describe("em português o aviso é byte a byte o do projeto principal", () => {
+  it("go-live (texto da v1.99.0)", () => {
     expect(avisoDoNumero("go_live", TAXAS, K, "pt-BR")).toEqual({
       titulo: "Número novo aguardando liberação (go-live)",
       corpo:
-        "Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up " +
-        "e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. " +
-        "RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o " +
-        "número estiver pronto para disparar.",
+        "Os retornos automáticos deste número estão parados até você liberar. Eles esperam na fila, " +
+        "nada é perdido, e voltam espaçados ao longo das horas seguintes. Responder quem te escreveu " +
+        "continua funcionando normalmente. Marque este item como resolvido quando o número estiver " +
+        "pronto para disparar.",
     });
   });
 

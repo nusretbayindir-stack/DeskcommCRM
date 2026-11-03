@@ -50,7 +50,9 @@ describe("o exemplo do campo de etiquetas", () => {
   });
 
   it("no novo contato, em turco", () => {
+    // Desde a v1.99.0 o novo contato usa o seletor de etiquetas da ficha
+    // (EtiquetasDoContato, campo `new-tags`): no lugar do exemplo, a dica de busca.
     emTurco(<NewContactDialog open onOpenChange={() => {}} onCriado={() => {}} />);
-    expect(placeholderDasEtiquetas()).toBe("vip, sadık müşteri");
+    expect(document.getElementById("new-tags")?.getAttribute("placeholder")).toBe("Etiket aramak için yazın…");
   });
 });

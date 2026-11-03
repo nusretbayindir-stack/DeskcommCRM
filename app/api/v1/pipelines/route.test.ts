@@ -109,8 +109,8 @@ describe("POST /api/v1/pipelines", () => {
   });
 
   it("o vocabulário do funil novo nasce no idioma da organização", async () => {
-    // O default do banco é português («Cliente», «Pedido», «Pago»…). Org turca
-    // abria o editor do funil novo e lia isso.
+    // O default do banco é português («Contato», «Negócio», «Ganho»… desde a
+    // migration 9080). Org turca abria o editor do funil novo e lia isso.
     authOk("manager", { localeDaOrg: "tr" });
     const db = makeDb({ pipelines: umFunil() });
     const { POST } = await import("./route");
@@ -118,12 +118,12 @@ describe("POST /api/v1/pipelines", () => {
 
     const funil = db.escritas.find((e) => e.table === "crm_pipelines")?.patch as Record<string, unknown>;
     expect(funil.vocabulary).toEqual({
-      lead: "Müşteri",
-      lead_plural: "Müşteriler",
-      deal: "Sipariş",
-      deal_plural: "Siparişler",
-      won: "Ödendi",
-      lost: "İptal edildi",
+      lead: "Kişi",
+      lead_plural: "Kişiler",
+      deal: "Fırsat",
+      deal_plural: "Fırsatlar",
+      won: "Kazanıldı",
+      lost: "Kaybedildi",
       stage: "Aşama",
       stage_plural: "Aşamalar",
     });
@@ -137,12 +137,12 @@ describe("POST /api/v1/pipelines", () => {
 
     const funil = db.escritas.find((e) => e.table === "crm_pipelines")?.patch as Record<string, unknown>;
     expect(funil.vocabulary).toEqual({
-      lead: "Cliente",
-      lead_plural: "Clientes",
-      deal: "Pedido",
-      deal_plural: "Pedidos",
-      won: "Pago",
-      lost: "Cancelado",
+      lead: "Contato",
+      lead_plural: "Contatos",
+      deal: "Negócio",
+      deal_plural: "Negócios",
+      won: "Ganho",
+      lost: "Perdido",
       stage: "Etapa",
       stage_plural: "Etapas",
     });

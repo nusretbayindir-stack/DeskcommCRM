@@ -11,15 +11,21 @@ import {
  * A Central mostra o título e o corpo gravados. No demo em turco de 31/10/2026
  * a Central dizia "O assistente quis organizar um negócio de um funil que não
  * é dele", com a etapa crua ("qualified") no corpo. Quem decide SE avisa não
- * muda; muda a frase, e a etapa sai pelo nome do passo no idioma.
+ * muda; muda a frase.
+ *
+ * Desde a v1.99.0 (issue #3148 do projeto principal) a etapa dos três avisos de
+ * estado legítimo é o NOME da etapa no funil do dono (`etapaDoFunil`), entre
+ * aspas e como está cadastrado; sem nome, o texto de reserva no idioma. O passo
+ * interno (`etapaDeDestino`) só aparece no aviso de incidente, como diagnóstico.
  */
 
 describe("avisoDoEspelhoRecusado em turco", () => {
-  it("fora do escopo: título, corpo, nome do passo e detalhe em turco", () => {
+  it("fora do escopo: título, corpo, nome da etapa e detalhe em turco", () => {
     const aviso = avisoDoEspelhoRecusado({
       motivo: "fora_do_escopo",
       detalhe: "o negócio está num funil que este assistente não cuida",
       etapaDeDestino: "qualified",
+      etapaDoFunil: "Nitelikli",
       idioma: "tr",
     });
     expect(aviso?.title).toBe("Asistan, sorumlu olmadığı bir hunideki fırsatı düzenlemek istedi");
@@ -30,6 +36,18 @@ describe("avisoDoEspelhoRecusado em turco", () => {
         "gerekmiyorsa yapmanız gereken bir şey yok.",
     );
     expect(aviso?.dedupe).toBe("kind_ref_e_titulo");
+  });
+
+  it("sem nome da etapa: o texto de reserva em turco, nunca o passo interno", () => {
+    // A recusa de ESCOPO decide antes de ler as etapas: o nome não vem.
+    const aviso = avisoDoEspelhoRecusado({
+      motivo: "fora_do_escopo",
+      detalhe: "nenhum funil liberado para este assistente",
+      etapaDeDestino: "qualified",
+      idioma: "tr",
+    });
+    expect(aviso?.body).toMatch(/^Asistan bu fırsatın hunideki hedef aşamasına geçmesi gerektiğine karar verdi, /);
+    expect(aviso?.body).not.toMatch(/qualified|Nitelikli|"/);
   });
 
   it("fora do escopo sem funil liberado: o outro detalhe do sync também em turco", () => {
@@ -47,6 +65,7 @@ describe("avisoDoEspelhoRecusado em turco", () => {
       motivo: "perda_sem_motivo",
       detalhe: "a etapa de destino fecha o negócio como perdido",
       etapaDeDestino: "lost",
+      etapaDoFunil: "Kaybedildi",
       idioma: "tr",
     });
     expect(aviso?.title).toBe(
@@ -66,6 +85,7 @@ describe("avisoDoEspelhoRecusado em turco", () => {
       motivo: "campos_obrigatorios",
       detalhe: "Preencha os campos obrigatórios antes de continuar: Bütçe, Motivo do ganho.",
       etapaDeDestino: "negotiating",
+      etapaDoFunil: "Pazarlıkta",
       idioma: "tr",
     });
     expect(aviso?.title).toBe(
@@ -89,25 +109,28 @@ describe("avisoDoEspelhoRecusado em turco", () => {
     expect(aviso?.body).toContain(" hedef aşama, fırsatta doldurulmamış alanlar istiyor ");
   });
 
-  it("incidente: frase em turco; o motivo e o detalhe técnico ficam como vieram", () => {
+  it("incidente: frase em turco; o passo, o motivo e o detalhe técnico ficam como vieram", () => {
+    // Diagnóstico de quem depura (issue #3148): o passo interno do agente fica.
     const aviso = avisoDoEspelhoRecusado({
       motivo: "crm_unavailable",
       detalhe: "fetch failed",
       etapaDeDestino: "qualified",
+      etapaDoFunil: "Nitelikli",
       idioma: "tr",
     });
     expect(aviso?.title).toBe("Kartın aşaması CRM'de güncellenemedi — huni tutarsız olabilir");
     expect(aviso?.body).toBe(
-      'Asistanın hunisi "Nitelikli" aşamasına geçti, ancak CRM\'deki kart taşınamadı ' +
+      'Asistanın hunisi "qualified" aşamasına geçti, ancak CRM\'deki kart taşınamadı ' +
         "(crm_unavailable: fetch failed). Kartın aşamasını CRM'de elle düzeltin.",
     );
   });
 
-  it("um nome de etapa que não é passo do agente fica como veio", () => {
+  it("o nome da etapa no funil do dono fica como está cadastrado", () => {
     const aviso = avisoDoEspelhoRecusado({
       motivo: "fora_do_escopo",
       detalhe: "nenhum funil liberado para este assistente",
-      etapaDeDestino: "Teklif gönderildi",
+      etapaDeDestino: "proposal",
+      etapaDoFunil: "Teklif gönderildi",
       idioma: "tr",
     });
     expect(aviso?.body).toContain('"Teklif gönderildi" aşamasına');
@@ -121,20 +144,22 @@ describe("avisoDoEspelhoRecusado em turco", () => {
 });
 
 describe("português sem mudança de byte", () => {
-  // Os literais são o texto que o espelho gravava antes desta mudança.
+  // Os literais são o texto do projeto principal (v1.99.0, issue #3148): a
+  // camada de idioma não pode mudar um byte do português.
   const FORA = {
     title: "O assistente quis organizar um negócio de um funil que não é dele",
     body:
-      'O assistente concluiu que este negócio deveria ir para "qualified", mas ele não cuida do funil onde o ' +
+      'O assistente concluiu que este negócio deveria ir para "Qualificado", mas ele não cuida do funil onde o ' +
       "negócio está (nenhum funil liberado para este assistente). Ninguém mexeu no card. Se ele deveria " +
       "cuidar desse funil, marque isso na configuração do assistente; se não, não há nada a fazer.",
   };
 
-  it("sem idioma, o padrão é o português de antes", () => {
+  it("sem idioma, o padrão é o português", () => {
     const aviso = avisoDoEspelhoRecusado({
       motivo: "fora_do_escopo",
       detalhe: "nenhum funil liberado para este assistente",
       etapaDeDestino: "qualified",
+      etapaDoFunil: "Qualificado",
     });
     expect({ title: aviso?.title, body: aviso?.body }).toEqual(FORA);
   });
@@ -144,16 +169,30 @@ describe("português sem mudança de byte", () => {
       motivo: "fora_do_escopo",
       detalhe: "nenhum funil liberado para este assistente",
       etapaDeDestino: "qualified",
+      etapaDoFunil: "Qualificado",
       idioma: "pt-BR",
     });
     expect({ title: aviso?.title, body: aviso?.body }).toEqual(FORA);
+  });
+
+  it("sem nome da etapa, o texto de reserva em português", () => {
+    const aviso = avisoDoEspelhoRecusado({
+      motivo: "fora_do_escopo",
+      detalhe: "nenhum funil liberado para este assistente",
+      etapaDeDestino: "qualified",
+      idioma: "pt-BR",
+    });
+    expect(aviso?.body).toMatch(
+      /^O assistente concluiu que este negócio deveria ir para a etapa de destino do funil, mas /,
+    );
   });
 
   it("campos obrigatórios e incidente em português, byte a byte", () => {
     const campos = avisoDoEspelhoRecusado({
       motivo: "campos_obrigatorios",
       detalhe: "Preencha os campos obrigatórios antes de continuar: Concorrente.",
-      etapaDeDestino: "Proposta enviada",
+      etapaDeDestino: "proposal",
+      etapaDoFunil: "Proposta enviada",
       idioma: "pt-BR",
     });
     expect(campos?.body).toBe(
@@ -201,6 +240,7 @@ describe("abreAvisoDoEspelhoRecusado lê o idioma da organização", () => {
       motivo: "fora_do_escopo",
       detalhe: "nenhum funil liberado para este assistente",
       etapaDeDestino: "qualified",
+      etapaDoFunil: "Nitelikli",
     });
     expect(inserts()).toHaveLength(1);
     // Ordem dos parâmetros de `insertInboxItem`: org, kind, severity, title, body, ...

@@ -2,9 +2,11 @@ import { observeServiceOrigin } from "@/lib/atendimento/origem";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
+import { lerPosicaoDeEntrada } from "@/lib/leads/posicao-de-entrada";
 import { emitLeadActivity, stageChangeReason } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import {
+  camposComAnexo,
   recusaDeCamposObrigatorios,
   settingsDoFunil,
   validaCamposExigidos,
@@ -174,8 +176,8 @@ export async function moverLeadParaEtapaDeAgendamento(
   //
   // `position` chega como `numeric` do Postgres (texto no PostgREST). Sem as
   // duas posições, a regra de antes.
-  const posicaoDoAlvo = posicao(etapaRow.position);
-  const posicaoDoCard = posicao((origem as { position?: unknown } | null)?.position);
+  const posicaoDoAlvo = posicaoDaEtapa(etapaRow.position);
+  const posicaoDoCard = posicaoDaEtapa((origem as { position?: unknown } | null)?.position);
   if (posicaoDoAlvo !== null && posicaoDoCard !== null && posicaoDoAlvo < posicaoDoCard) {
     logger.info("[appointment-stage-move] card já está depois da etapa de agendamento; fica", {
       lead_id: leadRow.id,
@@ -198,6 +200,7 @@ export async function moverLeadParaEtapaDeAgendamento(
   const vereditoDeCampos = validaCamposExigidos({
     lead: leadRow as unknown as Record<string, unknown>,
     settingsDoFunil: settings,
+    camposComAnexo: await camposComAnexo(admin, settings, input.organizationId, leadRow.id),
     destino: {
       stageId: etapaRow.id,
       desfecho: etapaRow.is_won ? "won" : etapaRow.is_lost ? "lost" : null,
@@ -215,9 +218,10 @@ export async function moverLeadParaEtapaDeAgendamento(
   }
 
   const serviceOrigin = await observeServiceOrigin(admin, input.organizationId, leadRow.contact_id);
+  const posicao = await lerPosicaoDeEntrada(admin, input.organizationId, etapaRow.id);
   const { data: atualizadas, error: erroUpdate } = await admin
     .from("crm_leads")
-    .update({ stage_id: etapaRow.id })
+    .update({ stage_id: etapaRow.id, ...(posicao === null ? {} : { position_in_stage: posicao }) })
     .eq("id", leadRow.id)
     // Trava otimista pelo estágio de ORIGEM: se um humano moveu o card entre a
     // leitura e a escrita, a decisão dele vence.
@@ -284,8 +288,14 @@ export async function moverLeadParaEtapaDeAgendamento(
   return { moveu: true, motivo: "movido" };
 }
 
-/** `crm_stages.position` é `numeric`: número no PostgREST, texto em outros caminhos. */
-function posicao(v: unknown): number | null {
+/**
+ * `crm_stages.position` é `numeric`: número no PostgREST, texto em outros caminhos.
+ *
+ * Não se chama `posicao`: o corpo de `moverLeadParaEtapaDeAgendamento` declara
+ * `const posicao` (posição de entrada do card, v1.99.0), e uma função com o
+ * mesmo nome ficaria escondida no corpo inteiro (TS2448 no build).
+ */
+function posicaoDaEtapa(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string" && v.trim() !== "") {
     const n = Number(v);

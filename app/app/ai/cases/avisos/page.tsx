@@ -27,7 +27,10 @@ import { redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { avisoDeTransferenciaLigado } from "@/lib/schemas/settings";
+import { createClient } from "@/lib/supabase/server";
 
+import { AvisoDeTransferencia } from "./_components/AvisoDeTransferencia";
 import { AvisoNoWhatsApp } from "./_components/AvisoNoWhatsApp";
 import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
@@ -45,6 +48,10 @@ export default async function AvisoDeCasoPage() {
     redirect("/403");
   }
   const idioma = user.idioma;
+  // A MESMA régua que o handoff e o handler aplicam: ausente = ligado.
+  const supabase = await createClient();
+  const { data } = await supabase.from("organizations").select("settings").eq("id", activeOrg.orgId).maybeSingle();
+  const transferencias = avisoDeTransferenciaLigado(data?.settings);
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
@@ -60,6 +67,7 @@ export default async function AvisoDeCasoPage() {
         </p>
       </header>
       <AvisoNoWhatsApp />
+      <AvisoDeTransferencia ligada={transferencias} />
     </div>
   );
 }
