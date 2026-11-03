@@ -52,7 +52,8 @@ describe("POST /api/v1/admin/cobranca/planos", () => {
     expect(h.banco.cadeias).toHaveLength(1);
     const [insercao] = h.banco.cadeias;
     expect(insercao!.tabela).toBe("cobranca_planos");
-    expect(argumentos(insercao!, "insert")?.[0]).toEqual({ ...CORPO, updated_by: h.ator });
+    // moeda e IVA saem do default do schema (BRL, 0): os mesmos do default da tabela.
+    expect(argumentos(insercao!, "insert")?.[0]).toEqual({ ...CORPO, moeda: "BRL", iva_percentual: 0, updated_by: h.ator });
     expect(h.audit).toHaveBeenCalledWith(
       expect.objectContaining({ action: "cobranca.plano_salvo", actorUserId: h.ator, resourceId: PLANO.id }),
     );

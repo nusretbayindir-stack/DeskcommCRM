@@ -20,8 +20,11 @@ export type Modo = (typeof MODOS)[number];
 export const INTERVALOS = ["mes", "ano"] as const;
 export type Intervalo = (typeof INTERVALOS)[number];
 
-/** O Asaas não tem moeda e o boleto da Stripe é só BRL. Alargar = alargar o CHECK. */
-export const MOEDAS = ["BRL"] as const;
+/**
+ * BRL (Asaas ou Stripe) e EUR (só Stripe: o Asaas não tem moeda, migration
+ * 7001). Alargar = alargar o CHECK.
+ */
+export const MOEDAS = ["BRL", "EUR"] as const;
 export type Moeda = (typeof MOEDAS)[number];
 
 export const AVISOS_DA_REGUA = ["trial_acabando", "venceu", "suspende_em_breve", "suspensa"] as const;
