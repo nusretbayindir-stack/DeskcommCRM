@@ -19,6 +19,7 @@ function abrir(locale: "tr" | "pt-BR") {
           userId: "11111111-1111-4111-8111-111111111111",
           name: "Ana",
           email: null,
+          sectorIds: [],
           availability: {
             user_id: "11111111-1111-4111-8111-111111111111",
             role: "agent",
