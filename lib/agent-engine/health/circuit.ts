@@ -13,9 +13,11 @@
  * Fontes HONESTAS (só o que já é drenado/medido — nada inventado):
  *   - block rate = send_ledger.status='vetoed' (is_blocked, F2-06) / total de
  *     tentativas de outbound do número na janela. Atribuição ao número: exists em
- *     conversations (contact_id + channel_session_id, is_group=false) — o vínculo
- *     durável contato↔sessão no CRM. É o sinal por-envio do "outbound que virou
- *     is_blocked"; contacts.is_blocked é o estado por-contato.
+ *     conversations (contact_id + channel_session_id) — o vínculo durável
+ *     contato↔sessão no CRM, incluindo as conversas de GRUPO da mesma sessão
+ *     (#2729: o envio do grupo queima o mesmo número, e o circuito é do número).
+ *     É o sinal por-envio do "outbound que virou is_blocked"; contacts.is_blocked
+ *     é o estado por-contato.
  *   - response rate = contatos (do número) contatados (send_ledger 'accepted') que
  *     responderam (evento ai_agent.dispatch_requested no event_log, F2-05) / contatados.
  *     ponytail: é um PROXY (janela grosseira; conversa iniciada por inbound infla o
@@ -105,12 +107,19 @@ interface SessionRates {
 /**
  * Computa block/response rate do número na janela — só de fontes já drenadas/medidas.
  * Atribuição send_ledger→número: `exists` em conversations (contact_id +
- * channel_session_id, is_group=false) — send_ledger não guarda a sessão; a
- * conversa 1:1 do contato no número é o vínculo durável. Inbound via evento
+ * channel_session_id) — send_ledger não guarda a sessão; a conversa do contato
+ * naquele número é o vínculo durável. **Inclui as conversas de GRUPO da mesma
+ * sessão (#2729)**: com a chave do grupo ligada a IA envia por ali, e um envio
+ * que o circuito não vê é um bloqueio que ele não pausa antes de acontecer —
+ * a conta passa a ser do NÚMERO, que é quem queima. Inbound via evento
  * ai_agent.dispatch_requested no event_log do CRM (payload.channel_session_id/
- * contact_id — as chaves que lib/waha/ingest.ts emite).
+ * contact_id — as chaves que lib/waha/ingest.ts e o ingest de grupo emitem).
+ *
+ * @internal exportada para o invariante `saude-do-numero-conta-o-grupo`: a régua
+ * é o SQL, então o teste tem de rodá-lo contra um Postgres de verdade — um dublê
+ * de `query` provaria só que a função sabe chamar um dublê.
  */
-async function computeSessionRates(
+export async function computeSessionRates(
   db: pg.Pool,
   tenantId: string,
   channelSessionId: string,
@@ -129,28 +138,28 @@ async function computeSessionRates(
             and exists (
               select 1 from conversations c
               where c.organization_id = $1 and c.contact_id = sl.contact_id
-                and c.channel_session_id = $2::uuid and c.is_group = false))::int as total_sends,
+                and c.channel_session_id = $2::uuid))::int as total_sends,
        (select count(*) from send_ledger sl
           where sl.organization_id = $1 and sl.status = 'vetoed'
             and sl.created_at >= (select t from cut)
             and exists (
               select 1 from conversations c
               where c.organization_id = $1 and c.contact_id = sl.contact_id
-                and c.channel_session_id = $2::uuid and c.is_group = false))::int as blocked_sends,
+                and c.channel_session_id = $2::uuid))::int as blocked_sends,
        (select count(distinct sl.contact_id) from send_ledger sl
           where sl.organization_id = $1 and sl.status = 'accepted'
             and sl.created_at >= (select t from cut)
             and exists (
               select 1 from conversations c
               where c.organization_id = $1 and c.contact_id = sl.contact_id
-                and c.channel_session_id = $2::uuid and c.is_group = false))::int as sent_leads,
+                and c.channel_session_id = $2::uuid))::int as sent_leads,
        (select count(distinct sl.contact_id) from send_ledger sl
           where sl.organization_id = $1 and sl.status = 'accepted'
             and sl.created_at >= (select t from cut)
             and exists (
               select 1 from conversations c
               where c.organization_id = $1 and c.contact_id = sl.contact_id
-                and c.channel_session_id = $2::uuid and c.is_group = false)
+                and c.channel_session_id = $2::uuid)
             and exists (
               select 1 from event_log e
               where e.organization_id = $1 and e.event_type = 'ai_agent.dispatch_requested'
@@ -182,17 +191,32 @@ function preencher(modelo: string, valores: Record<string, string | number>): st
 }
 
 /**
- * Texto do diagnóstico do inbox_item, no idioma da organização (SÓ
- * taxas/contagens — PII jamais). A tela mostra o que está gravado: em
- * português ele sai byte a byte como antes.
+ * O item que a trava de número novo abre na Central. É o ÚNICO sinal na tela de
+ * que os retornos automáticos do número pararam, e por isso nasce `warn`, não
+ * `info` (doc 109): no nível informação ele era o mais fácil de ignorar, e o
+ * texto antigo não dizia que nada saía. Traduzido pelo idioma da organização
+ * (título e corpo saem do banco como foram gravados, nunca por `t()` na tela).
  */
-function diagnosisBody(reason: HoldReason, rates: SessionRates, k: HealthKnobs, idioma: Idioma): string {
-  if (reason === 'go_live') {
-    return traduzir(
-      'Número novo aguardando liberação (go-live). Os disparos que o sistema começa — follow-up e cadência de prospecção — nascem em espera por segurança: a fila retém, nada é perdido. RESPONDER quem te escreveu continua funcionando normalmente. Resolva este item quando o número estiver pronto para disparar.',
-      idioma,
-    );
-  }
+export const TITULO_DO_GO_LIVE = 'Número novo aguardando liberação (go-live)';
+// Uma linha só, sem `+`: a catraca do espanhol só resolve const de topo literal.
+export const CORPO_DO_GO_LIVE =
+  'Os retornos automáticos deste número estão parados até você liberar. Eles esperam na fila, nada é perdido, e voltam espaçados ao longo das horas seguintes. Responder quem te escreveu continua funcionando normalmente. Marque este item como resolvido quando o número estiver pronto para disparar.';
+
+export function textoDoGoLive(idioma: Idioma): { title: string; body: string } {
+  return { title: traduzir(TITULO_DO_GO_LIVE, idioma), body: traduzir(CORPO_DO_GO_LIVE, idioma) };
+}
+
+/**
+ * Texto do diagnóstico do inbox_item de saúde degradada, no idioma da
+ * organização (SÓ taxas/contagens — PII jamais). A tela mostra o que está
+ * gravado: em português ele sai byte a byte como antes.
+ */
+function diagnosisBody(
+  reason: Exclude<HoldReason, 'go_live'>,
+  rates: SessionRates,
+  k: HealthKnobs,
+  idioma: Idioma,
+): string {
   if (reason === 'block_rate') {
     const rate = rates.totalSends > 0 ? rates.blockedSends / rates.totalSends : 0;
     return preencher(
@@ -225,11 +249,12 @@ export function avisoDoNumero(
   k: HealthKnobs,
   idioma: Idioma,
 ): { titulo: string; corpo: string } {
+  if (reason === 'go_live') {
+    const { title, body } = textoDoGoLive(idioma);
+    return { titulo: title, corpo: body };
+  }
   return {
-    titulo:
-      reason === 'go_live'
-        ? traduzir('Número novo aguardando liberação (go-live)', idioma)
-        : traduzir('Saúde do número degradada — outbound em espera automática', idioma),
+    titulo: traduzir('Saúde do número degradada — outbound em espera automática', idioma),
     corpo: diagnosisBody(reason, rates, k, idioma),
   };
 }
@@ -309,6 +334,11 @@ async function evaluateSession(
     const unhealthy = blockUnhealthy || responseUnhealthy;
     const degradeReason: HoldReason = blockUnhealthy ? 'block_rate' : 'response_rate';
 
+    // O aviso sai no idioma da organização. Lido pelo `client`, dentro da
+    // transação: ela segura o lock da linha de saúde, e uma segunda conexão
+    // pedida ao pool cheio esperaria por quem talvez espere este lock.
+    const idiomaDaOrg = (): Promise<Idioma> => idiomaDaOrgPeloPg(client, tenantId);
+
     const engageHold = async (reason: HoldReason): Promise<void> => {
       await client.query(
         `update channel_session_health
@@ -317,10 +347,7 @@ async function evaluateSession(
         [tenantId, channelSessionId, reason],
       );
       delta.held = 1;
-      // O aviso sai no idioma da organização. Lido pelo `client`, dentro da
-      // transação: ela segura o lock da linha de saúde, e uma segunda conexão
-      // pedida ao pool cheio esperaria por quem talvez espere este lock.
-      const idioma = await idiomaDaOrgPeloPg(client, tenantId);
+      const idioma = await idiomaDaOrg();
       const aviso = avisoDoNumero(reason, rates, k, idioma);
       // inbox item 1× por episódio: só cria se não há item aberto do número (dedup).
       const ins = await client.query(
@@ -332,7 +359,7 @@ async function evaluateSession(
          )`,
         [
           tenantId,
-          reason === 'go_live' ? 'info' : 'warn',
+          'warn',
           aviso.titulo,
           aviso.corpo,
           HEALTH_HOLD_REF_KIND,
@@ -365,6 +392,17 @@ async function evaluateSession(
           [tenantId, channelSessionId],
         );
         delta.released = 1;
+      } else {
+        // Item aberto antes de o aviso subir para `warn`: reescrito UMA vez com o
+        // texto de hoje — quem atualiza com número ainda em aquecimento precisa
+        // ver que os retornos pararam. Depois disso o filtro `severity = 'info'`
+        // não casa mais nada.
+        const item = textoDoGoLive(await idiomaDaOrg());
+        await client.query(
+          `update agent_inbox_items set severity = 'warn', title = $3, body = $4
+           where organization_id = $1 and ref_kind = $5 and ref_id = $2 and status = 'open' and severity = 'info'`,
+          [tenantId, channelSessionId, item.title, item.body, HEALTH_HOLD_REF_KIND],
+        );
       }
     } else if (row.health_hold_active) {
       // Já liberado alguma vez → circuito de degradação. Retomada:

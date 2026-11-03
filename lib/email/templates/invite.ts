@@ -21,6 +21,7 @@ import { traduzir } from "@/lib/i18n/dicionario";
 import type { Idioma } from "@/lib/i18n/idiomas";
 import { idiomaVisivelPorCodigo } from "@/lib/i18n/registro";
 import { FUSO_PADRAO, fusoValido } from "@/lib/tempo/fusos";
+import { estruturaDeEmail } from "./estrutura";
 
 export interface InviteEmailOptions {
   inviterName: string;
@@ -61,27 +62,6 @@ export function buildInviteEmail(opts: InviteEmailOptions): {
     marca,
   });
 
-  /**
-   * O logo de quem convidou, quando há um.
-   *
-   * `<img>` solto e não background: cliente de e-mail não carrega CSS externo e
-   * boa parte ignora `background-image`. Dimensão no ATRIBUTO além do style
-   * porque Outlook desktop descarta `height` de style em imagem, e sem dimensão
-   * ele renderiza a arte no tamanho original — um PNG de 1200px arrebentaria a
-   * largura de 560 do corpo.
-   *
-   * A URL passa por `escapeHtml` como qualquer outro valor: ela vem de
-   * `platform_branding.logo_url`, que é `text` livre no banco (a tela de marca
-   * ainda não a edita), e uma aspa ali escaparia do atributo.
-   *
-   * Sem logo, NADA é renderizado: um espaço reservado vazio é pior que ausência
-   * — o cliente de e-mail desenharia o ícone de imagem quebrada no topo do
-   * primeiro e-mail que a pessoa recebe do sistema.
-   */
-  const logo = opts.marca.logoUrl
-    ? `<p style="margin:0 0 24px"><img src="${escapeHtml(opts.marca.logoUrl)}" alt="${escapeHtml(marca)}" height="40" style="height:40px;width:auto;max-width:200px;border:0;display:block"></p>`
-    : "";
-
   // O papel pelo NOME (« Atendente »), não pelo código (« agent »): o convite dizia
   // « convidou você como agent » em toda instalação.
   // O rótulo é o mesmo que a tela de time mostra (`t(rotuloDoPapel(r))`).
@@ -101,32 +81,28 @@ export function buildInviteEmail(opts: InviteEmailOptions): {
     data: `<strong>${expiresStr}</strong>`,
   });
 
-  const html = `<!doctype html>
-<html lang="${opts.idioma}">
-<body style="margin:0;padding:0;background:${NEUTROS_DE_SAIDA.fundo};font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:${NEUTROS_DE_SAIDA.texto}">
-  <div style="max-width:560px;margin:0 auto;padding:32px 24px">
-    ${logo}
-    <h1 style="font-size:22px;line-height:1.3;margin:0 0 16px;color:${NEUTROS_DE_SAIDA.texto}">
+  const html = estruturaDeEmail(
+    opts.marca,
+    `    <h1 style="font-size:22px;line-height:1.3;margin:0 0 16px;color:${NEUTROS_DE_SAIDA.texto}">
       ${titulo}
     </h1>
     <p style="margin:0 0 16px;font-size:15px;line-height:1.5">
       ${corpo}
     </p>
     <p style="margin:24px 0">
-      <a href="${opts.acceptUrl}" style="display:inline-block;padding:12px 24px;background:${opts.marca.accent};color:${opts.marca.accentFg};border-radius:6px;text-decoration:none;font-weight:600">
+      <a href="${escapeHtml(opts.acceptUrl)}" style="display:inline-block;padding:12px 24px;background:${opts.marca.accent};color:${opts.marca.accentFg};border-radius:6px;text-decoration:none;font-weight:600">
         ${escapeHtml(t("Aceitar convite"))}
       </a>
     </p>
     <p style="margin:0 0 8px;font-size:13px;color:${NEUTROS_DE_SAIDA.suave}">
       ${escapeHtml(t("Ou copie e cole este link no navegador:"))}<br>
-      <span style="word-break:break-all;color:${opts.marca.accent}">${opts.acceptUrl}</span>
+      <span style="word-break:break-all;color:${opts.marca.accent}">${escapeHtml(opts.acceptUrl)}</span>
     </p>
     <p style="margin:24px 0 0;font-size:13px;color:${NEUTROS_DE_SAIDA.suave}">
       ${validade}
-    </p>
-  </div>
-</body>
-</html>`;
+    </p>`,
+    opts.idioma,
+  );
 
   const text = [
     montar(t("Você foi convidado para a {empresa} como {papel} no {marca}."), {

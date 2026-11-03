@@ -31,7 +31,7 @@
  * `baseline.sql`.
  */
 import type { Idioma } from "@/lib/i18n/idiomas";
-import { vocabularioDoFunilPadrao } from "@/lib/pipelines/vocabulario-padrao";
+import { vocabularioDoFunilPadrao, vocabularioIntocadoDoBanco } from "@/lib/pipelines/vocabulario-padrao";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 type SlugDoTipo = "consulta" | "reuniao" | "atendimento";
@@ -123,15 +123,6 @@ async function escrever(rotulo: string, escrita: PromiseLike<Resultado>): Promis
   return false;
 }
 
-/** O vocabulário ainda é o default do banco (o português), ou nem existe. */
-function vocabularioIntocado(atual: Record<string, unknown> | null | undefined): boolean {
-  if (!atual) return true;
-  const padrao = vocabularioDoFunilPadrao("pt-BR");
-  return (Object.keys(padrao) as (keyof typeof padrao)[]).every(
-    (k) => atual[k] === undefined || atual[k] === padrao[k],
-  );
-}
-
 /**
  * Renomeia, para `idioma`, as linhas que os gatilhos semearam e ninguém mexeu:
  * os tipos de agendamento, o funil "Pedidos", as etapas dele e as palavras do
@@ -202,7 +193,7 @@ export async function sementesNoIdioma(
     const funilPt = FUNIL_SEMEADO["pt-BR"];
     const mudancas: Record<string, unknown> = {};
     if (funil.name === funilPt.nome) mudancas.name = FUNIL_SEMEADO[idioma].nome;
-    if (vocabularioIntocado(funil.vocabulary)) mudancas.vocabulary = vocabularioDoFunilPadrao(idioma);
+    if (vocabularioIntocadoDoBanco(funil.vocabulary)) mudancas.vocabulary = vocabularioDoFunilPadrao(idioma);
     if (Object.keys(mudancas).length > 0) {
       escritas.push(
         escrever(

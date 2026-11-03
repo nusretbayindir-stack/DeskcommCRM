@@ -648,7 +648,8 @@ function temTraducao(idioma: Idioma): (chave: string) => boolean {
  * ficam como estão.
  */
 const COMPLETOS_ALEM_DO_ESPANHOL = IDIOMAS_VISIVEIS.filter(
-  (idioma) => idioma.nivel === "completo" && idioma.codigo !== "pt-BR" && idioma.codigo !== "es",
+  // Com só pt-BR/es visíveis, inferir um type guard estreitaria o array a never[].
+  (idioma): boolean => idioma.nivel === "completo" && idioma.codigo !== "pt-BR" && idioma.codigo !== "es",
 ).map((idioma) => idioma.codigo);
 
 const COMO_CONSERTAR_NO_CATALOGO =
@@ -1631,11 +1632,13 @@ const CHAVE_DE_RUNTIME_CONGELADA: { arquivo: string; expressao: string; motivo: 
       "conjunto fechado não resolvível estaticamente",
   },
   {
-    arquivo: "components/shell/CommandPalette.tsx",
-    expressao: "rotuloGrupo",
+    arquivo: "components/shell/PaletaDeDestinos.tsx",
+    expressao: "label",
     motivo:
-      "ROTULO_GRUPO.get(grupoId) ?? grupoId (linha 225): o fallback é o próprio id de runtime, e a " +
-      "chamada aparece nas linhas 227 e 230",
+      "rotuloGrupo.get(grupoId) ?? grupoId: o fallback é o próprio id de runtime. A dívida veio de " +
+      "components/shell/CommandPalette.tsx quando o miolo da paleta foi extraído para cá — é o MESMO " +
+      "sítio (rótulo de grupo resolvido por mapa), agora compartilhado com a busca do painel do " +
+      "administrador. Não é chamada nova: o total congelado segue igual",
   },
 ];
 

@@ -243,7 +243,7 @@ opção Euro com o Asaas conectado, e a rota recusa com `400 moeda_nao_suportada
 | Campo | O que saber |
 |---|---|
 | IVA (%) | Só em euro. De 0 a 100, até duas casas. O preço do plano é **sem** IVA: a página de pagamento soma o imposto por cima. 0 = sem linha de imposto |
-| Implantação (taxa única, €) | Só em euro, opcional, a partir de € 5,00. Cobrada uma vez, junto do primeiro pagamento. Quem já pagou alguma vez (cancelou e assinou de novo) não paga de novo |
+| Implantação (taxa única, €) | Só em euro, opcional, a partir de € 5,00. Cobrada uma vez, junto do primeiro pagamento. Com teste grátis, a implantação é cobrada **na assinatura** (a fatura inicial da Stripe) e a mensalidade só no fim do teste — é o que o contrato diz (5.1: a implantação é faturada na assinatura do contrato). Quem já pagou alguma vez (cancelou e assinou de novo) não paga de novo |
 | Respostas do assistente por mês | Nas duas moedas, opcional. Só exibição: a aba **Clientes** mostra "312 / 300 · +1 bloco extra" (blocos de 250). **Não limita** o assistente: quem para o assistente é o teto de IA |
 
 - Na página de pagamento em euro a Stripe pede o **número de IVA** e o **endereço de cobrança**, e
