@@ -176,8 +176,8 @@ export async function moverLeadParaEtapaDeAgendamento(
   //
   // `position` chega como `numeric` do Postgres (texto no PostgREST). Sem as
   // duas posições, a regra de antes.
-  const posicaoDoAlvo = posicao(etapaRow.position);
-  const posicaoDoCard = posicao((origem as { position?: unknown } | null)?.position);
+  const posicaoDoAlvo = posicaoDaEtapa(etapaRow.position);
+  const posicaoDoCard = posicaoDaEtapa((origem as { position?: unknown } | null)?.position);
   if (posicaoDoAlvo !== null && posicaoDoCard !== null && posicaoDoAlvo < posicaoDoCard) {
     logger.info("[appointment-stage-move] card já está depois da etapa de agendamento; fica", {
       lead_id: leadRow.id,
@@ -288,8 +288,14 @@ export async function moverLeadParaEtapaDeAgendamento(
   return { moveu: true, motivo: "movido" };
 }
 
-/** `crm_stages.position` é `numeric`: número no PostgREST, texto em outros caminhos. */
-function posicao(v: unknown): number | null {
+/**
+ * `crm_stages.position` é `numeric`: número no PostgREST, texto em outros caminhos.
+ *
+ * Não se chama `posicao`: o corpo de `moverLeadParaEtapaDeAgendamento` declara
+ * `const posicao` (posição de entrada do card, v1.99.0), e uma função com o
+ * mesmo nome ficaria escondida no corpo inteiro (TS2448 no build).
+ */
+function posicaoDaEtapa(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string" && v.trim() !== "") {
     const n = Number(v);

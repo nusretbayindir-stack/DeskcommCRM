@@ -31,6 +31,7 @@ function abrir(locale: "tr" | "pt-BR") {
             current_load: 0,
             last_heartbeat_at: null,
             present: false,
+            sector_ids: [],
           },
         }}
         open
