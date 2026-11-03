@@ -157,6 +157,20 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 | passagem (devir anlamında) | devir |
 | Central de Conexões | Bağlantı Merkezi |
 | estornar | iade et |
+| setor (ekip içi birim) | departman ("sektör" iş kolu demektir, kullanılmaz) |
+| meta (satış hedefi) | hedef ("Meta de vendas": "Satış hedefi") |
+| atalho | kısayol |
+| aviso | bildirim. Yalnız ekibe duyuru modülünde ("Avisos para a equipe"): duyuru. |
+| imagem (Docker, güncelleme ekranı) | imaj. Fotoğraf/görsel anlamında: görsel. |
+| caso parado | bekleyen vaka |
+| remetente | gönderen |
+| fornecedor | tedarikçi |
+| recorrência / recorrente | yinelenen |
+| revendedor | bayi |
+| fallback (asistan) | yedek ("Agente de fallback": "Yedek asistan") |
+| dispensar (öneri) | yok say |
+| lateral (Gelen kutusunun yan paneli) | yan panel |
+| agente do servidor (güncelleme programı) | sunucu ajanı (AI asistanı değildir) |
 
 **CSV sütun adları çevrilmez.** `nome, telefone, email, cpf, nascimento, tags` gibi sütun adları içe aktarıcının tanıdığı başlıklardır (`lib/contacts/csv.ts`). Metinde olduğu gibi kalır.
 
