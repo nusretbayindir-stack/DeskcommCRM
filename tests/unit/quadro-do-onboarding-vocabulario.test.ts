@@ -120,16 +120,35 @@ describe("aplicarQuadro grava o vocabulario do idioma da empresa", () => {
     const u = updates.find((x) => x.tabela === "crm_pipelines");
     expect(u?.valores).toEqual({
       vocabulary: {
-        lead: "Cliente",
-        lead_plural: "Clientes",
-        deal: "Pedido",
-        deal_plural: "Pedidos",
-        won: "Pago",
-        lost: "Cancelado",
+        lead: "Contato",
+        lead_plural: "Contatos",
+        deal: "Negócio",
+        deal_plural: "Negócios",
+        won: "Ganho",
+        lost: "Perdido",
         stage: "Etapa",
         stage_plural: "Etapas",
       },
     });
+  });
+
+  it("tr: o vocabulario de loja gravado antes da 9080 ainda conta como intocado", async () => {
+    // Funil criado antes da migration 9080 tem o default antigo gravado; ninguém
+    // o escolheu, então ele vai para o idioma da empresa.
+    estado.locale = "tr";
+    estado.vocabularioAtual = {
+      lead: "Cliente",
+      lead_plural: "Clientes",
+      deal: "Pedido",
+      deal_plural: "Pedidos",
+      won: "Pago",
+      lost: "Cancelado",
+      stage: "Etapa",
+      stage_plural: "Etapas",
+    };
+    await aplicar();
+    const u = updates.find((x) => x.tabela === "crm_pipelines");
+    expect(u?.valores).toEqual({ vocabulary: vocabularioDoFunilPadrao("tr") });
   });
 
   it("vocabulario ja personalizado nao e sobrescrito", async () => {
