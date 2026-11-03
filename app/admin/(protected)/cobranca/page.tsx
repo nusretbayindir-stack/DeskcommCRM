@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CopiarLinkDePagamento } from "@/components/admin/cobranca/CopiarLinkDePagamento";
 import { requirePlatformAdmin } from "@/lib/auth/requirePlatformAdmin";
 import { toleranciaDias } from "@/lib/cobranca/configuracao";
+import { lerRespostasDoMes, textoDasRespostas } from "@/lib/cobranca/respostas";
 import { ROTULO_DO_ERRO, ROTULO_DO_ESTADO } from "@/lib/cobranca/rotulos";
 import { leituraAtrasada, lerVisaoGeral, montarChecklist } from "@/lib/cobranca/visao-geral";
 import type { ErroDeLeitura, EstadoDaAssinatura } from "@/lib/cobranca/vocabulario";
@@ -78,6 +79,12 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
   const data = new Intl.DateTimeFormat(idioma, { dateStyle: "short" });
   const quando = (v: string | null) => (v ? data.format(new Date(v)) : "—");
   const agora = new Date();
+  // S4: respostas do assistente no mês contra a cota do plano (só exibição; o fim
+  // do mês fatura o excedente à mão). Uma leitura por empresa; a que falha vira "—".
+  const cotaDoPlano = new Map(lista.map((p) => [p.id, p.respostas_mes]));
+  const respostasDoMes = new Map(
+    await Promise.all(pagantes.map(async (c) => [c.id, await lerRespostasDoMes(admin, c.id, agora)] as const)),
+  );
 
   const clientesDaTela =
     pagantes.length === 0 ? (
@@ -89,6 +96,7 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
             <tr className="text-left text-muted-foreground">
               <th className="py-2 pr-4 font-medium">{t("Empresa")}</th>
               <th className="pr-4 font-medium">{t("Plano")}</th>
+              <th className="pr-4 font-medium">{t("Respostas no mês")}</th>
               <th className="pr-4 font-medium">{t("Situação")}</th>
               <th className="pr-4 font-medium">{t("Próximo vencimento")}</th>
               <th className="pr-4 font-medium">{t("Em atraso desde")}</th>
@@ -107,6 +115,9 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
                   <td className="pr-4">
                     {nomeDoPlano.get(a.plano_id) ?? "—"}
                     {a.plano_agendado_id && ` → ${nomeDoPlano.get(a.plano_agendado_id) ?? "—"}`}
+                  </td>
+                  <td className="pr-4">
+                    {textoDasRespostas(respostasDoMes.get(c.id) ?? null, cotaDoPlano.get(a.plano_id) ?? null, t)}
                   </td>
                   <td className="pr-4">{t(ROTULO_DO_ESTADO[a.estado])}</td>
                   <td className="pr-4">{quando(a.estado === "trial" ? a.trial_ate : a.proximo_vencimento)}</td>

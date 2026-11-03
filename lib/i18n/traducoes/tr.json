@@ -11642,5 +11642,8 @@
   "Confira os campos do plano: preço e implantação a partir de € 5,00, IVA de 0 a 100 com até duas casas decimais, teste grátis de 0 a 90 dias e limites a partir de 1.": "Plan alanlarını kontrol edin: fiyat ve kurulum ücreti en az € 5,00, KDV 0 ile 100 arasında ve en fazla iki ondalık, ücretsiz deneme 0 ile 90 gün arasında, sınırlar en az 1.",
   "O preço, o intervalo, a moeda, o IVA e a implantação de um plano travam quando alguém o assina: para mudar, arquive e crie outro.": "Bir planın fiyatı, aralığı, para birimi, KDV'si ve kurulum ücreti, biri abone olduğunda kilitlenir: değiştirmek için planı arşivleyip yenisini oluşturun.",
   "Este plano tem assinantes: preço, intervalo, moeda, IVA e implantação não mudam mais. Arquive-o e crie outro.": "Bu planın aboneleri var: fiyat, aralık, para birimi, KDV ve kurulum ücreti artık değişmez. Planı arşivleyip yenisini oluşturun.",
-  "IVA e implantação só existem em plano em euro.": "KDV ve kurulum ücreti yalnızca avro planlarında vardır."
+  "IVA e implantação só existem em plano em euro.": "KDV ve kurulum ücreti yalnızca avro planlarında vardır.",
+  "Respostas no mês": "Bu ayki cevaplar",
+  "+1 bloco extra": "+1 ek blok",
+  "+{n} blocos extras": "+{n} ek blok"
 }
