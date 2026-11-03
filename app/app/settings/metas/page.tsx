@@ -19,12 +19,13 @@ import { redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK, escreveComoPlatformAdmin } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 import { mesLocal } from "@/lib/metas/periodo";
 import { createClient } from "@/lib/supabase/server";
 
 import { FormularioDaMeta } from "./_form";
 
-export const metadata = { title: "Meta de vendas" };
+export const generateMetadata = tituloDaAba((t) => t("Meta de vendas"));
 export const dynamic = "force-dynamic";
 
 export default async function MetaDeVendasPage() {
