@@ -208,9 +208,12 @@ async function gerarCheckout(
   },
 ): Promise<{ url: string } | { vivo: string | null } | { recusa: ResultadoDoCheckout }> {
   const ad = adaptador(provedor);
+  // A implantação (S4) só vai a quem nunca pagou: guardar o que a releitura já diz.
+  let jaPagou: boolean | null = null;
   if (lida.provedor_cliente_id) {
     const situacao = await ad.lerSituacao({ clienteRef: lida.provedor_cliente_id });
     if (situacao.assinaturasVivas > 0) return { vivo: situacao.linkDePagamento };
+    jaPagou = situacao.jaPagou;
   }
   if (lida.troca_id) {
     // Ajuste proporcional em aberto e nenhuma assinatura viva (o Asaas cancela na
@@ -221,11 +224,19 @@ async function gerarCheckout(
   }
   const [org, plano] = await Promise.all([
     admin.from("organizations").select("legal_name, display_name").eq("id", orgId).maybeSingle(),
-    admin.from("cobranca_planos").select(COLUNAS_PARA_O_PROVEDOR).eq("id", lida.plano_id).maybeSingle(),
+    admin.from("cobranca_planos").select(`${COLUNAS_PARA_O_PROVEDOR}, implantacao_cents`).eq("id", lida.plano_id).maybeSingle(),
   ]);
   if (org.error || plano.error || !plano.data) throw new Error("cobranca: empresa ou plano ilegível no checkout");
   const nomes = org.data as { legal_name: string | null; display_name: string } | null;
-  const p = plano.data as { id: string; nome: string; preco_cents: number; intervalo: Intervalo; moeda: Moeda; iva_percentual: number | string };
+  const p = plano.data as {
+    id: string;
+    nome: string;
+    preco_cents: number;
+    intervalo: Intervalo;
+    moeda: Moeda;
+    iva_percentual: number | string;
+    implantacao_cents: number | string | null;
+  };
   const clienteRef =
     lida.provedor_cliente_id ??
     (await ad.garantirCliente({ id: orgId, nome: nomes?.legal_name || nomes?.display_name || orgId, email: quem.email, documento: quem.documento }));
@@ -244,6 +255,12 @@ async function gerarCheckout(
       .maybeSingle();
     if (erroDoCliente || !comCliente) throw new Error(`cobranca: cliente do Asaas não gravado (${erroDoCliente?.code ?? "reserva_perdida"})`);
   }
+  const implantacaoBruta = p.implantacao_cents ?? null;
+  const implantacaoDoPlano = implantacaoBruta === null ? null : Number(implantacaoBruta);
+  // Sem id local, o cliente pode ter sido ACHADO na conta por `garantirCliente`
+  // (retomada depois de isentar): a implantação já paga não se cobra de novo.
+  // Só quando há implantação a cobrar — o plano em BRL segue sem leitura a mais.
+  if (implantacaoDoPlano !== null && jaPagou === null) jaPagou = (await ad.lerSituacao({ clienteRef })).jaPagou;
   const inicio = await ad.iniciarAssinatura({
     clienteRef,
     orgId,
@@ -251,7 +268,7 @@ async function gerarCheckout(
     trialAte: lida.estado === "trial" && lida.trial_ate ? new Date(lida.trial_ate) : null,
     urlDeVolta: quem.urlDeVolta,
     chaveIdempotencia: quem.chaveIdempotencia,
-    implantacaoCents: null,
+    implantacaoCents: jaPagou ? null : implantacaoDoPlano,
   });
   const modo = await modoDoProvedor(provedor);
   const { data: gravada, error } = await admin

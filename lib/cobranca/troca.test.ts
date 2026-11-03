@@ -20,6 +20,7 @@ const plano = (id: string, extra: Record<string, unknown> = {}) => ({
 const PLANOS = [
   plano("basico"), plano("pro", { preco_cents: 9990 }), plano("mini", { max_assentos: 1 }), plano("anual", { intervalo: "ano" }),
   plano("negociado", { preco_cents: 2990, oferecido_ao_cliente: false }),
+  plano("euro", { moeda: "EUR", iva_percentual: 21 }),
 ];
 
 interface Mundo { linha: Record<string, unknown> | null; assentos: number; canais: number; casPerdido: boolean; falharAoRegistrarPagamento: boolean }
@@ -220,6 +221,17 @@ describe("trocarPlanoDaOrg", () => {
       ok: false, status: 409, code: "pagamento_do_periodo_pendente", message: FRASE_DO_PERIODO_PENDENTE,
     });
     expect(escritas()).toEqual([]);
+  });
+
+  it("plano em outra moeda é recusado com moeda_diferente", async () => {
+    m.linha = { ...PAGANDO };
+    expect(await trocar("euro")).toMatchObject({
+      ok: false, status: 422, code: "moeda_diferente",
+      message: "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.",
+    });
+    expect(trocarNoProvedor).not.toHaveBeenCalled();
+    expect(iniciarAjusteProporcional).not.toHaveBeenCalled();
+    expect(escritas()).toHaveLength(0);
   });
 
   it("outro intervalo: 422 plano_invalido", async () => {

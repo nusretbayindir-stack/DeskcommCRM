@@ -67,6 +67,7 @@ const FRASE_DO_ERRO: Record<string, string> = {
   troca_pendente: "Conclua ou aguarde a cobrança proporcional antes de solicitar outra troca de plano.",
   pagamento_nao_registrado: "A cobrança foi iniciada, mas não conseguimos registrar o pagamento. Tente novamente; se houver uma cobrança aberta, fale com o suporte.",
   periodo_indisponivel: "Não foi possível calcular o período pago. Atualize a assinatura e tente novamente.",
+  moeda_diferente: "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.",
 };
 const FRASE_GENERICA = "Não foi possível concluir agora. Tente de novo.";
 type Leitura = { estado: EstadoDaAssinatura | null; assinaturas_vivas: number; org_operante: boolean };

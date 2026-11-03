@@ -35,12 +35,12 @@ const EM_TESTE = {
   plano_id: "plano-a", estado: "trial", trial_ate: "2026-10-20T00:00:00.000Z", provedor: null, provedor_cliente_id: null,
   checkout_url: null, checkout_expira_em: null,
 };
-interface Mundo { linha: Record<string, unknown> | null; reservaOk: boolean }
+interface Mundo { linha: Record<string, unknown> | null; reservaOk: boolean; plano?: Record<string, unknown> }
 let m: Mundo;
 
 function responder(c: Cadeia): Resposta {
   if (c.tabela === "organizations") return { data: { legal_name: "Loja Legal Ltda", display_name: "Loja" } };
-  if (c.tabela === "cobranca_planos") return { data: { id: "plano-a", nome: "Essencial", preco_cents: 4990, intervalo: "mes" } };
+  if (c.tabela === "cobranca_planos") return { data: { id: "plano-a", nome: "Essencial", preco_cents: 4990, intervalo: "mes", ...m.plano } };
   if (operacao(c) === "select") return { data: m.linha };
   if (filtros(c).some((f) => f[0] === "or")) return m.reservaOk ? { data: { organization_id: ORG } } : { data: null };
   return { data: { organization_id: ORG } };
@@ -70,6 +70,57 @@ beforeEach(() => {
   h.ad.garantirCliente.mockResolvedValue("cus_novo");
   h.emailDoAdmin.mockResolvedValue("ana@loja.com");
   h.ad.iniciarAssinatura.mockResolvedValue({ url: "https://checkout.stripe.com/c/pay/cs_1", expiraEm: new Date("2026-10-11T12:00:00Z"), assinaturaRef: null });
+});
+
+describe("implantação (S4): só no primeiro pagamento", () => {
+  const EURO = { moeda: "EUR", iva_percentual: 21, implantacao_cents: 29900 };
+  const implantacaoPedida = () => (h.ad.iniciarAssinatura.mock.calls[0]?.[0] as { implantacaoCents: unknown }).implantacaoCents;
+  const situacao = (jaPagou: boolean) => ({ assinaturasVivas: 0, linkDePagamento: null, jaPagou });
+
+  it("sem cliente no provedor: a implantação do plano vai junto", async () => {
+    m.plano = EURO;
+    h.ad.lerSituacao.mockResolvedValue(situacao(false));
+    await assinar();
+    expect(h.ad.lerSituacao).toHaveBeenCalledWith({ clienteRef: "cus_novo" });
+    expect(implantacaoPedida()).toBe(29900);
+  });
+
+  it("⭐ sem id local, mas o cliente ACHADO na conta já pagou (retomada depois de isentar): sem implantação", async () => {
+    m.plano = EURO;
+    h.ad.garantirCliente.mockResolvedValue("cus_antigo");
+    h.ad.lerSituacao.mockResolvedValue(situacao(true));
+    await assinar();
+    expect(h.ad.lerSituacao).toHaveBeenCalledWith({ clienteRef: "cus_antigo" });
+    expect(implantacaoPedida()).toBeNull();
+  });
+
+  it("plano em BRL sem cliente no provedor: nenhuma leitura a mais (o caminho de hoje)", async () => {
+    await assinar();
+    expect(h.ad.lerSituacao).not.toHaveBeenCalled();
+    expect(implantacaoPedida()).toBeNull();
+  });
+
+  it("cliente no provedor que nunca pagou: a implantação vai junto", async () => {
+    m.plano = EURO;
+    m.linha = { ...EM_TESTE, provedor: "stripe", provedor_cliente_id: "cus_1" };
+    h.ad.lerSituacao.mockResolvedValue(situacao(false));
+    await assinar();
+    expect(implantacaoPedida()).toBe(29900);
+  });
+
+  it("⭐ já pagou alguma vez (cancelou e assina de novo): a implantação NÃO é cobrada outra vez", async () => {
+    m.plano = EURO;
+    m.linha = { ...EM_TESTE, provedor: "stripe", provedor_cliente_id: "cus_1" };
+    h.ad.lerSituacao.mockResolvedValue(situacao(true));
+    await assinar();
+    expect(implantacaoPedida()).toBeNull();
+  });
+
+  it("plano sem implantação: null", async () => {
+    m.plano = { moeda: "EUR", iva_percentual: 21, implantacao_cents: null };
+    await assinar();
+    expect(implantacaoPedida()).toBeNull();
+  });
 });
 
 describe("checkout da assinatura", () => {

@@ -196,6 +196,10 @@ export async function trocarPlanoDaOrg(
   if (!novo || !antigo || (!desfazendo && (novo.arquivado_em !== null || novo.intervalo !== antigo.intervalo))) {
     return recusa(422, "plano_invalido", "Escolha um plano ativo com o mesmo intervalo de cobrança.");
   }
+  // O cliente da Stripe fica preso à moeda da 1ª assinatura (S4): trocar de moeda é cancelar e assinar de novo.
+  if (!desfazendo && novo.moeda !== antigo.moeda) {
+    return recusa(422, "moeda_diferente", "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.");
+  }
   // Enquanto houver link de pagamento em aberto, o plano não muda — a menos que
   // dê para expirá-lo no provedor (#2609): aí a troca vale na hora e o link
   // antigo deixa de valer. Sem a id da sessão guardada (linha anterior à 0641)
