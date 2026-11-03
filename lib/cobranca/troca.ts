@@ -33,11 +33,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 
 import { adaptador as adaptadorPadrao } from "@/lib/cobranca/provedores";
-import { ErroDoProvedor, type AdaptadorDeCobranca } from "@/lib/cobranca/provedores/contrato";
+import { COLUNAS_PARA_O_PROVEDOR, ErroDoProvedor, planoParaProvedor, type AdaptadorDeCobranca } from "@/lib/cobranca/provedores/contrato";
 import { excedenteDoPlano, lerUsoDaOrganizacao } from "@/lib/cobranca/uso";
 import { calcularAjusteProporcional, SEM_TROCA } from "@/lib/cobranca/prorata";
 import { urlDoPainelDaEmpresa } from "@/lib/cobranca/url";
-import type { EstadoDaAssinatura, Intervalo, ProvedorDeCobranca } from "@/lib/cobranca/vocabulario";
+import type { EstadoDaAssinatura, Intervalo, Moeda, ProvedorDeCobranca } from "@/lib/cobranca/vocabulario";
 
 export type ResultadoDaTroca =
   | {
@@ -78,6 +78,8 @@ interface Plano {
   nome: string;
   preco_cents: number;
   intervalo: Intervalo;
+  moeda: Moeda;
+  iva_percentual: number | string;
   max_assentos: number | null;
   max_canais: number | null;
   arquivado_em: string | null;
@@ -111,7 +113,7 @@ async function limparSessaoExpirada(admin: SupabaseClient, orgId: string, sessao
 async function lerPlanoCompleto(admin: SupabaseClient, id: string): Promise<Plano | null | "erro"> {
   const { data, error } = await admin
     .from("cobranca_planos")
-    .select("id, nome, preco_cents, intervalo, max_assentos, max_canais, arquivado_em, oferecido_ao_cliente")
+    .select(`${COLUNAS_PARA_O_PROVEDOR}, max_assentos, max_canais, arquivado_em, oferecido_ao_cliente`)
     .eq("id", id)
     .maybeSingle();
   if (error) return "erro";
@@ -235,7 +237,7 @@ export async function trocarPlanoDaOrg(
   const aoProvedor = (p: Plano) =>
     adaptadorDe(provedorDaTroca!.provedor).trocarPlano({
       assinaturaRef: provedorDaTroca!.ref,
-      plano: { id: p.id, nome: p.nome, precoCents: p.preco_cents, intervalo: p.intervalo },
+      plano: planoParaProvedor(p),
     });
   // O preço no provedor tem de ser o do que o banco registra (agendado, senão o atual).
   // Relê a linha (outra troca pode ter vencido a corrida); se a leitura falha, vale o que líamos.
@@ -316,7 +318,7 @@ export async function trocarPlanoDaOrg(
       if (erroReserva || !reserva) return recusa(409, "troca_em_preparo", "A assinatura mudou enquanto você solicitava a troca. Atualize a página e tente novamente.");
       try {
         const pagamento = await adaptadorDe(provedorDaTroca.provedor).iniciarAjusteProporcional({
-          clienteRef: atual.provedor_cliente_id, orgId, plano: { id: novo.id, nome: novo.nome, precoCents: novo.preco_cents, intervalo: novo.intervalo },
+          clienteRef: atual.provedor_cliente_id, orgId, plano: planoParaProvedor(novo),
           valorCents, chaveIdempotencia: id, urlDeVolta: urlDoPainelDaEmpresa(),
         });
         const { data: pagamentoGravado, error: erroAoGravarPagamento } = await admin

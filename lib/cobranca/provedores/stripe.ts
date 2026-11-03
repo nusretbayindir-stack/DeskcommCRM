@@ -230,14 +230,46 @@ function pagouAssinaturaEncerrada(pagas: FaturaDaStripe[], assinaturas: Assinatu
   return dona !== undefined && TERMINAIS.has(dona.status) && pagaEm !== null && fim !== null && pagaEm > fim;
 }
 
+/** A moeda na grafia da Stripe ("brl", "eur"). */
+const moedaDaStripe = (plano: PlanoParaProvedor) => plano.moeda.toLowerCase();
+
 function precoRecorrente(plano: PlanoParaProvedor, produto: string) {
   return {
-    currency: "brl",
+    currency: moedaDaStripe(plano),
     unit_amount: plano.precoCents,
     recurring: { interval: plano.intervalo === "ano" ? "year" : "month" },
     product: produto,
   };
 }
+
+/**
+ * O plano em euro (S4, migration 7001). Tudo o que muda está aqui e só vale
+ * para EUR: o corpo do plano em BRL sai byte a byte igual ao de antes.
+ * - A página de pagamento pede o número de IVA e o endereço de cobrança; com
+ *   cliente já criado, a Stripe exige `customer_update` para gravá-los nele.
+ * - O idioma é o do navegador (`auto`: NL/FR/EN), não pt-BR.
+ */
+const ID_DA_IMPLANTACAO = "dc_implantacao";
+const NOME_DA_IMPLANTACAO = "Installatie / Installation";
+const NOME_DA_TAXA = "BTW/TVA";
+
+function extrasDoEuro(plano: PlanoParaProvedor) {
+  if (plano.moeda !== "EUR") return {};
+  return {
+    tax_id_collection: { enabled: true },
+    billing_address_collection: "required",
+    customer_update: { name: "auto", address: "auto" },
+  };
+}
+
+const localeDoCheckout = (plano: PlanoParaProvedor) => (plano.moeda === "EUR" ? "auto" : "pt-BR");
+
+const taxaDaStripe = z.object({
+  id: z.string(),
+  percentage: z.number(),
+  inclusive: z.boolean(),
+  metadata: z.record(z.string(), z.string()).nullish(),
+});
 
 /** Janela da assinatura, nos DOIS sentidos: o relógio da VPS pode estar atrás da Stripe. */
 export const TOLERANCIA_DO_WEBHOOK_S = 300;
@@ -415,6 +447,39 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
     return id;
   }
 
+  /** A implantação é um produto só da conta (id fixo), cobrado como linha avulsa no 1º pagamento. */
+  async function garantirProdutoDaImplantacao(): Promise<string> {
+    try {
+      await chamar("POST", "/products", { id: ID_DA_IMPLANTACAO, name: NOME_DA_IMPLANTACAO });
+    } catch (e) {
+      if (!(e instanceof ErroDoProvedor) || e.codigo !== "resource_already_exists") throw e;
+      await chamar("POST", `/products/${ID_DA_IMPLANTACAO}`, { name: NOME_DA_IMPLANTACAO, active: true });
+    }
+    return ID_DA_IMPLANTACAO;
+  }
+
+  /**
+   * A taxa de IVA desta instalação com esse percentual, achada pela marca (sem
+   * id guardado, como o portal) e criada se faltar. Só exclusiva (`inclusive:
+   * false`): o preço do plano é sem IVA e a página soma o imposto por cima.
+   * A taxa alheia, a inclusiva e a de outro percentual não servem.
+   */
+  async function garantirTaxa(percentual: number): Promise<string> {
+    const taxas = ler(listaDe(taxaDaStripe), await chamar("GET", "/tax_rates?active=true&limit=100")).data;
+    const nossa = taxas.find((t) => ehNosso(t.metadata) && !t.inclusive && Math.abs(t.percentage - percentual) < 1e-9);
+    if (nossa) return nossa.id;
+    return ler(
+      comId,
+      await chamar("POST", "/tax_rates", { display_name: NOME_DA_TAXA, percentage: percentual, inclusive: false, metadata: metadadosDaMarca }),
+    ).id;
+  }
+
+  /** As taxas da linha do plano: só euro com IVA > 0; senão nenhuma (o campo some do corpo). */
+  async function taxasDoPlano(plano: PlanoParaProvedor): Promise<string[] | undefined> {
+    if (plano.moeda !== "EUR" || !(plano.ivaPercentual > 0)) return undefined;
+    return [await garantirTaxa(plano.ivaPercentual)];
+  }
+
   async function garantirCliente(org: Parameters<AdaptadorDeCobranca["garantirCliente"]>[0]): Promise<string> {
     const orgId = UUID.parse(org.id);
     // A busca cura o cliente que já existe na conta (linha local zerada, retomada
@@ -436,6 +501,17 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
   ): ReturnType<AdaptadorDeCobranca["iniciarAssinatura"]> {
     const orgId = UUID.parse(p.orgId);
     const produto = await garantirProduto(p.plano);
+    const taxas = await taxasDoPlano(p.plano);
+    const implantacao =
+      p.implantacaoCents === null
+        ? []
+        : [
+            {
+              price_data: { currency: moedaDaStripe(p.plano), unit_amount: p.implantacaoCents, product: await garantirProdutoDaImplantacao() },
+              quantity: 1,
+              tax_rates: taxas,
+            },
+          ];
     const trialEnd =
       p.trialAte !== null && p.trialAte.getTime() - agora().getTime() >= TESTE_MINIMO_MS + FOLGA_DO_TESTE_MS
         ? Math.floor(p.trialAte.getTime() / 1000)
@@ -452,12 +528,13 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
           mode: "subscription",
           customer: p.clienteRef,
           client_reference_id: orgId,
-          line_items: [{ price_data: precoRecorrente(p.plano, produto), quantity: 1 }],
+          line_items: [{ price_data: precoRecorrente(p.plano, produto), quantity: 1, tax_rates: taxas }, ...implantacao],
           subscription_data: { metadata: metadados, trial_end: trialEnd },
           metadata: metadados,
           success_url: sucesso.toString(),
           cancel_url: p.urlDeVolta,
-          locale: "pt-BR",
+          ...extrasDoEuro(p.plano),
+          locale: localeDoCheckout(p.plano),
         },
         `${p.chaveIdempotencia}:checkout`,
       ),
@@ -472,6 +549,7 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
   async function iniciarAjusteProporcional(p: Parameters<AdaptadorDeCobranca["iniciarAjusteProporcional"]>[0]) {
     const orgId = UUID.parse(p.orgId);
     const produto = await garantirProduto(p.plano);
+    const taxas = await taxasDoPlano(p.plano);
     const sucesso = new URL(p.urlDeVolta);
     sucesso.searchParams.set("voltou", "1");
     const sessao = ler(
@@ -480,11 +558,12 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
         mode: "payment",
         customer: p.clienteRef,
         client_reference_id: orgId,
-        line_items: [{ price_data: { currency: "brl", unit_amount: p.valorCents, product: produto }, quantity: 1 }],
+        line_items: [{ price_data: { currency: moedaDaStripe(p.plano), unit_amount: p.valorCents, product: produto }, quantity: 1, tax_rates: taxas }],
         metadata: { organization_id: orgId, plano_id: p.plano.id, tipo: "ajuste_proporcional" },
         success_url: sucesso.toString(),
         cancel_url: p.urlDeVolta,
-        locale: "pt-BR",
+        ...extrasDoEuro(p.plano),
+        locale: localeDoCheckout(p.plano),
       },
       `ajuste:${orgId}:${p.chaveIdempotencia}`),
     );
@@ -595,9 +674,11 @@ export function criarAdaptadorStripe(dep: DependenciasDaStripe): AdaptadorDeCobr
     const item = ler(assinaturaDaStripe, await chamar("GET", caminho)).items.data[0];
     if (!item) throw new ErroDoProvedor(null, "assinatura_sem_item", false);
     const produto = await garantirProduto(p.plano);
+    // Plano em euro sem IVA manda "" (a Stripe limpa a taxa que o item tinha); BRL não manda nada.
+    const taxas = p.plano.moeda === "EUR" ? ((await taxasDoPlano(p.plano)) ?? "") : undefined;
     // Sem proração automática: o período pago foi ajustado pela cobrança avulsa; a próxima fatura sai com o novo preço, sem mover a âncora.
     await chamar("POST", caminho, {
-      items: [{ id: item.id, price_data: precoRecorrente(p.plano, produto) }],
+      items: [{ id: item.id, price_data: precoRecorrente(p.plano, produto), tax_rates: taxas }],
       proration_behavior: "none",
       metadata: { plano_id: p.plano.id },
     });

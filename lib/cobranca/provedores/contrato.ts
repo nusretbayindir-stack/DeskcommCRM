@@ -17,6 +17,7 @@ import {
   type ErroDeLeitura,
   type Intervalo,
   type Modo,
+  type Moeda,
   type ProvedorDeCobranca,
 } from "@/lib/cobranca/vocabulario";
 
@@ -26,9 +27,39 @@ export type { Modo, ProvedorDeCobranca };
 export interface PlanoParaProvedor {
   readonly id: string;
   readonly nome: string;
+  /** Centavos da `moeda` do plano. */
   readonly precoCents: number;
-  /** Moeda sempre BRL (CHECK de `cobranca_planos.moeda`). */
   readonly intervalo: Intervalo;
+  /** BRL (Asaas ou Stripe) ou EUR (só Stripe: o Asaas recusa com `moeda_nao_suportada`). */
+  readonly moeda: Moeda;
+  /** IVA em % (0 a 100, duas casas), só em EUR; 0 = sem linha de imposto. */
+  readonly ivaPercentual: number;
+}
+
+/** As colunas de `cobranca_planos` que `planoParaProvedor` lê: todo `select` que monta o plano do provedor usa esta. */
+export const COLUNAS_PARA_O_PROVEDOR = "id, nome, preco_cents, intervalo, moeda, iva_percentual";
+
+/**
+ * A linha de `cobranca_planos` → o plano que o adaptador recebe. `Number()`
+ * porque o PostgREST pode devolver `numeric`/`bigint` como texto ("21.00"):
+ * a taxa de IVA da conta Stripe tem de casar com 21, não com "21.00".
+ */
+export function planoParaProvedor(l: {
+  id: string;
+  nome: string;
+  preco_cents: number | string;
+  intervalo: Intervalo;
+  moeda: Moeda;
+  iva_percentual: number | string;
+}): PlanoParaProvedor {
+  return {
+    id: l.id,
+    nome: l.nome,
+    precoCents: Number(l.preco_cents),
+    intervalo: l.intervalo,
+    moeda: l.moeda,
+    ivaPercentual: Number(l.iva_percentual),
+  };
 }
 
 /** O que o webhook AUTORIZA: acordar a leitura. Nunca é fonte de estado. */
@@ -149,6 +180,12 @@ export interface AdaptadorDeCobranca {
     trialAte: Date | null;
     urlDeVolta: string;
     chaveIdempotencia: string;
+    /**
+     * Taxa única de implantação (centavos da moeda do plano), cobrada junto do
+     * 1º pagamento; `null` = não cobra. Quem chama só a passa a quem nunca pagou
+     * (`Situacao.jaPagou`), e só existe em plano EUR.
+     */
+    implantacaoCents: number | null;
   }): Promise<{ url: string; expiraEm: Date | null; assinaturaRef: string | null; sessaoId: string | null }>;
   iniciarAjusteProporcional(p: { clienteRef: string; orgId: string; plano: PlanoParaProvedor; valorCents: number; chaveIdempotencia: string; urlDeVolta: string }): Promise<{ pagamentoRef: string; url: string }>;
   lerPagamentoProporcional(pagamentoRef: string): Promise<"pendente" | "pago" | "encerrado">;

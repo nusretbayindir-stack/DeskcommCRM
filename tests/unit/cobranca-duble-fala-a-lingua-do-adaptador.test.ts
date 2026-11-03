@@ -50,8 +50,8 @@ afterAll(async () => {
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const ORG_EM_TESTE = "22222222-2222-4222-8222-222222222222";
-const ESSENCIAL = { id: "33333333-3333-4333-8333-333333333333", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const };
-const PROFISSIONAL = { id: "44444444-4444-4444-8444-444444444444", nome: "Profissional", precoCents: 9990, intervalo: "mes" as const };
+const ESSENCIAL = { id: "33333333-3333-4333-8333-333333333333", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
+const PROFISSIONAL = { id: "44444444-4444-4444-8444-444444444444", nome: "Profissional", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
 const VOLTA = "http://localhost:3001/app/settings/billing?voltou=1";
 
 async function stripe() {
@@ -76,7 +76,7 @@ describe("dublê do e2e × adaptador Stripe", () => {
     expect(await s.clienteExiste("cus_de_outra_conta")).toBe(false);
     expect(await s.lerSituacao({ clienteRef: cliente })).toMatchObject({ existe: false, assinaturasVivas: 0, jaPagou: false, cancelada: false, emAtraso: false });
 
-    const inicio = await s.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-1" });
+    const inicio = await s.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-1", implantacaoCents: null });
     expect(inicio.url.startsWith(`${duble.base}/checkout/`)).toBe(true);
     const pago = await fetch(`${inicio.url}/pagar`, { method: "POST", redirect: "manual" });
     expect(pago.status).toBe(303);
@@ -117,7 +117,7 @@ describe("dublê do e2e × adaptador Stripe", () => {
     const s = await stripe();
     const cliente = await s.garantirCliente({ id: ORG_EM_TESTE, nome: "Loja em Teste", email: "admin@teste.test", documento: null });
     const fim = new Date(Date.now() + 3 * 86_400_000);
-    const inicio = await s.iniciarAssinatura({ clienteRef: cliente, orgId: ORG_EM_TESTE, plano: ESSENCIAL, trialAte: fim, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-2" });
+    const inicio = await s.iniciarAssinatura({ clienteRef: cliente, orgId: ORG_EM_TESTE, plano: ESSENCIAL, trialAte: fim, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-2", implantacaoCents: null });
     expect((await fetch(`${inicio.url}/pagar`, { method: "POST", redirect: "manual" })).status).toBe(303);
     const situacao = await s.lerSituacao({ clienteRef: cliente });
     expect(situacao).toMatchObject({ existe: false, assinaturasVivas: 1, jaPagou: false });

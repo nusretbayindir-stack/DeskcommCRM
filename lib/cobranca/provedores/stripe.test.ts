@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import objetos from "@/tests/fixtures/stripe/objetos.json";
 
-import { ErroDoProvedor } from "./contrato";
+import { ErroDoProvedor, planoParaProvedor } from "./contrato";
 import {
   criarAdaptadorStripe,
   emFormulario,
@@ -350,7 +350,7 @@ describe("verificarWebhook", () => {
 
 describe("garantirCliente e iniciarAssinatura", () => {
   const ORG = "11111111-1111-4111-8111-111111111111";
-  const PLANO = { id: "22222222-2222-4222-8222-222222222222", nome: "Pro", precoCents: 4990, intervalo: "mes" as const };
+  const PLANO = { id: "22222222-2222-4222-8222-222222222222", nome: "Pro", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
   const PRODUTO = `dc_plano_${PLANO.id}`;
   const SESSAO = { corpo: { id: "cs_test_1", url: "https://checkout.stripe.com/c/pay/cs_test_1", expires_at: 1790086400 } };
   const base = {
@@ -360,6 +360,7 @@ describe("garantirCliente e iniciarAssinatura", () => {
     trialAte: null,
     urlDeVolta: "https://crm.example.com/app/settings/billing",
     chaveIdempotencia: "3f1c2d4e-0000-4000-8000-000000000001",
+    implantacaoCents: null as number | null,
   };
 
   it("reusa o cliente que a busca por organization_id acha, sem criar outro", async () => {
@@ -520,6 +521,154 @@ describe("garantirCliente e iniciarAssinatura", () => {
     const chaves = chamadas.filter((c) => c.rota === "POST /checkout/sessions").map((c) => c.headers.get("idempotency-key"));
     expect(chaves).toEqual(Array(3).fill(`${base.chaveIdempotencia}:checkout`));
   });
+
+  // ── o plano em euro (S4) ──────────────────────────────────────────────────
+  const PLANO_EURO = { ...PLANO, moeda: "EUR" as const, ivaPercentual: 21 };
+  const TAXA_NOSSA = { id: "txr_1", percentage: 21, inclusive: false, active: true, metadata: { cobranca_do_revendedor: MARCA } };
+  const TAXAS = (...data: unknown[]) => ({ corpo: { object: "list", data, has_more: false } });
+  const EURO = {
+    "POST /products": { corpo: { id: PRODUTO } },
+    "GET /tax_rates": TAXAS(TAXA_NOSSA),
+    "POST /checkout/sessions": SESSAO,
+  };
+  const corpoDoCheckout = (chamadas: Array<{ rota: string; corpo: URLSearchParams }>) =>
+    Object.fromEntries(chamadas.find((c) => c.rota === "POST /checkout/sessions")?.corpo ?? []);
+
+  it("⭐ Checkout em euro: moeda, IVA, número de IVA, endereço, implantação e locale auto", async () => {
+    const { adaptador, chamadas } = montar(EURO);
+    await adaptador.iniciarAssinatura({ ...base, plano: PLANO_EURO, implantacaoCents: 29900 });
+    expect(corpoDoCheckout(chamadas)).toEqual({
+      mode: "subscription",
+      customer: "cus_QfixtureCliente",
+      client_reference_id: ORG,
+      "line_items[0][price_data][currency]": "eur",
+      "line_items[0][price_data][unit_amount]": "4990",
+      "line_items[0][price_data][recurring][interval]": "month",
+      "line_items[0][price_data][product]": PRODUTO,
+      "line_items[0][quantity]": "1",
+      "line_items[0][tax_rates][0]": "txr_1",
+      "line_items[1][price_data][currency]": "eur",
+      "line_items[1][price_data][unit_amount]": "29900",
+      "line_items[1][price_data][product]": "dc_implantacao",
+      "line_items[1][quantity]": "1",
+      "line_items[1][tax_rates][0]": "txr_1",
+      "subscription_data[metadata][organization_id]": ORG,
+      "subscription_data[metadata][plano_id]": PLANO.id,
+      "metadata[organization_id]": ORG,
+      "metadata[plano_id]": PLANO.id,
+      success_url: "https://crm.example.com/app/settings/billing?voltou=1",
+      cancel_url: "https://crm.example.com/app/settings/billing",
+      "tax_id_collection[enabled]": "true",
+      billing_address_collection: "required",
+      "customer_update[name]": "auto",
+      "customer_update[address]": "auto",
+      locale: "auto",
+    });
+    // A implantação é produto fixo da conta, criado (ou reativado) antes da sessão.
+    expect(chamadas.filter((c) => c.rota === "POST /products").map((c) => c.corpo.get("id"))).toEqual([PRODUTO, "dc_implantacao"]);
+    expect(chamadas.find((c) => c.corpo.get("id") === "dc_implantacao")?.corpo.get("name")).toBe("Installatie / Installation");
+  });
+
+  it("taxa já marcada na conta é reutilizada", async () => {
+    const { adaptador, chamadas } = montar(EURO);
+    await adaptador.iniciarAssinatura({ ...base, plano: PLANO_EURO });
+    expect(chamadas.some((c) => c.rota === "POST /tax_rates")).toBe(false);
+    expect(corpoDoCheckout(chamadas)["line_items[0][tax_rates][0]"]).toBe("txr_1");
+  });
+
+  it("⭐ IVA lido do banco como texto (numeric do PostgREST, '21.00') casa com a taxa de 21 da conta", async () => {
+    const { adaptador, chamadas } = montar(EURO);
+    const plano = planoParaProvedor({ id: PLANO.id, nome: "Pro", preco_cents: "4990", intervalo: "mes", moeda: "EUR", iva_percentual: "21.00" });
+    expect(plano).toEqual(PLANO_EURO);
+    await adaptador.iniciarAssinatura({ ...base, plano });
+    expect(chamadas.some((c) => c.rota === "POST /tax_rates")).toBe(false);
+    expect(corpoDoCheckout(chamadas)["line_items[0][tax_rates][0]"]).toBe("txr_1");
+  });
+
+  it("taxa ausente é criada com a marca (a alheia, a inclusiva e a de outro percentual não servem)", async () => {
+    const { adaptador, chamadas } = montar({
+      ...EURO,
+      "GET /tax_rates": TAXAS(
+        { ...TAXA_NOSSA, id: "txr_alheia", metadata: {} },
+        { ...TAXA_NOSSA, id: "txr_inclusiva", inclusive: true },
+        { ...TAXA_NOSSA, id: "txr_6", percentage: 6 },
+      ),
+      "POST /tax_rates": { corpo: { id: "txr_novo" } },
+    });
+    await adaptador.iniciarAssinatura({ ...base, plano: PLANO_EURO });
+    expect(Object.fromEntries(chamadas.find((c) => c.rota === "POST /tax_rates")?.corpo ?? [])).toEqual({
+      display_name: "BTW/TVA",
+      percentage: "21",
+      inclusive: "false",
+      "metadata[cobranca_do_revendedor]": MARCA,
+    });
+    expect(corpoDoCheckout(chamadas)["line_items[0][tax_rates][0]"]).toBe("txr_novo");
+  });
+
+  it("euro com IVA 0: sem tax_rates, com coleta do número de IVA", async () => {
+    const { adaptador, chamadas } = montar(EURO);
+    await adaptador.iniciarAssinatura({ ...base, plano: { ...PLANO_EURO, ivaPercentual: 0 }, implantacaoCents: 29900 });
+    const corpo = corpoDoCheckout(chamadas);
+    expect(chamadas.some((c) => c.rota.endsWith("/tax_rates"))).toBe(false);
+    expect(Object.keys(corpo).filter((k) => k.includes("tax_rates"))).toEqual([]);
+    expect(corpo).toMatchObject({ "line_items[1][price_data][unit_amount]": "29900", "tax_id_collection[enabled]": "true", locale: "auto" });
+  });
+
+  it("implantação null: só a linha da assinatura", async () => {
+    const { adaptador, chamadas } = montar(EURO);
+    await adaptador.iniciarAssinatura({ ...base, plano: PLANO_EURO, implantacaoCents: null });
+    expect(Object.keys(corpoDoCheckout(chamadas)).filter((k) => k.startsWith("line_items[1]"))).toEqual([]);
+    expect(chamadas.filter((c) => c.rota === "POST /products")).toHaveLength(1);
+  });
+
+  it("⭐ ajuste proporcional e troca de plano em euro levam moeda e taxa", async () => {
+    const ajuste = montar(EURO);
+    await ajuste.adaptador.iniciarAjusteProporcional({ ...base, plano: PLANO_EURO, valorCents: 3065 });
+    expect(corpoDoCheckout(ajuste.chamadas)).toMatchObject({
+      mode: "payment",
+      "line_items[0][price_data][currency]": "eur",
+      "line_items[0][price_data][unit_amount]": "3065",
+      "line_items[0][tax_rates][0]": "txr_1",
+      "tax_id_collection[enabled]": "true",
+      locale: "auto",
+    });
+
+    const troca = montar({
+      "GET /subscriptions/sub_1QfixtureAtiva": { corpo: objetos.assinatura },
+      "POST /products": { corpo: { id: PRODUTO } },
+      "GET /tax_rates": TAXAS(TAXA_NOSSA),
+      "POST /subscriptions/sub_1QfixtureAtiva": { corpo: objetos.assinatura },
+    });
+    await troca.adaptador.trocarPlano({ assinaturaRef: "sub_1QfixtureAtiva", plano: PLANO_EURO });
+    expect(Object.fromEntries(troca.chamadas.find((c) => c.rota === "POST /subscriptions/sub_1QfixtureAtiva")?.corpo ?? [])).toEqual({
+      "items[0][id]": "si_QfixtureItem",
+      "items[0][price_data][currency]": "eur",
+      "items[0][price_data][unit_amount]": "4990",
+      "items[0][price_data][recurring][interval]": "month",
+      "items[0][price_data][product]": PRODUTO,
+      "items[0][tax_rates][0]": "txr_1",
+      proration_behavior: "none",
+      "metadata[plano_id]": PLANO.id,
+    });
+  });
+
+  it("troca para plano em euro com IVA 0 limpa a taxa que o item tinha (string vazia, como a Stripe pede)", async () => {
+    const { adaptador, chamadas } = montar({
+      "GET /subscriptions/sub_1QfixtureAtiva": { corpo: objetos.assinatura },
+      "POST /products": { corpo: { id: PRODUTO } },
+      "POST /subscriptions/sub_1QfixtureAtiva": { corpo: objetos.assinatura },
+    });
+    await adaptador.trocarPlano({ assinaturaRef: "sub_1QfixtureAtiva", plano: { ...PLANO_EURO, ivaPercentual: 0 } });
+    const corpo = chamadas.find((c) => c.rota === "POST /subscriptions/sub_1QfixtureAtiva")?.corpo;
+    expect(corpo?.get("items[0][tax_rates]")).toBe("");
+    expect(chamadas.some((c) => c.rota.endsWith("/tax_rates"))).toBe(false);
+  });
+
+  it("falha ao criar a taxa: a sessão não é aberta (nada de página de pagamento pela metade)", async () => {
+    const { adaptador, chamadas } = montar({ ...EURO, "GET /tax_rates": TAXAS(), "POST /tax_rates": { status: 400, corpo: { error: { code: "parameter_invalid" } } } });
+    expect(await adaptador.iniciarAssinatura({ ...base, plano: PLANO_EURO }).catch((e: unknown) => e)).toMatchObject({ codigo: "parameter_invalid" });
+    expect(chamadas.some((c) => c.rota === "POST /checkout/sessions")).toBe(false);
+  });
 });
 
 describe("lerSituacao", () => {
@@ -676,7 +825,7 @@ describe("lerSituacao", () => {
 });
 
 describe("trocarPlano, cancelarNoFim, prepararWebhook e portal", () => {
-  const NOVO = { id: "33333333-3333-4333-8333-333333333333", nome: "Max", precoCents: 9990, intervalo: "mes" as const };
+  const NOVO = { id: "33333333-3333-4333-8333-333333333333", nome: "Max", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
   const PRODUTO_NOVO = `dc_plano_${NOVO.id}`;
   const URL_DO_WEBHOOK = "https://crm.example.com/api/v1/webhooks/cobranca/stripe";
 
