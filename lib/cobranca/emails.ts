@@ -80,6 +80,36 @@ export async function emailDoAdminDaEmpresa(admin: SupabaseClient, orgId: string
   return (await emailsDosAdmins(admin, orgId, { semProvisorio: true, exceto: donos, estrito: true }))[0] ?? null;
 }
 
+/**
+ * O e-mail do cliente quando a empresa ainda não tem admin: o do convite de
+ * admin em aberto. Sem isto, a empresa criada pelo dono com plano de 0 dias não
+ * sai do lugar: nasce suspensa, o convite não se aceita em empresa suspensa
+ * (`fn_accept_team_invite`) e sem admin o link dava 409 `empresa_sem_email`.
+ * Vencido ainda vale: o prazo é do token, e o endereço continua sendo o do
+ * cliente. Convite para um dono da instalação fica de fora pelo mesmo motivo de
+ * `emailDoAdminDaEmpresa`; a comparação ignora a caixa porque o convite guarda
+ * em minúsculas e o Auth não garante.
+ */
+export async function emailDoConviteDeAdminPendente(admin: SupabaseClient, orgId: string): Promise<string | null> {
+  const { data, error } = await admin
+    .from("team_invites")
+    .select("email")
+    .eq("organization_id", orgId)
+    .eq("role", "admin")
+    .is("accepted_at", null)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`convites ilegíveis (${error.code ?? "sem_codigo"})`);
+  const convidados = ((data ?? []) as Array<{ email: string }>).map((l) => l.email);
+  if (convidados.length === 0) return null;
+
+  const { data: linhasDosDonos, error: erroDosDonos } = await admin.from("platform_admins").select("user_id").is("revoked_at", null);
+  if (erroDosDonos) throw new Error(`donos ilegíveis (${erroDosDonos.code ?? "sem_codigo"})`);
+  const idsDosDonos = ((linhasDosDonos ?? []) as Array<{ user_id: string }>).map((l) => l.user_id);
+  const dosDonos = new Set((await emailsDe(admin, idsDosDonos, true)).map((e) => e.toLowerCase()));
+  return convidados.find((e) => !dosDonos.has(e.toLowerCase())) ?? null;
+}
+
 async function enviarParaCada(
   para: readonly string[],
   email: { subject: string; html: string; text: string },
