@@ -98,7 +98,7 @@ export function RecoverOrganizationForm({
           >
             {planos.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.nome} — {new Intl.NumberFormat(undefined, { style: "currency", currency: "BRL" }).format(p.preco_cents / 100)} / {p.intervalo === "ano" ? t("ano") : t("mês")}
+                {p.nome} — {new Intl.NumberFormat(undefined, { style: "currency", currency: p.moeda }).format(p.preco_cents / 100)} / {p.intervalo === "ano" ? t("ano") : t("mês")}
                 {p.trial_dias > 0 ? ` · ${p.trial_dias} ${t("dias de teste")}` : ` · ${t("sem período de teste")}`}
               </option>
             ))}

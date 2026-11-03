@@ -18010,6 +18010,25 @@ export const DICIONARIO: Traducoes = {
   "Interessado": { es: "Interesado" },
   "Sem interesse": { es: "Sin interés" },
   "sim": { es: "si" },
+  // S4 — cobrança em euro
+  "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.": { es: "Solo se puede cambiar a un plan en la misma moneda. Cancela y suscríbete al plan nuevo." },
+  "Real (R$)": { es: "Real (R$)" },
+  "Euro (€)": { es: "Euro (€)" },
+  "O Asaas só cobra em real. Para vender plano em euro, conecte a Stripe.": { es: "Asaas solo cobra en reales. Para vender planes en euros, conecta Stripe." },
+  "Preço (€)": { es: "Precio (€)" },
+  "IVA (%)": { es: "IVA (%)" },
+  "Implantação (taxa única, €)": { es: "Implementación (cargo único, €)" },
+  "Respostas do assistente por mês": { es: "Respuestas del asistente por mes" },
+  "Só para a aba Clientes: mostra quantas respostas passaram da cota. Não limita o assistente.": { es: "Solo para la pestaña Clientes: muestra cuántas respuestas superaron la cuota. No limita al asistente." },
+  "IVA": { es: "IVA" },
+  "Implantação": { es: "Implementación" },
+  "Confira os campos do plano: preço e implantação a partir de € 5,00, IVA de 0 a 100 com até duas casas decimais, teste grátis de 0 a 90 dias e limites a partir de 1.": { es: "Revisa los campos del plan: precio e implementación desde 5,00 €, IVA de 0 a 100 con hasta dos decimales, prueba gratis de 0 a 90 días y límites desde 1." },
+  "O preço, o intervalo, a moeda, o IVA e a implantação de um plano travam quando alguém o assina: para mudar, arquive e crie outro.": { es: "El precio, el intervalo, la moneda, el IVA y la implementación de un plan se bloquean cuando alguien se suscribe: para cambiarlos, archívalo y crea otro." },
+  "Este plano tem assinantes: preço, intervalo, moeda, IVA e implantação não mudam mais. Arquive-o e crie outro.": { es: "Este plan tiene suscriptores: el precio, el intervalo, la moneda, el IVA y la implementación ya no cambian. Archívalo y crea otro." },
+  "IVA e implantação só existem em plano em euro.": { es: "El IVA y la implementación solo existen en planes en euros." },
+  "Respostas no mês": { es: "Respuestas del mes" },
+  "+1 bloco extra": { es: "+1 bloque extra" },
+  "+{n} blocos extras": { es: "+{n} bloques extra" },
 };
 
 /**

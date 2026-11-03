@@ -39,22 +39,34 @@ comment on table public.cobranca_planos is
   'Planos que o dono da instalação vende às empresas dela (migration 0583; euro na 7001). Da INSTALAÇÃO, sem organization_id: RLS ligada sem policy, só o service_role. Limite nulo = sem limite. preco_cents >= 500 (centavos da moeda do plano); moeda BRL ou EUR (EUR só com a Stripe); iva_percentual e implantacao_cents só em EUR; respostas_mes é a cota exibida na aba Clientes, não limite; teto_ia_usd_cents na moeda de fn_gasto_de_ia_do_mes.';
 
 -- ── C. respostas do assistente no mês ───────────────────────────────────────
+-- O índice que serve o contador é o da 0133 (fn_atrito_metrics), mesmo nome e
+-- mesmas colunas: na cadeia ele já existe (no-op); o baseline não o tinha, então
+-- quem só aplica o baseline o ganha aqui. Sem CONCURRENTLY, como a 0585: o runner
+-- envolve a migration em transação, e a criação trava escrita em `messages` pelo
+-- tempo de construir o índice.
+create index if not exists idx_messages_org_direction_sent
+  on public.messages (organization_id, direction, sent_at);
+
 -- Uma resposta = uma mensagem da IA (sent_via 'ai', outbound) cuja anterior NA MESMA
 -- conversa é recebida: várias mensagens do cliente seguidas de várias da IA contam
 -- uma; o follow-up da IA depois de outra mensagem da IA e a resposta humana não
--- contam (contrato, anexo 1). O mês é o do fuso da org; a janela abre 7 dias antes
--- para a 1ª resposta do mês enxergar a mensagem recebida no fim do mês anterior.
+-- contam (contrato, anexo 1). A hora é `sent_at` (a da mensagem, que o histórico
+-- importado preserva; `created_at` é a da linha) e o filtro é o do índice acima:
+-- organização, direção e sent_at. O mês é o do fuso da org; a janela abre 7 dias
+-- antes para a 1ª resposta do mês enxergar a mensagem recebida no fim do mês
+-- anterior — uma resposta cuja recebida é mais velha que isso não conta.
 create or replace function public.fn_respostas_do_assistente_no_mes(p_org uuid, p_agora timestamptz default now())
 returns integer language sql stable security definer set search_path = public as $$
   with tz as (select coalesce(nullif(o.timezone, ''), 'UTC') as z from public.organizations o where o.id = p_org),
   j as (select date_trunc('month', p_agora at time zone z) at time zone z as desde,
                (date_trunc('month', p_agora at time zone z) + interval '1 month') at time zone z as ate from tz),
-  s as (select m.sent_via, m.direction, m.created_at,
-               lag(m.direction) over (partition by m.conversation_id order by m.created_at, m.id) as anterior
+  s as (select m.sent_via, m.direction, m.sent_at,
+               lag(m.direction) over (partition by m.conversation_id order by m.sent_at, m.id) as anterior
           from public.messages m, j
-         where m.organization_id = p_org and m.created_at >= j.desde - interval '7 days' and m.created_at < j.ate)
+         where m.organization_id = p_org and m.direction in ('inbound', 'outbound')
+           and m.sent_at >= j.desde - interval '7 days' and m.sent_at < j.ate)
   select count(*)::int from s, j
-   where s.sent_via = 'ai' and s.direction = 'outbound' and s.anterior = 'inbound' and s.created_at >= j.desde;
+   where s.sent_via = 'ai' and s.direction = 'outbound' and s.anterior = 'inbound' and s.sent_at >= j.desde;
 $$;
 
 comment on function public.fn_respostas_do_assistente_no_mes(uuid, timestamptz) is

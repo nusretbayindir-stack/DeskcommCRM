@@ -236,7 +236,7 @@ export function SignupForm({
           <select id="cobranca_plan_id" className="h-10 w-full rounded-md border bg-background px-3 text-sm" {...register("cobranca_plan_id")}>
             {planos.map((plano) => (
               <option key={plano.id} value={plano.id}>
-                {plano.nome} — {new Intl.NumberFormat(undefined, { style: "currency", currency: "BRL" }).format(plano.preco_cents / 100)} / {plano.intervalo === "ano" ? t("ano") : t("mês")}
+                {plano.nome} — {new Intl.NumberFormat(undefined, { style: "currency", currency: plano.moeda }).format(plano.preco_cents / 100)} / {plano.intervalo === "ano" ? t("ano") : t("mês")}
                 {plano.trial_dias > 0 ? ` · ${plano.trial_dias} ${t("dias de teste")}` : ` · ${t("sem período de teste")}`}
               </option>
             ))}
