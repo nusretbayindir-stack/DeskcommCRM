@@ -28,7 +28,15 @@ import { documentoDoPagador } from "@/lib/cobranca/documento";
 import { FUSO_PADRAO } from "@/lib/cobranca/fuso";
 import { logger } from "@/lib/logger";
 
-import { ErroDoProvedor, type AdaptadorDeCobranca, type Modo, type SinalDoWebhook, type Situacao, type WebhookPreparado } from "./contrato";
+import {
+  ErroDoProvedor,
+  type AdaptadorDeCobranca,
+  type Modo,
+  type PlanoParaProvedor,
+  type SinalDoWebhook,
+  type Situacao,
+  type WebhookPreparado,
+} from "./contrato";
 
 /** A base de cada ambiente. Qual vale sai do prefixo da chave. */
 export const ASAAS_API_BASE = {
@@ -259,6 +267,15 @@ export function verificarWebhookAsaas(corpoCru: string, headers: Headers, segred
   return { eventoId: `forma:${resumo}`, tipo, clienteRef: null };
 }
 
+/**
+ * O Asaas só cobra em real (`value` é sempre BRL). A rota do plano já recusa
+ * plano em euro com o Asaas conectado; isto é a segunda linha, antes de
+ * qualquer chamada: um plano EUR nunca vira cobrança em reais.
+ */
+function soEmReal(plano: PlanoParaProvedor): void {
+  if (plano.moeda !== "BRL") throw new ErroDoProvedor(null, "moeda_nao_suportada", false);
+}
+
 export function criarAdaptadorAsaas(dep: DependenciasDoAsaas): AdaptadorDeCobranca {
   if (dep.baseUrl !== undefined && !baseDeLoopback(dep.baseUrl)) {
     throw new Error("base da API do Asaas recusada: só a oficial ou loopback");
@@ -486,6 +503,7 @@ export function criarAdaptadorAsaas(dep: DependenciasDoAsaas): AdaptadorDeCobran
   async function iniciarAssinatura(
     p: Parameters<AdaptadorDeCobranca["iniciarAssinatura"]>[0],
   ): ReturnType<AdaptadorDeCobranca["iniciarAssinatura"]> {
+    soEmReal(p.plano);
     const orgId = uuidDaOrg(p.orgId);
     const caminho = `/subscriptions?customer=${encodeURIComponent(p.clienteRef)}&status=ACTIVE&limit=10`;
     const ativas = ler(listaDoAsaas(comId), await chamar("GET", caminho)).data.filter((s) => s.deleted !== true);
@@ -516,6 +534,7 @@ export function criarAdaptadorAsaas(dep: DependenciasDoAsaas): AdaptadorDeCobran
   }
 
   async function iniciarAjusteProporcional(p: Parameters<AdaptadorDeCobranca["iniciarAjusteProporcional"]>[0]) {
+    soEmReal(p.plano);
     const externalReference = `upgrade:${uuidDaOrg(p.orgId)}:${p.chaveIdempotencia}`;
     const consulta = new URLSearchParams({ customer: p.clienteRef, externalReference, limit: "10" });
     const existentes = ler(listaDoAsaas(cobrancaDoAsaas), await chamar("GET", `/payments?${consulta}`)).data;
@@ -643,6 +662,7 @@ export function criarAdaptadorAsaas(dep: DependenciasDoAsaas): AdaptadorDeCobran
    * todas levam o valor novo.
    */
   async function trocarPlano(p: Parameters<AdaptadorDeCobranca["trocarPlano"]>[0]): Promise<void> {
+    soEmReal(p.plano);
     const hoje = dataCivilEmSaoPaulo(agora());
     const cobrancas = await cobrancasDaAssinatura(p.assinaturaRef);
     if (cobrancas.some((c) => c.status === "OVERDUE" || (c.status === "PENDING" && c.dueDate <= hoje))) {

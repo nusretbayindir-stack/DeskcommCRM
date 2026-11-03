@@ -11,6 +11,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { Moeda } from "@/lib/cobranca/vocabulario";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 
 export interface PlanoDoCadastro {
@@ -19,6 +20,8 @@ export interface PlanoDoCadastro {
   preco_cents: number;
   intervalo: string;
   trial_dias: number;
+  /** O preço sai nesta moeda (S4: plano em euro oferecido no cadastro). */
+  moeda: Moeda;
 }
 
 export interface PlanosDoCadastro {
@@ -31,7 +34,7 @@ export async function lerPlanosDoCadastro(admin: SupabaseClient): Promise<Planos
   const [oferecidos, padrao] = await Promise.all([
     admin
       .from("cobranca_planos")
-      .select("id, nome, preco_cents, intervalo, trial_dias")
+      .select("id, nome, preco_cents, intervalo, trial_dias, moeda")
       .is("arquivado_em", null)
       .eq("oferecido_ao_cliente", true)
       .order("preco_cents"),

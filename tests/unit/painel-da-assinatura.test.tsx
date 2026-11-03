@@ -11,7 +11,7 @@ import type { DadosDoPainel } from "@/lib/cobranca/painel";
 
 afterEach(cleanup);
 
-const PLANO = { id: "plano-a", nome: "Básico", preco_cents: 4990, intervalo: "mes", max_assentos: 1, max_canais: null, teto_ia_usd_cents: 500 };
+const PLANO = { id: "plano-a", nome: "Básico", preco_cents: 4990, intervalo: "mes", moeda: "BRL" as const, max_assentos: 1, max_canais: null, teto_ia_usd_cents: 500 };
 const ASSINATURA_EM_TESTE: NonNullable<DadosDoPainel["assinatura"]> = {
   estado: "trial", trial_ate: "2026-10-10T12:00:00Z", prazo_extra_ate: null, proximo_vencimento: null, vencida_desde: null,
   cancela_no_fim: false, modo: null, provedor: null, link_de_pagamento: null, assinaturas_vivas: 0, plano_agendado: null,
@@ -67,5 +67,13 @@ describe("PainelDaAssinatura", () => {
     // fuso gravado ilegível cai no padrão em vez de derrubar a tela
     render(<PainelDaAssinatura dados={{ ...dados, fuso: "Marte/Olimpo" }} idioma="pt-BR" />);
     expect(screen.getByText(/^Teste grátis até 10\/10\/2026/)).toBeTruthy();
+  });
+});
+
+describe("PainelDaAssinatura: o plano em euro (S4)", () => {
+  it("o preço sai na moeda do plano", () => {
+    render(<PainelDaAssinatura dados={{ ...EM_TESTE, plano: { ...PLANO, moeda: "EUR", preco_cents: 7900 } }} idioma="pt-BR" />);
+    expect(screen.getByText(/€\s79,00/)).toBeTruthy();
+    expect(screen.queryByText(/R\$/)).toBeNull();
   });
 });

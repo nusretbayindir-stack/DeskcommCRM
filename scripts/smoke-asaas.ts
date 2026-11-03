@@ -71,8 +71,8 @@ const webhooksDoSmoke = async (url: string) =>
 
 const orgId = randomUUID();
 const adaptador = criarAdaptadorAsaas({ lerChave: async () => chave, marca: `smoke-${orgId.slice(0, 8)}` });
-const plano = { id: randomUUID(), nome: "Smoke mensal", precoCents: 4990, intervalo: "mes" as const };
-const novo = { id: randomUUID(), nome: "Smoke maior", precoCents: 9990, intervalo: "mes" as const };
+const plano = { id: randomUUID(), nome: "Smoke mensal", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
+const novo = { id: randomUUID(), nome: "Smoke maior", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
 const urlDoWebhook = `https://example.com/api/v1/webhooks/cobranca/asaas-smoke-${orgId}`;
 const documento = gerarCpf();
 let cliente: string | null = null;
@@ -117,7 +117,7 @@ try {
   ok(`CNPJ alfanumérico → ${alfa.status} ${alfa.status === 200 ? "aceito" : codigoDoErro(alfa.json)} (registre no PR)`);
 
   // 3. Assinatura sem teste grátis: a 1ª cobrança vence hoje (data civil de São Paulo).
-  const inicio = await adaptador.iniciarAssinatura({ clienteRef: cliente, orgId, plano, trialAte: null, urlDeVolta: "https://example.com/app/settings/billing", chaveIdempotencia: randomUUID() });
+  const inicio = await adaptador.iniciarAssinatura({ clienteRef: cliente, orgId, plano, trialAte: null, urlDeVolta: "https://example.com/app/settings/billing", chaveIdempotencia: randomUUID(), implantacaoCents: null });
   if (!/^https:\/\/[a-z.-]*asaas\.com\//.test(inicio.url)) falha("invoiceUrl fora de asaas.com, ou sem https");
   assinatura = inicio.assinaturaRef;
   if (!assinatura) falha("sem assinatura no sandbox depois de iniciarAssinatura");

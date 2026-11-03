@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
+import { formatarDinheiro } from "@/lib/cobranca/dinheiro";
 import { documentoDoPagador, exigeDocumento } from "@/lib/cobranca/documento";
 import { formatadorDeData } from "@/lib/cobranca/fuso";
 import { linkDePagamentoSeguro } from "@/lib/cobranca/link";
@@ -67,6 +68,7 @@ const FRASE_DO_ERRO: Record<string, string> = {
   troca_pendente: "Conclua ou aguarde a cobrança proporcional antes de solicitar outra troca de plano.",
   pagamento_nao_registrado: "A cobrança foi iniciada, mas não conseguimos registrar o pagamento. Tente novamente; se houver uma cobrança aberta, fale com o suporte.",
   periodo_indisponivel: "Não foi possível calcular o período pago. Atualize a assinatura e tente novamente.",
+  moeda_diferente: "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.",
 };
 const FRASE_GENERICA = "Não foi possível concluir agora. Tente de novo.";
 type Leitura = { estado: EstadoDaAssinatura | null; assinaturas_vivas: number; org_operante: boolean };
@@ -113,7 +115,7 @@ export function AcoesDaAssinatura(p: PropsDasAcoes) {
         proximoVencimento: p.proximoVencimento ? new Date(p.proximoVencimento) : null,
         agora: new Date(p.instanteCalculo),
       });
-  const reais = (centavos: number) => new Intl.NumberFormat(idioma, { style: "currency", currency: "BRL" }).format(centavos / 100);
+  const dinheiro = (centavos: number, plano: PlanoParaTroca) => formatarDinheiro(centavos, plano.moeda, idioma);
   const dolares = (centavos: number) => new Intl.NumberFormat(idioma, { style: "currency", currency: "USD" }).format(centavos / 100);
 
   const emDivida = p.estado === "em_atraso" || p.estado === "cancelada";
@@ -342,7 +344,7 @@ export function AcoesDaAssinatura(p: PropsDasAcoes) {
               {[p.planoAtual, selecionado].map((plano, i) => (
                 <section key={plano.id} className="rounded-md bg-muted/40 p-3">
                   <h3 className="font-medium">{i === 0 ? t("Plano atual") : t("Novo plano")}: {plano.nome}</h3>
-                  <p>{reais(plano.preco_cents)} / {plano.intervalo === "ano" ? t("ano") : t("mês")}</p>
+                  <p>{dinheiro(plano.preco_cents, plano)} / {plano.intervalo === "ano" ? t("ano") : t("mês")}</p>
                   <ul className="mt-2 space-y-1 text-muted-foreground">
                     <li>{t("Pessoas")}: {plano.max_assentos ?? t("sem limite")}</li>
                     <li>{t("Números conectados")}: {plano.max_canais ?? t("sem limite")}</li>
@@ -358,7 +360,7 @@ export function AcoesDaAssinatura(p: PropsDasAcoes) {
                 ? t("Não foi possível calcular o proporcional com os dados do período pago. Nenhuma troca será realizada.")
                 : ajusteProporcional === 0
                   ? `${t("O ajuste proporcional é zero; o novo plano entra na próxima renovação")}: ${dia(p.proximoVencimento)}.`
-                  : `${t("Ajuste proporcional estimado para hoje")}: ${reais(ajusteProporcional)}. ${t("A data da próxima renovação permanece")}: ${dia(p.proximoVencimento)}.`}
+                  : `${t("Ajuste proporcional estimado para hoje")}: ${dinheiro(ajusteProporcional, selecionado)}. ${t("A data da próxima renovação permanece")}: ${dia(p.proximoVencimento)}.`}
             </p>
           )}
           {selecionado && p.planoAtual && selecionado.preco_cents <= p.planoAtual.preco_cents && (

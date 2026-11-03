@@ -26,8 +26,10 @@ import { aplicarLeitura } from "@/lib/cobranca/estado";
 import { SEM_TROCA } from "@/lib/cobranca/prorata";
 import { adaptador as adaptadorPadrao } from "@/lib/cobranca/provedores";
 import {
+  COLUNAS_PARA_O_PROVEDOR,
   ErroDoProvedor,
   paraErroDeLeitura,
+  planoParaProvedor,
   type AdaptadorDeCobranca,
   type ProvedorDeCobranca,
   type Situacao,
@@ -143,13 +145,11 @@ export async function sincronizar(
       const adaptador = (deps.adaptador ?? adaptadorPadrao)(provedor);
       const pagamento = await adaptador.lerPagamentoProporcional(primeira.troca_pagamento_ref);
       if (pagamento === "pago") {
-        const { data: alvo, error: erroAlvo } = await admin.from("cobranca_planos").select("id, nome, preco_cents, intervalo").eq("id", primeira.plano_troca_pendente_id).maybeSingle();
+        const { data: alvo, error: erroAlvo } = await admin.from("cobranca_planos").select(COLUNAS_PARA_O_PROVEDOR).eq("id", primeira.plano_troca_pendente_id).maybeSingle();
         if (erroAlvo || !alvo) throw new Error("plano do upgrade proporcional indisponível");
         let precoAtualizado = true;
         try {
-          await adaptador.trocarPlano({ assinaturaRef: primeira.provedor_assinatura_id, plano: {
-            id: alvo.id, nome: alvo.nome, precoCents: alvo.preco_cents, intervalo: alvo.intervalo,
-          } });
+          await adaptador.trocarPlano({ assinaturaRef: primeira.provedor_assinatura_id, plano: planoParaProvedor(alvo) });
         } catch (e) {
           // Transitório, ou a mensalidade do período ainda aberta (Asaas): a próxima leitura tenta de novo.
           if (!(e instanceof ErroDoProvedor) || e.transitorio || e.codigo === "pagamento_do_periodo_pendente") throw e;

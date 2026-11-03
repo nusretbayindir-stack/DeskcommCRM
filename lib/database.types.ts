@@ -4232,7 +4232,9 @@ isOneToOne: false
           arquivado_em: string | null
           created_at: string
           id: string
+          implantacao_cents: number | null
           intervalo: string
+          iva_percentual: number
           max_assentos: number | null
           max_canais: number | null
           moeda: string
@@ -4240,6 +4242,7 @@ isOneToOne: false
           oferecido_ao_cliente: boolean
           padrao_no_cadastro: boolean
           preco_cents: number
+          respostas_mes: number | null
           teto_ia_usd_cents: number | null
           trial_dias: number
           updated_at: string
@@ -4249,7 +4252,9 @@ isOneToOne: false
           arquivado_em?: string | null
           created_at?: string
           id?: string
+          implantacao_cents?: number | null
           intervalo: string
+          iva_percentual?: number
           max_assentos?: number | null
           max_canais?: number | null
           moeda?: string
@@ -4257,6 +4262,7 @@ isOneToOne: false
           oferecido_ao_cliente?: boolean
           padrao_no_cadastro?: boolean
           preco_cents: number
+          respostas_mes?: number | null
           teto_ia_usd_cents?: number | null
           trial_dias?: number
           updated_at?: string
@@ -4266,7 +4272,9 @@ isOneToOne: false
           arquivado_em?: string | null
           created_at?: string
           id?: string
+          implantacao_cents?: number | null
           intervalo?: string
+          iva_percentual?: number
           max_assentos?: number | null
           max_canais?: number | null
           moeda?: string
@@ -4274,6 +4282,7 @@ isOneToOne: false
           oferecido_ao_cliente?: boolean
           padrao_no_cadastro?: boolean
           preco_cents?: number
+          respostas_mes?: number | null
           teto_ia_usd_cents?: number | null
           trial_dias?: number
           updated_at?: string
@@ -10990,6 +10999,8 @@ isOneToOne: false
         Returns: Json
       }
       fn_limite_do_plano: { Args: { p_org: string; p_recurso: string }; Returns: number | null }
+      /** Migration 7001 — respostas do assistente no mês (fuso da org); só service_role. */
+      fn_respostas_do_assistente_no_mes: { Args: { p_org: string; p_agora?: string }; Returns: number }
       fn_log_event: {
         Args: {
           p_event_type: string

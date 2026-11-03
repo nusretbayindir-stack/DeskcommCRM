@@ -87,7 +87,8 @@ Aba **Planos**:
 | Campo | O que saber |
 |---|---|
 | Nome do plano | Até 60 caracteres |
-| Preço (R$) | A partir de R$ 5,00 |
+| Moeda | Real ou Euro. Euro só com a Stripe: veja [Euro, SEPA e IVA](#euro-sepa-e-iva) |
+| Preço (R$ ou €) | A partir de 5,00 na moeda do plano |
 | Intervalo de cobrança | Mensal ou Anual |
 | Dias de teste grátis | De 0 a 90; o padrão é 14. **0 = entrada paga:** a empresa que nasce nesse plano fica suspensa até o provedor confirmar o primeiro pagamento |
 | Máximo de pessoas | Vazio = sem limite |
@@ -106,8 +107,8 @@ Aba **Planos**:
 - **Sem plano nenhum** (nenhum padrão e nenhum visível às empresas): tudo como antes da cobrança
   por plano — quem se cadastra sozinho fica **isento** (usa de graça e sem limite) e o Google
   aparece.
-- O preço e o intervalo de um plano **travam** quando alguém o assina. Para mudar, arquive e crie
-  outro.
+- O preço, o intervalo, a moeda, o IVA e a implantação de um plano **travam** quando alguém o
+  assina. Para mudar, arquive e crie outro. A cota de respostas muda sempre.
 - Plano negociado com um só cliente: **Esconder das empresas**. Ele ganha o selo "Só você
   atribui", e a empresa não o vê nem o escolhe.
 
@@ -233,6 +234,34 @@ linha por empresa que paga, com **Copiar link de pagamento**.
 
 **Desligar** a cobrança faz os limites dos planos deixarem de valer e libera as empresas
 suspensas por falta de pagamento (a tela mostra quantas). Nada é cancelado no provedor.
+
+## Euro, SEPA e IVA
+
+Plano em **euro** existe só com a **Stripe**: o Asaas cobra só em real, então a aba Planos fecha a
+opção Euro com o Asaas conectado, e a rota recusa com `400 moeda_nao_suportada`.
+
+| Campo | O que saber |
+|---|---|
+| IVA (%) | Só em euro. De 0 a 100, até duas casas. O preço do plano é **sem** IVA: a página de pagamento soma o imposto por cima. 0 = sem linha de imposto |
+| Implantação (taxa única, €) | Só em euro, opcional, a partir de € 5,00. Cobrada uma vez, junto do primeiro pagamento. Quem já pagou alguma vez (cancelou e assinou de novo) não paga de novo |
+| Respostas do assistente por mês | Nas duas moedas, opcional. Só exibição: a aba **Clientes** mostra "312 / 300 · +1 bloco extra" (blocos de 250). **Não limita** o assistente: quem para o assistente é o teto de IA |
+
+- Na página de pagamento em euro a Stripe pede o **número de IVA** e o **endereço de cobrança**, e
+  abre no idioma do navegador (NL, FR, EN…).
+- A taxa de IVA é criada na conta Stripe uma vez por instalação, com o nome "BTW/TVA", e
+  reaproveitada nos pagamentos seguintes.
+- **SEPA (débito em conta):** ligue **SEPA Direct Debit** no painel da Stripe (Settings › Payment
+  methods). O DeskcommCRM não escolhe as formas de pagamento: cartão e SEPA aparecem conforme o
+  painel da conta.
+- Na SEPA a Stripe pode deixar a assinatura `active` enquanto o primeiro débito ainda processa
+  ([docs.stripe.com/billing/subscriptions/sepa-debit](https://docs.stripe.com/billing/subscriptions/sepa-debit)):
+  a empresa é liberada na hora. Se o débito voltar (saldo, contestação), a assinatura vira
+  `past_due` e entra na [régua](#a-régua).
+- Trocar de plano só entre planos da mesma moeda (`422 moeda_diferente`): para mudar de moeda,
+  cancele e assine o plano novo.
+- **Fatura:** o recibo da Stripe não é fatura. Na Bélgica, fatura entre empresas é e-fatura
+  **Peppol** desde 1º de janeiro de 2026: emita fora do sistema, uma vez por mês, com a
+  mensalidade e os blocos extras que a aba Clientes mostra.
 
 ## Nota fiscal
 

@@ -619,12 +619,13 @@ const rotaDePagamentos = (todas: Linha[]) => (url: URL): Resposta =>
     (url.searchParams.get("subscription") === null || c.subscription === url.searchParams.get("subscription")) &&
     (url.searchParams.get("customer") === null || c.customer === url.searchParams.get("customer")) &&
     (url.searchParams.get("status") === null || c.status === url.searchParams.get("status"))));
-const PLANO = { id: "1d0e4b9a-7c2f-4e1a-9b3c-5d6e7f8a9b0c", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const };
+const PLANO = { id: "1d0e4b9a-7c2f-4e1a-9b3c-5d6e7f8a9b0c", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
 
 describe("iniciarAssinatura", () => {
   const PEDIDO = {
     clienteRef: CLIENTE, orgId: ORG, plano: PLANO, trialAte: null as Date | null,
     urlDeVolta: "https://crm.example.com/cobranca/volta?para=painel", chaveIdempotencia: "idem-1",
+    implantacaoCents: null as number | null,
   };
   const criando = (extra: Record<string, Responder> = {}) =>
     montar({
@@ -732,6 +733,28 @@ describe("iniciarAssinatura", () => {
     const tudo = JSON.stringify(chamadas.map((c) => [c.url.toString(), c.corpo]));
     expect(tudo).not.toContain("cobranca/volta");
     expect(tudo).not.toContain("idem-1");
+  });
+});
+
+describe("o plano em euro (S4)", () => {
+  it("⭐ plano em euro é recusado antes de qualquer chamada (o Asaas só cobra em real)", async () => {
+    const { adaptador, chamadas } = montar({});
+    const EURO = { ...PLANO, moeda: "EUR" as const, ivaPercentual: 21 };
+    const tentativas = [
+      adaptador.iniciarAssinatura({
+        clienteRef: CLIENTE, orgId: ORG, plano: EURO, trialAte: null, urlDeVolta: "https://crm.example.com/volta", chaveIdempotencia: "idem-euro", implantacaoCents: 29900,
+      }),
+      adaptador.iniciarAjusteProporcional({
+        clienteRef: CLIENTE, orgId: ORG, plano: EURO, valorCents: 3065, chaveIdempotencia: "troca-euro", urlDeVolta: "https://crm.example.com/volta",
+      }),
+      adaptador.trocarPlano({ assinaturaRef: "sub_1", plano: EURO }),
+    ];
+    for (const t of tentativas) {
+      const erro = await t.catch((e: unknown) => e);
+      expect(erro).toBeInstanceOf(ErroDoProvedor);
+      expect(erro).toMatchObject({ codigo: "moeda_nao_suportada", transitorio: false });
+    }
+    expect(chamadas).toEqual([]);
   });
 });
 
@@ -893,7 +916,7 @@ describe("lerSituacao", () => {
 });
 
 describe("trocarPlano", () => {
-  const PRO = { id: "2e1f5c0b-8d3a-4f2b-a0c4-6e7f8a9b0c1d", nome: "Pro", precoCents: 9990, intervalo: "mes" as const };
+  const PRO = { id: "2e1f5c0b-8d3a-4f2b-a0c4-6e7f8a9b0c1d", nome: "Pro", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
   const trocar = (cobrancas: Linha[], put: Responder = { corpo: assinatura({ value: 99.9 }) }, agora = AGORA) => {
     const m = montar({ "GET /payments": rotaDePagamentos(cobrancas), "PUT /subscriptions/sub_1": put }, { agora: () => agora });
     return { ...m, troca: m.adaptador.trocarPlano({ assinaturaRef: "sub_1", plano: PRO }) };

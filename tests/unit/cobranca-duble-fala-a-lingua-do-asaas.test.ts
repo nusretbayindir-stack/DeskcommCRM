@@ -69,8 +69,8 @@ afterAll(async () => {
 });
 
 const ORG = "55555555-5555-4555-8555-555555555555";
-const ESSENCIAL = { id: "66666666-6666-4666-8666-666666666666", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const };
-const PROFISSIONAL = { id: "77777777-7777-4777-8777-777777777777", nome: "Profissional", precoCents: 9990, intervalo: "mes" as const };
+const ESSENCIAL = { id: "66666666-6666-4666-8666-666666666666", nome: "Essencial", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
+const PROFISSIONAL = { id: "77777777-7777-4777-8777-777777777777", nome: "Profissional", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
 const VOLTA = "http://localhost:3001/app/settings/billing?voltou=1";
 
 async function asaas() {
@@ -105,7 +105,7 @@ describe("dialeto Asaas do dublê × adaptador Asaas", () => {
     expect(await a.lerSituacao({ clienteRef: cliente })).toMatchObject({ existe: false, assinaturasVivas: 0, jaPagou: false, cancelada: false, emAtraso: false, linkDePagamento: null, emTesteNoProvedorAte: null });
 
     // Sem teste grátis: a 1ª cobrança vence HOJE em São Paulo, em reais.
-    const inicio = await a.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-1" });
+    const inicio = await a.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-1", implantacaoCents: null });
     const [primeira] = duble.asaas.cobrancasDe(cliente);
     expect(primeira).toMatchObject({ status: "PENDING", dueDate: hojeEmSaoPaulo(), value: 49.9 });
     expect(inicio.url).toBe(`${duble.base}/i/${primeira?.id}`);
@@ -120,7 +120,7 @@ describe("dialeto Asaas do dublê × adaptador Asaas", () => {
     await expect(a.trocarPlano({ assinaturaRef: pendente.assinaturaRef ?? "", plano: PROFISSIONAL })).rejects.toMatchObject({ codigo: "pagamento_do_periodo_pendente", transitorio: false });
     expect(puts().length).toBe(putsAntes);
     // Assinatura ACTIVE existente é reaproveitada.
-    expect((await a.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-2" })).url).toBe(inicio.url);
+    expect((await a.iniciarAssinatura({ clienteRef: cliente, orgId: ORG, plano: ESSENCIAL, trialAte: null, urlDeVolta: VOLTA, chaveIdempotencia: "contrato-2", implantacaoCents: null })).url).toBe(inicio.url);
     expect(duble.asaas.assinaturasDe(cliente)).toHaveLength(1);
 
     // Cartão: CONFIRMED já conta como pago (§6.2 passo 4).

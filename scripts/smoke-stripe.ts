@@ -51,8 +51,8 @@ async function stripe(metodo: "GET" | "POST" | "DELETE", caminho: string, corpo?
 async function main(): Promise<void> {
   const orgId = randomUUID();
   const adaptador = criarAdaptadorStripe({ lerChave: async () => chave, marca: `smoke-${orgId.slice(0, 8)}` });
-  const plano = { id: randomUUID(), nome: "Smoke mensal", precoCents: 4990, intervalo: "mes" as const };
-  const novo = { id: randomUUID(), nome: "Smoke maior", precoCents: 9990, intervalo: "mes" as const };
+  const plano = { id: randomUUID(), nome: "Smoke mensal", precoCents: 4990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
+  const novo = { id: randomUUID(), nome: "Smoke maior", precoCents: 9990, intervalo: "mes" as const, moeda: "BRL" as const, ivaPercentual: 0 };
   const urlDoWebhook = `https://example.com/api/v1/webhooks/cobranca/stripe-smoke-${orgId}`;
   let cliente: string | null = null;
   let assinatura: string | null = null;
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
 
     const checkout = await adaptador.iniciarAssinatura({
       clienteRef: cliente, orgId, plano, trialAte: null,
-      urlDeVolta: "https://example.com/app/settings/billing", chaveIdempotencia: randomUUID(),
+      urlDeVolta: "https://example.com/app/settings/billing", chaveIdempotencia: randomUUID(), implantacaoCents: null,
     });
     if (!checkout.url.startsWith("https://checkout.stripe.com/")) falha("checkout sem URL da Stripe");
     ok("Checkout em modo assinatura criado");
