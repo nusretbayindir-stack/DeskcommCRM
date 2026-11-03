@@ -18,8 +18,8 @@ import { AcoesDaAssinatura, type PropsDasAcoes } from "@/components/cobranca/Aco
 import { PainelDaAssinatura } from "@/components/cobranca/PainelDaAssinatura";
 import type { DadosDoPainel } from "@/lib/cobranca/painel";
 
-const PLANO = { id: "plano-a", nome: "Essencial", preco_cents: 4990, intervalo: "mes", max_assentos: null, max_canais: null, teto_ia_usd_cents: null };
-const PRO = { id: "plano-b", nome: "Profissional", preco_cents: 9990, intervalo: "mes", max_assentos: 3, max_canais: 5, teto_ia_usd_cents: 1000 };
+const PLANO = { id: "plano-a", nome: "Essencial", preco_cents: 4990, intervalo: "mes", moeda: "BRL" as const, max_assentos: null, max_canais: null, teto_ia_usd_cents: null };
+const PRO = { id: "plano-b", nome: "Profissional", preco_cents: 9990, intervalo: "mes", moeda: "BRL" as const, max_assentos: 3, max_canais: 5, teto_ia_usd_cents: 1000 };
 const BASE: NonNullable<DadosDoPainel["assinatura"]> = {
   estado: "ativa", trial_ate: null, prazo_extra_ate: null, proximo_vencimento: "2026-11-01T12:00:00Z", vencida_desde: null,
   cancela_no_fim: false, modo: "teste", provedor: "stripe", link_de_pagamento: null, assinaturas_vivas: 1, plano_agendado: null,
@@ -291,5 +291,17 @@ describe("Asaas no Plano e cobrança (PR 3b)", () => {
     expect((await screen.findByRole("status")).textContent).toBe(
       "O provedor de pagamento não aceitou este CPF ou CNPJ. Confira o número ou informe outro documento.",
     );
+  });
+});
+
+describe("AcoesDaAssinatura: o plano em euro (S4)", () => {
+  it("a troca compara os preços na moeda do plano", async () => {
+    const u = userEvent.setup();
+    const euro = { moeda: "EUR" as const };
+    render(<AcoesDaAssinatura {...acoes({ planoAtual: { ...PLANO, ...euro }, planosParaTroca: [{ ...PRO, ...euro }] })} />);
+    await u.click(screen.getByRole("button", { name: "Trocar de plano" }));
+    await u.selectOptions(screen.getByLabelText("Novo plano"), "plano-b");
+    expect(screen.getAllByText(/€\s99,90/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/R\$/)).toBeNull();
   });
 });

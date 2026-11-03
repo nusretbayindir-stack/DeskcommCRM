@@ -142,7 +142,7 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
           "visao-geral": <VisaoGeral dados={visao} checklist={montarChecklist(visao)} idioma={idioma} agora={agora} />,
           conexao: <ConexaoDaCobranca provedor={visao.provedor} modo={visao.modo} last4={visao.chaveLast4} urlDoWebhook={visao.urlDoWebhook} />,
           regua: <ReguaDaCobranca tolerancia={tolerancia} />,
-          planos: <PlanosDaInstalacao planos={lista} />,
+          planos: <PlanosDaInstalacao planos={lista} provedor={visao.provedor} />,
           clientes: clientesDaTela,
         }}
       />

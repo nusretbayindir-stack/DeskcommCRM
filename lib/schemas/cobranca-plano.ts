@@ -41,7 +41,7 @@ const MENSAGEM_DO_EXTRA = "IVA e implantação só existem em plano em euro.";
 export function extraForaDoEuro(p: {
   moeda: Moeda;
   iva_percentual: number | string;
-  implantacao_cents: number | null;
+  implantacao_cents: number | string | null;
 }): "iva_percentual" | "implantacao_cents" | null {
   if (p.moeda === "EUR") return null;
   if (Number(p.iva_percentual) !== 0) return "iva_percentual";

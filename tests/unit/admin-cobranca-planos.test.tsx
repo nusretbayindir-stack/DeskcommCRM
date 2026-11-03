@@ -17,6 +17,7 @@ import { PlanosDaInstalacao, type PlanoDaTela } from "@/app/admin/(protected)/co
 const PLANO: PlanoDaTela = {
   id: "cccccccc-0000-4000-8000-000000000001", nome: "Básico", preco_cents: 4990, intervalo: "mes", trial_dias: 14,
   max_assentos: 3, max_canais: null, teto_ia_usd_cents: null, padrao_no_cadastro: false, oferecido_ao_cliente: true, arquivado_em: null,
+  moeda: "BRL", iva_percentual: 0, implantacao_cents: null, respostas_mes: null,
 };
 
 beforeEach(() => {
@@ -44,6 +45,8 @@ describe("Planos da instalação", () => {
     expect(h.post).toHaveBeenCalledWith("/api/v1/admin/cobranca/planos", {
       nome: "Pro", preco_cents: 9990, intervalo: "mes", trial_dias: 7,
       max_assentos: 5, max_canais: null, teto_ia_usd_cents: null,
+      // S4: em real, IVA 0 e sem implantação (o default da tabela); cota vazia = null.
+      moeda: "BRL", iva_percentual: 0, implantacao_cents: null, respostas_mes: null,
     });
     expect(h.refresh).toHaveBeenCalled();
   });
@@ -87,5 +90,65 @@ describe("Planos da instalação", () => {
     rerender(<PlanosDaInstalacao planos={[{ ...PLANO, oferecido_ao_cliente: false }]} />);
     expect(screen.getByText("Só você atribui")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Mostrar às empresas" })).toBeTruthy();
+  });
+});
+
+describe("Planos da instalação: o plano em euro (S4)", () => {
+  const PLANO_EURO: PlanoDaTela = {
+    ...PLANO, id: "cccccccc-0000-4000-8000-000000000002", nome: "Start", preco_cents: 7900,
+    moeda: "EUR", iva_percentual: "21.00", implantacao_cents: 29900, respostas_mes: 300,
+  };
+
+  it("⭐ euro: o preço vira €, IVA e implantação aparecem, e o corpo leva moeda, IVA, implantação e cota", async () => {
+    const u = userEvent.setup();
+    render(<PlanosDaInstalacao planos={[]} provedor="stripe" />);
+    await u.type(screen.getByLabelText("Nome do plano"), "Start");
+    await u.selectOptions(screen.getByLabelText("Moeda"), "EUR");
+    await u.type(screen.getByLabelText("Preço (€)"), "79");
+    await u.type(screen.getByLabelText("IVA (%)"), "21");
+    await u.type(screen.getByLabelText("Implantação (taxa única, €)"), "299");
+    await u.clear(screen.getByLabelText("Dias de teste grátis"));
+    await u.type(screen.getByLabelText("Dias de teste grátis"), "0");
+    await u.type(screen.getByLabelText("Respostas do assistente por mês"), "300");
+    await u.click(screen.getByRole("button", { name: "Salvar plano" }));
+    await waitFor(() => expect(h.post).toHaveBeenCalledTimes(1));
+    expect(h.post).toHaveBeenCalledWith("/api/v1/admin/cobranca/planos", {
+      nome: "Start", preco_cents: 7900, intervalo: "mes", trial_dias: 0,
+      max_assentos: null, max_canais: null, teto_ia_usd_cents: null,
+      moeda: "EUR", iva_percentual: 21, implantacao_cents: 29900, respostas_mes: 300,
+    });
+  });
+
+  it("em real, IVA e implantação não aparecem; a cota aparece nas duas moedas", () => {
+    render(<PlanosDaInstalacao planos={[]} provedor="stripe" />);
+    expect(screen.queryByLabelText("IVA (%)")).toBeNull();
+    expect(screen.queryByLabelText("Implantação (taxa única, €)")).toBeNull();
+    expect(screen.getByLabelText("Respostas do assistente por mês")).toBeTruthy();
+  });
+
+  it("⭐ Asaas conectado: a opção Euro fica fechada, com o porquê", () => {
+    render(<PlanosDaInstalacao planos={[]} provedor="asaas" />);
+    const euro = screen.getByRole("option", { name: "Euro (€)" }) as HTMLOptionElement;
+    expect(euro.disabled).toBe(true);
+    expect(screen.getByText("O Asaas só cobra em real. Para vender plano em euro, conecte a Stripe.")).toBeTruthy();
+  });
+
+  it("a lista mostra o plano em euro em €, com IVA, implantação e cota", () => {
+    render(<PlanosDaInstalacao planos={[PLANO_EURO]} provedor="stripe" />);
+    expect(screen.getByText(/€\s79,00/)).toBeTruthy();
+    expect(screen.getByText(/IVA: 21%/)).toBeTruthy();
+    expect(screen.getByText(/€\s299,00/)).toBeTruthy();
+    expect(screen.getByText(/Respostas do assistente por mês: 300/)).toBeTruthy();
+  });
+
+  it("editar um plano em euro carrega moeda, IVA (o \"21.00\" do banco) e implantação", async () => {
+    const u = userEvent.setup();
+    render(<PlanosDaInstalacao planos={[PLANO_EURO]} provedor="stripe" />);
+    await u.click(screen.getByRole("button", { name: "Editar" }));
+    expect((screen.getByLabelText("Moeda") as HTMLSelectElement).value).toBe("EUR");
+    expect((screen.getByLabelText("Preço (€)") as HTMLInputElement).value).toBe("79,00");
+    expect((screen.getByLabelText("IVA (%)") as HTMLInputElement).value).toBe("21");
+    expect((screen.getByLabelText("Implantação (taxa única, €)") as HTMLInputElement).value).toBe("299,00");
+    expect((screen.getByLabelText("Respostas do assistente por mês") as HTMLInputElement).value).toBe("300");
   });
 });

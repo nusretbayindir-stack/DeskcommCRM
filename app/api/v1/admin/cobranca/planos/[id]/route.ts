@@ -23,8 +23,10 @@ import {
   type PlatformAdminContext,
 } from "@/lib/auth/requirePlatformAdmin";
 import { requireSupportWrite } from "@/lib/impersonate/support";
+import { provedorDaInstalacao } from "@/lib/cobranca/configuracao";
+import type { Moeda } from "@/lib/cobranca/vocabulario";
 import { moduloLigado } from "@/lib/instalacao/modulos";
-import { COLUNAS_DO_PLANO, edicaoDoPlanoSchema } from "@/lib/schemas/cobranca-plano";
+import { COLUNAS_DO_PLANO, edicaoDoPlanoSchema, extraForaDoEuro } from "@/lib/schemas/cobranca-plano";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface PlanoAtual {
@@ -32,7 +34,15 @@ interface PlanoAtual {
   preco_cents: number;
   intervalo: string;
   arquivado_em: string | null;
+  moeda: Moeda;
+  /** numeric/bigint: o PostgREST pode devolver como texto ("21.00"). */
+  iva_percentual: number | string;
+  implantacao_cents: number | string | null;
 }
+
+/** null e null são iguais; senão compara número com número (o banco pode mandar texto). */
+const mesmoValor = (a: number | string | null, b: number | string | null) =>
+  a === null || b === null ? a === b : Number(a) === Number(b);
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supportDenied = await requireSupportWrite();
@@ -60,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: lido, error: erroDeLeitura } = await admin
     .from("cobranca_planos")
-    .select("id, preco_cents, intervalo, arquivado_em")
+    .select("id, preco_cents, intervalo, arquivado_em, moeda, iva_percentual, implantacao_cents")
     .eq("id", id)
     .maybeSingle();
   if (erroDeLeitura) return fail("internal_error", "Não foi possível ler o plano", 500, { requestId });
@@ -68,9 +78,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!atual) return fail("not_found", "Plano não encontrado", 404, { requestId });
 
   const { arquivado, ...campos } = corpo.data;
+  // A edição é parcial: "IVA e implantação só em euro" vale para a linha como ela FICA.
+  const fica = {
+    moeda: campos.moeda ?? atual.moeda,
+    iva_percentual: campos.iva_percentual ?? atual.iva_percentual,
+    implantacao_cents: campos.implantacao_cents !== undefined ? campos.implantacao_cents : atual.implantacao_cents,
+  };
+  const foraDoEuro = extraForaDoEuro(fica);
+  if (foraDoEuro !== null) {
+    return fail("validation_failed", "IVA e implantação só existem em plano em euro.", 400, {
+      requestId,
+      details: { campo: foraDoEuro },
+    });
+  }
+  if (campos.moeda === "EUR" && atual.moeda !== "EUR" && (await provedorDaInstalacao()) === "asaas") {
+    return fail("moeda_nao_suportada", "O Asaas só cobra em real. Para vender plano em euro, conecte a Stripe.", 400, { requestId });
+  }
+
   const mudaACobranca =
     (campos.preco_cents !== undefined && campos.preco_cents !== Number(atual.preco_cents)) ||
-    (campos.intervalo !== undefined && campos.intervalo !== atual.intervalo);
+    (campos.intervalo !== undefined && campos.intervalo !== atual.intervalo) ||
+    (campos.moeda !== undefined && campos.moeda !== atual.moeda) ||
+    (campos.iva_percentual !== undefined && !mesmoValor(campos.iva_percentual, atual.iva_percentual)) ||
+    (campos.implantacao_cents !== undefined && !mesmoValor(campos.implantacao_cents, atual.implantacao_cents));
   if (mudaACobranca) {
     // ponytail: conferido na rota, sem gatilho. Uma atribuição que entre entre
     // esta contagem e o UPDATE passa; gatilho em cobranca_planos se isso aparecer.
@@ -82,7 +112,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if ((count ?? 0) > 0) {
       return fail(
         "plano_com_assinantes",
-        "Este plano tem assinantes: o preço e o intervalo não mudam mais. Arquive-o e crie outro.",
+        "Este plano tem assinantes: preço, intervalo, moeda, IVA e implantação não mudam mais. Arquive-o e crie outro.",
         409,
         { requestId, details: { assinantes: count } },
       );

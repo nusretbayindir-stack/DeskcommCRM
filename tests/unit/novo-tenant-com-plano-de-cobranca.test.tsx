@@ -4,9 +4,9 @@
  * "Sem cobrança (isenta)" (nada é cobrado sem escolha explícita do dono), e o
  * rótulo antigo não vai no pedido. Escolher um plano pela tela é provado no e2e.
  */
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ criar: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ back: vi.fn(), push: vi.fn() }) }));
@@ -16,7 +16,7 @@ vi.mock("@/hooks/useCreateTenant", () => ({ useCreateTenant: () => ({ mutateAsyn
 
 import { NewTenantForm } from "@/app/admin/(protected)/tenants/new/_form";
 
-const PLANO = { id: "cccccccc-0000-4000-8000-000000000001", nome: "Básico", preco_cents: 4990, intervalo: "mes", trial_dias: 14 };
+const PLANO = { id: "cccccccc-0000-4000-8000-000000000001", nome: "Básico", preco_cents: 4990, intervalo: "mes", trial_dias: 14, moeda: "BRL" as const };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -49,5 +49,25 @@ describe("/admin/tenants/new — os dois modos", () => {
     const enviado = await preencherEEnviar();
     expect(enviado).not.toHaveProperty("plan");
     expect(enviado.plano_id).toBeUndefined();
+  });
+});
+
+describe("/admin/tenants/new — o plano em euro (S4)", () => {
+  // jsdom não implementa captura de ponteiro; o Select do Radix a lê antes de abrir
+  // (mesmo remédio de rule-editor-etapa-de-qualquer-funil.test.tsx).
+  beforeAll(() => {
+    const proto = window.HTMLElement.prototype as unknown as Record<string, unknown>;
+    proto.hasPointerCapture ??= () => false;
+    proto.setPointerCapture ??= () => undefined;
+    proto.releasePointerCapture ??= () => undefined;
+    proto.scrollIntoView ??= () => undefined;
+  });
+
+  it("a lista de planos mostra o preço na moeda do plano", async () => {
+    const EURO = { ...PLANO, id: "cccccccc-0000-4000-8000-000000000002", nome: "Start", preco_cents: 7900, moeda: "EUR" as const };
+    render(<NewTenantForm cobranca={{ ligada: true, planos: [PLANO, EURO] }} />);
+    fireEvent.click(screen.getByRole("combobox", { name: "Plano de cobrança" }));
+    expect(await screen.findByRole("option", { name: /Start · €\s79,00/ })).toBeTruthy();
+    expect(screen.getByRole("option", { name: /Básico · R\$\s49,90/ })).toBeTruthy();
   });
 });

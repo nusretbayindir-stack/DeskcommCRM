@@ -8,8 +8,10 @@ const h = vi.hoisted(() => ({
   escrita: vi.fn(),
   audit: vi.fn(),
   ligada: true,
+  provedor: "stripe" as string | null,
   banco: undefined as unknown as BancoFalso,
 }));
+vi.mock("@/lib/cobranca/configuracao", () => ({ provedorDaInstalacao: async () => h.provedor }));
 vi.mock("@/lib/impersonate/support", () => ({ requireSupportWrite: async () => null }));
 vi.mock("@/lib/auth/server", () => ({ mfaEmDivida: async () => false, loadAuthUser: async () => null }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -39,6 +41,7 @@ let resposta: Resposta;
 beforeEach(() => {
   vi.clearAllMocks();
   h.ligada = true;
+  h.provedor = "stripe";
   h.escrita.mockResolvedValue({ user: { id: h.ator }, platformAdmin: { user_id: h.ator, scope: "full", mfa_required: false } });
   resposta = { data: PLANO };
   h.banco = bancoFalso(() => resposta);
@@ -98,5 +101,33 @@ describe("POST /api/v1/admin/cobranca/planos", () => {
     resposta = { error: { code: "XX000", message: "boom" } };
     expect((await POST(pedido(CORPO))).status).toBe(500);
     expect(h.audit).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST: o plano em euro (S4)", () => {
+  const EURO = { ...CORPO, padrao_no_cadastro: false, moeda: "EUR", iva_percentual: 21, implantacao_cents: 29900, respostas_mes: 300 };
+
+  it("⭐ Asaas conectado: plano em euro → 400 moeda_nao_suportada, nada gravado", async () => {
+    h.provedor = "asaas";
+    const res = await POST(pedido(EURO));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe("moeda_nao_suportada");
+    expect(h.banco.cadeias).toEqual([]);
+    expect(h.audit).not.toHaveBeenCalled();
+  });
+
+  it("Stripe conectada: 201, e o insert leva moeda, IVA, implantação e cota", async () => {
+    resposta = { data: { ...PLANO, ...EURO } };
+    const res = await POST(pedido(EURO));
+    expect(res.status).toBe(201);
+    expect((await res.json()).data).toMatchObject({ moeda: "EUR", iva_percentual: 21 });
+    expect(argumentos(h.banco.cadeias[0]!, "insert")?.[0]).toMatchObject({
+      moeda: "EUR", iva_percentual: 21, implantacao_cents: 29900, respostas_mes: 300,
+    });
+  });
+
+  it("plano em real com o Asaas conectado segue gravando", async () => {
+    h.provedor = "asaas";
+    expect((await POST(pedido(CORPO))).status).toBe(201);
   });
 });

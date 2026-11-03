@@ -8,8 +8,10 @@ const h = vi.hoisted(() => ({
   escrita: vi.fn(),
   audit: vi.fn(),
   ligada: true,
+  provedor: "stripe" as string | null,
   banco: undefined as unknown as BancoFalso,
 }));
+vi.mock("@/lib/cobranca/configuracao", () => ({ provedorDaInstalacao: async () => h.provedor }));
 vi.mock("@/lib/impersonate/support", () => ({ requireSupportWrite: async () => null }));
 vi.mock("@/lib/auth/server", () => ({ mfaEmDivida: async () => false, loadAuthUser: async () => null }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -29,7 +31,10 @@ import { EscritaDePlatformAdminNegada } from "@/lib/auth/requirePlatformAdmin";
 import { PATCH } from "./route";
 
 const ID = "cccccccc-0000-4000-8000-000000000001";
-const ATUAL = { id: ID, nome: "Básico", preco_cents: 4990, intervalo: "mes", arquivado_em: null as string | null };
+const ATUAL = {
+  id: ID, nome: "Básico", preco_cents: 4990, intervalo: "mes", arquivado_em: null as string | null,
+  moeda: "BRL", iva_percentual: 0 as number | string, implantacao_cents: null as number | null, respostas_mes: null as number | null,
+};
 const pedido = (body: unknown, id = ID) => [
   new NextRequest(`http://localhost/api/v1/admin/cobranca/planos/${id}`, {
     method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" },
@@ -51,6 +56,7 @@ const consultouAssinantes = () => h.banco.cadeias.some((c) => c.tabela === "cobr
 beforeEach(() => {
   vi.clearAllMocks();
   h.ligada = true;
+  h.provedor = "stripe";
   h.escrita.mockResolvedValue({ user: { id: h.ator }, platformAdmin: { user_id: h.ator, scope: "full", mfa_required: false } });
   m = { atual: { ...ATUAL }, assinantes: 0, escrita: null };
   h.banco = bancoFalso(responder);
@@ -138,5 +144,55 @@ describe("PATCH /api/v1/admin/cobranca/planos/[id]", () => {
     h.escrita.mockRejectedValueOnce(new EscritaDePlatformAdminNegada("forbidden_scope", "somente leitura"));
     expect((await PATCH(...pedido({ nome: "x" }))).status).toBe(403);
     expect(updates()).toEqual([]);
+  });
+});
+
+describe("PATCH: o plano em euro (S4)", () => {
+  // O PostgREST devolve numeric como texto: "21.00".
+  const EURO_ATUAL = { ...ATUAL, moeda: "EUR", iva_percentual: "21.00", implantacao_cents: 29900, respostas_mes: 300 };
+  const TRAVADO = "Este plano tem assinantes: preço, intervalo, moeda, IVA e implantação não mudam mais. Arquive-o e crie outro.";
+
+  it.each([
+    ["a moeda", { moeda: "BRL", iva_percentual: 0, implantacao_cents: null }],
+    ["o IVA", { iva_percentual: 6 }],
+    ["a implantação", { implantacao_cents: 19900 }],
+    ["a implantação para nenhuma", { implantacao_cents: null }],
+  ])("⭐ com assinante, mudar %s → 409 plano_com_assinantes, nada gravado", async (_n, corpo) => {
+    m.atual = { ...EURO_ATUAL };
+    m.assinantes = 1;
+    const res = await PATCH(...pedido(corpo));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatchObject({ code: "plano_com_assinantes", message: TRAVADO });
+    expect(updates()).toEqual([]);
+  });
+
+  it("o MESMO IVA (21 contra o \"21.00\" do banco) e a mesma implantação não contam como mudança", async () => {
+    m.atual = { ...EURO_ATUAL };
+    m.assinantes = 3;
+    expect((await PATCH(...pedido({ iva_percentual: 21, implantacao_cents: 29900, nome: "Start 2" }))).status).toBe(200);
+    expect(consultouAssinantes()).toBe(false);
+  });
+
+  it("⭐ plano em real + IVA 21 → 400: a regra vale somada com a linha atual (a edição é parcial)", async () => {
+    const res = await PATCH(...pedido({ iva_percentual: 21 }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe("validation_failed");
+    expect(updates()).toEqual([]);
+  });
+
+  it("virar euro com o Asaas conectado → 400 moeda_nao_suportada", async () => {
+    h.provedor = "asaas";
+    const res = await PATCH(...pedido({ moeda: "EUR" }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe("moeda_nao_suportada");
+    expect(updates()).toEqual([]);
+  });
+
+  it("a cota de respostas muda mesmo com assinante", async () => {
+    m.atual = { ...EURO_ATUAL };
+    m.assinantes = 4;
+    expect((await PATCH(...pedido({ respostas_mes: 700 }))).status).toBe(200);
+    expect(consultouAssinantes()).toBe(false);
+    expect(argumentos(updates()[0]!, "update")?.[0]).toMatchObject({ respostas_mes: 700 });
   });
 });
