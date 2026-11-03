@@ -119,8 +119,11 @@ async function avisoQueChegaNaCentral(
 
   const chamadas: Array<{ params: unknown[] }> = [];
   const db = {
-    query: async (_sql: string, params: unknown[]) => {
-      chamadas.push({ params });
+    query: async (sql: string, params: unknown[]) => {
+      // Fork (U14): antes do insert, `abreAvisoDoEspelhoRecusado` lê o idioma da
+      // organização (`from organizations`). Conta só o item da Central; sem
+      // linha, o idioma cai no português e o texto é o da v1.99.0.
+      if (/insert into agent_inbox_items/i.test(sql)) chamadas.push({ params });
       return { rows: [] };
     },
   };
