@@ -573,7 +573,45 @@ const PERFIL_BE: PerfilDoPais = {
     feriados: HOLIDAYS_BE_ISO,
     rotulo: "feriados nacionais belgas",
   },
-  padroesDePii: [],
+  // A ORDEM importa. O telefone internacional vem primeiro para que
+  // `+32470123456` não seja lido como número nacional; o telefone sem `+` vem por
+  // último para que o `07.30…` dentro de `85.07.30-033.28` não pareça telefone.
+  // Código postal fica de fora de propósito: 4 dígitos pegariam anos e preços.
+  padroesDePii: [
+    {
+      tipo: "telefoneInternacionalBE",
+      marcador: "[TELEFONE]",
+      fonte: "\\+32(?:[\\s./-]?\\d){8,9}",
+      naoCobre: "número belga escrito com `0032` no lugar de `+32`",
+    },
+    {
+      tipo: "ibanBE",
+      marcador: "[IBAN]",
+      fonte: "\\bBE\\d{2}(?:\\s?\\d{4}){3}\\b",
+      naoCobre: "IBAN de outro país e prefixo `be` em minúsculas",
+    },
+    {
+      tipo: "rijksregister",
+      marcador: "[RIJKSREGISTER]",
+      fonte: "\\b\\d{2}[.\\s]?\\d{2}[.\\s]?\\d{2}[-.\\s]?\\d{3}[.\\s]?\\d{2}\\b",
+      naoCobre:
+        "número nacional com outra pontuação; além disso, data seguida de valor (`25.12.26 100.00`) também é apanhada, e aceitamos esse excesso",
+    },
+    {
+      tipo: "kbo",
+      marcador: "[KBO]",
+      fonte: "\\b(?:BE\\s?[01]\\d{3}[.\\s]?\\d{3}[.\\s]?\\d{3}|[01]\\d{3}\\.\\d{3}\\.\\d{3})\\b",
+      naoCobre:
+        "KBO sem prefixo `BE` e sem pontos: é indistinguível de telefone, sai como `[TELEFONE]` e o dado não chega ao modelo; prefixo `be` em minúsculas. Outro número de dez dígitos com pontos nessa forma também é redigido, e aceitamos isso",
+    },
+    {
+      tipo: "telefoneBE",
+      marcador: "[TELEFONE]",
+      fonte: "\\b(?!\\d{2}[./-]\\d{2}[./-](?:\\d{4}|\\d{2})\\b)0\\d(?:[\\s./-]?\\d){7,8}\\b(?!-\\d{2}\\b)",
+      naoCobre:
+        "número sem o `0` inicial e sem `+32`; data (`04/11/2026`) fica legível de propósito, porque o assistente responde sobre agendamentos",
+    },
+  ],
 };
 
 /**
