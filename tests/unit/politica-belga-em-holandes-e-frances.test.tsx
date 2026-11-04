@@ -9,6 +9,8 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type * as Dicionario from "@/lib/i18n/dicionario";
+
 const estado = vi.hoisted(() => ({
   cabecalho: null as string | null,
   pais: "BE" as string | null,
@@ -51,7 +53,7 @@ vi.mock("@/lib/i18n/IdiomaProvider", () => ({
   IdiomaProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 vi.mock("@/lib/i18n/dicionario", async (original) => {
-  const real = await original<typeof import("@/lib/i18n/dicionario")>();
+  const real = await original<typeof Dicionario>();
   return { ...real, traduzir: vi.fn(real.traduzir) };
 });
 

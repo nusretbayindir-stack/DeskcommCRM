@@ -49,12 +49,13 @@ export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
     "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o responsável pelo tratamento é essa empresa:":
       "Voor de gegevens die worden verwerkt in de gesprekken van een onderneming met haar klanten (contacten, berichten, bestanden, afspraken) is die onderneming de verwerkingsverantwoordelijke:",
     "a empresa que fala com você": "de onderneming die met u communiceert",
+    "Número da empresa (KBO/BCE)": "ondernemingsnummer",
     "O prestador de serviço trata esses dados em nome dela, como subcontratante.":
       "De leverancier van de dienst verwerkt die gegevens namens haar, als verwerker.",
     "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o responsável pelo tratamento é o prestador de serviço indicado no contrato de serviço assinado com a empresa.":
       "Voor de accountgegevens van de onderneming, van haar contactpersonen en van de gebruikers van het systeem is de verwerkingsverantwoordelijke de leverancier die vermeld staat in de dienstverleningsovereenkomst die met de onderneming is ondertekend.",
     "Os autores do software de código aberto não operam o serviço e não têm acesso ao servidor nem aos dados.":
-      "De auteurs van de opensourcesoftware exploiteren de dienst niet en hebben geen toegang tot de server of de gegevens.",
+      "De auteurs van de open-sourcesoftware exploiteren de dienst niet en hebben geen toegang tot de server of de gegevens.",
     "2. Que dados são tratados": "2. Welke gegevens worden verwerkt",
     "De quem é atendido:": "Van personen die worden geholpen:",
     "nome, telefone, e-mail quando informado, conteúdo das conversas, arquivos enviados (imagens, áudios, documentos) e o histórico de negócios.":
@@ -71,9 +72,9 @@ export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
     "a plataforma de mensagens usada para conversar com o cliente;":
       "het berichtenplatform waarmee met de klant wordt gecommuniceerd;",
     "o provedor de inteligência artificial usado pelo serviço, que recebe o trecho da conversa necessário para gerar a resposta ou avaliar a conversa;":
-      "de AI-aanbieder die de dienst gebruikt en die het deel van het gesprek ontvangt dat nodig is om het antwoord op te stellen of het gesprek te beoordelen;",
+      "de AI-aanbieder waarop de dienst een beroep doet en die het deel van het gesprek ontvangt dat nodig is om het antwoord op te stellen of het gesprek te beoordelen;",
     "quando o Jev é ligado (desligado por padrão), a TypeSafe AI, nos Estados Unidos, que recebe cada mensagem do cliente, sozinha e já sem CPF, telefone e e-mail, para avaliar se ele está irritado, se a mensagem tenta manipular o atendimento automático, a qual área da empresa ela se destina, se ela pede para falar com uma pessoa ou para parar de receber mensagens e, quando ela responde a um follow-up, em qual das saídas do fluxo ela se encaixa;":
-      "wanneer Jev is ingeschakeld (standaard uitgeschakeld), TypeSafe AI in de Verenigde Staten, dat elk bericht van de klant afzonderlijk ontvangt, al zonder rijksregisternummer, telefoonnummer en e-mailadres, om te beoordelen of de klant geïrriteerd is, of het bericht de automatische klantenservice probeert te manipuleren, voor welke afdeling van de onderneming het bedoeld is, of het vraagt om met een persoon te spreken of om geen berichten meer te ontvangen en, wanneer het een opvolgbericht beantwoordt, bij welke uitkomst van de flow het past;",
+      "wanneer Jev is ingeschakeld (standaard uitgeschakeld), TypeSafe AI in de Verenigde Staten, dat elk bericht van de klant afzonderlijk ontvangt, waaruit rijksregisternummer, telefoonnummer en e-mailadres vooraf zijn verwijderd, om te beoordelen of de klant geïrriteerd is, of het bericht de automatische klantenservice probeert te manipuleren, voor welke afdeling van de onderneming het bedoeld is, of het vraagt om met een persoon te spreken of om geen berichten meer te ontvangen en, wanneer het een opvolgbericht beantwoordt, bij welke uitkomst van de flow het past;",
     "quando uma chave de Mapas é cadastrada (desligado por padrão), o Google, que recebe as coordenadas da localização que o cliente compartilhou, para devolver a rua e a cidade aproximadas;":
       "wanneer een Maps-sleutel is ingesteld (standaard uitgeschakeld), Google, dat de coördinaten ontvangt van de locatie die de klant heeft gedeeld, om de straat en de stad bij benadering terug te geven;",
     "o provedor de infraestrutura onde o servidor está hospedado.":
@@ -92,7 +93,7 @@ export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
       "U kunt ook een klacht indienen bij de toezichthoudende autoriteit: {autoridade} ({site}).",
     "7. Segurança": "7. Beveiliging",
     "O acesso é controlado por conta, senha e papel. A verificação em duas etapas é opcional para todos e só pode ser exigida de quem administra. Cada organização hospedada só enxerga os próprios dados, e as chaves de integração são guardadas cifradas.":
-      "De toegang wordt gecontroleerd via account, wachtwoord en rol. Verificatie in twee stappen is voor iedereen optioneel en kan alleen worden verplicht voor wie beheert. Elke gehoste organisatie ziet alleen haar eigen gegevens, en de integratiesleutels worden versleuteld bewaard.",
+      "De toegang wordt gecontroleerd via account, wachtwoord en rol. Verificatie in twee stappen is voor iedereen optioneel en kan alleen voor beheerders verplicht worden gesteld. Elke gehoste organisatie ziet alleen haar eigen gegevens, en de integratiesleutels worden versleuteld bewaard.",
     "8. Encarregado da proteção de dados e contato": "8. Functionaris voor gegevensbescherming en contact",
     "Para exercer seus direitos ou tirar dúvidas sobre privacidade, fale com o encarregado da proteção de dados:":
       "Om uw rechten uit te oefenen of voor vragen over privacy kunt u terecht bij de functionaris voor gegevensbescherming:",
@@ -124,12 +125,13 @@ export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
     "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o responsável pelo tratamento é essa empresa:":
       "Pour les données traitées dans les conversations d'une entreprise avec ses clients (contacts, messages, fichiers, rendez-vous), le responsable du traitement est cette entreprise :",
     "a empresa que fala com você": "l'entreprise qui échange avec vous",
+    "Número da empresa (KBO/BCE)": "numéro d'entreprise",
     "O prestador de serviço trata esses dados em nome dela, como subcontratante.":
       "Le prestataire du service traite ces données pour son compte, en tant que sous-traitant.",
     "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o responsável pelo tratamento é o prestador de serviço indicado no contrato de serviço assinado com a empresa.":
       "Pour les données de compte de l'entreprise, de ses personnes de contact et des utilisateurs du système, le responsable du traitement est le prestataire indiqué dans le contrat de prestation de services signé avec l'entreprise.",
     "Os autores do software de código aberto não operam o serviço e não têm acesso ao servidor nem aos dados.":
-      "Les auteurs du logiciel open source n'exploitent pas le service et n'ont accès ni au serveur ni aux données.",
+      "Les auteurs du logiciel libre n'exploitent pas le service et n'ont accès ni au serveur ni aux données.",
     "2. Que dados são tratados": "2. Quelles données sont traitées",
     "De quem é atendido:": "Des personnes prises en charge :",
     "nome, telefone, e-mail quando informado, conteúdo das conversas, arquivos enviados (imagens, áudios, documentos) e o histórico de negócios.":
@@ -148,9 +150,9 @@ export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
     "o provedor de inteligência artificial usado pelo serviço, que recebe o trecho da conversa necessário para gerar a resposta ou avaliar a conversa;":
       "le fournisseur d'intelligence artificielle utilisé par le service, qui reçoit l'extrait de conversation nécessaire pour générer la réponse ou évaluer la conversation ;",
     "quando o Jev é ligado (desligado por padrão), a TypeSafe AI, nos Estados Unidos, que recebe cada mensagem do cliente, sozinha e já sem CPF, telefone e e-mail, para avaliar se ele está irritado, se a mensagem tenta manipular o atendimento automático, a qual área da empresa ela se destina, se ela pede para falar com uma pessoa ou para parar de receber mensagens e, quando ela responde a um follow-up, em qual das saídas do fluxo ela se encaixa;":
-      "lorsque Jev est activé (désactivé par défaut), TypeSafe AI, aux États-Unis, qui reçoit chaque message du client, isolément et déjà sans numéro de registre national, numéro de téléphone ni adresse e-mail, pour évaluer si le client est irrité, si le message tente de manipuler la prise en charge automatique, à quel service de l'entreprise il s'adresse, s'il demande à parler à une personne ou à ne plus recevoir de messages et, lorsqu'il répond à une relance, à quelle sortie du parcours il correspond ;",
+      "lorsque Jev est activé (désactivé par défaut), TypeSafe AI, aux États-Unis, qui reçoit chaque message du client, isolément et déjà expurgé du numéro de registre national, du numéro de téléphone et de l'adresse e-mail, pour évaluer si le client est irrité, si le message tente de manipuler la prise en charge automatique, à quel service de l'entreprise il s'adresse, s'il demande à parler à une personne ou à ne plus recevoir de messages et, lorsqu'il répond à une relance, à quelle sortie du parcours il correspond ;",
     "quando uma chave de Mapas é cadastrada (desligado por padrão), o Google, que recebe as coordenadas da localização que o cliente compartilhou, para devolver a rua e a cidade aproximadas;":
-      "lorsqu'une clé Maps est enregistrée (désactivé par défaut), Google, qui reçoit les coordonnées de la position partagée par le client, pour renvoyer la rue et la ville approximatives ;",
+      "lorsqu'une clé Maps est enregistrée (fonction désactivée par défaut), Google, qui reçoit les coordonnées de la position partagée par le client, pour renvoyer la rue et la ville approximatives ;",
     "o provedor de infraestrutura onde o servidor está hospedado.":
       "le fournisseur d'infrastructure qui héberge le serveur.",
     "Os dados não são vendidos nem cedidos para publicidade de terceiros.":
