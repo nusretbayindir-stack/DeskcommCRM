@@ -36,9 +36,9 @@ export default async function PrivacyPage() {
   // (issue #2344): no Brasil "controlador", "CNPJ" e "LGPD"; fora dele
   // "responsável pelo tratamento" (RGPD art. 4.º, n.º 7) e o RGPD, com a etiqueta
   // do número e a autoridade que o perfil do país declara.
-  // Sem sessão ou com a coluna vazia vale o Brasil — o mesmo "vazio" da
-  // coluna `organizations.country`. Cada ramo é um literal em `t()`: chave de
-  // dicionário nas duas direções, nunca frase montada em runtime.
+  // Sem sessão vale o país da instalação (`resolverOperador`); com a coluna vazia,
+  // o Brasil — o mesmo "vazio" de `organizations.country`. Cada ramo é um literal
+  // em `t()`: chave de dicionário nas duas direções, nunca frase montada em runtime.
   //
   // Há dois papéis, e o texto os separa: nas conversas com os clientes dela, a
   // empresa responde pelos dados e o prestador de serviço os trata em nome dela;

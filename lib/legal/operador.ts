@@ -29,7 +29,8 @@ export interface Operador {
   /** Contato do encarregado de dados (LGPD). */
   dpoEmail: string | null;
   /**
-   * ISO-3166 alpha-2 da organização ativa, ou `null` (Brasil, o padrão).
+   * ISO-3166 alpha-2 da organização ativa, ou `null` (Brasil, o padrão). Sem
+   * sessão, o da instalação (`PAIS_DA_INSTALACAO`).
    *
    * Existe para a política de privacidade (`app/legal/privacy/page.tsx`) falar
    * a língua legal do país: "controlador"/"CNPJ"/"LGPD" no Brasil, "responsável
@@ -102,9 +103,10 @@ const SEM_SESSAO = async (): Promise<Operador> => ({
   dpoEmail: (await valorDaInstalacao("LGPD_DPO_EMAIL")).valor?.trim() || null,
   politicaPropria: null,
   resolvido: false,
-  // Sem sessão não há organização para ler: vale o Brasil, o mesmo "vazio" da
-  // coluna `organizations.country`.
-  pais: null,
+  // Sem sessão não há organização para ler: vale o país que a instalação declara
+  // (Painel › Configuração). Sem declaração, o Brasil, o mesmo "vazio" da coluna
+  // `organizations.country`.
+  pais: (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor?.trim() || null,
 });
 
 /**

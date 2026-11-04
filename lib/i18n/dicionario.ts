@@ -9224,6 +9224,15 @@ export const DICIONARIO: Traducoes = {
   "O assistente ouviu alguns dados na conversa com clientes e ninguém confirmou a tempo. Eles saíram da ficha para não parecer que já estava salvo. Se a informação ainda importa, peça de novo ou preencha à mão.": {
     es: "El asistente oyó algunos datos en la conversación con clientes y nadie los confirmó a tiempo. Salieron de la ficha para que no pareciera que ya estaban guardados. Si la información aún importa, pídela de nuevo o complétala a mano.",
   },
+  "País das páginas legais": {
+    es: "País de las páginas legales",
+  },
+  "O país cuja lei a política de privacidade usa para quem a abre sem entrar no sistema. Escreva o código de duas letras, como BE para a Bélgica. Sem valor, vale o Brasil.": {
+    es: "El país cuya ley usa la política de privacidad para quien la abre sin entrar en el sistema. Escriba el código de dos letras, como BE para Bélgica. Sin valor, vale Brasil.",
+  },
+  "Escreva o código de um país que o sistema oferece, como BE para a Bélgica.": {
+    es: "Escriba el código de un país que el sistema ofrece, como BE para Bélgica.",
+  },
   "Continuar": { es: "Continuar" },
   "Aceite os termos para continuar.": { es: "Acepta los términos para continuar." },
 
