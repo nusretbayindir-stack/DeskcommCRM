@@ -89,13 +89,15 @@ vi.mock("@/hooks/i18n/useT", () => ({ useT: () => (texto: string) => texto }));
 vi.mock("@/lib/i18n/idiomaAnonimo", () => ({ idiomaDoVisitante: async () => "pt-BR" }));
 vi.mock("@/lib/legal/operador", () => ({
   resolverOperador: async () => operador.valor,
-  nomeDoOperador: () => operador.valor.razaoSocial ?? "o operador desta instalação",
+  nomeDoOperador: (op: { razaoSocial: string | null; nome: string | null }, sem: string) =>
+    op.razaoSocial ?? op.nome ?? sem,
 }));
 
 import PrivacyPage from "@/app/legal/privacy/page";
 import { collectExportData, type ExportPayload } from "@/lib/lgpd/export-collector";
 import { LgpdExportPdf } from "@/lib/lgpd/pdf-renderer";
 import { Art15Form } from "@/app/app/settings/tenant/_art15";
+import { PERFIS_DO_PAIS, perfilDoPais } from "@/lib/legal/perfil-do-pais";
 
 /** O payload da organização do país escolhido, pelo coletor de verdade. */
 async function payloadDe(country: string | null): Promise<ExportPayload> {
@@ -175,6 +177,28 @@ describe("Portugal: o titular e o operador leem os termos do RGPD", () => {
     expect(texto, "a política portuguesa ainda fala a língua da LGPD").not.toMatch(
       /LGPD|CNPJ|controlador/i,
     );
+  });
+});
+
+describe("fora do Brasil, o vocabulário sai do perfil do país", () => {
+  it("país fora do Brasil usa a etiqueta e a autoridade do perfil", async () => {
+    PERFIS_DO_PAIS.XB = {
+      ...perfilDoPais("PT"),
+      codigo: "XB",
+      empresa: { rotuloNomeLegal: "Denominação social", rotuloNumero: "Nº XB" },
+      autoridadeDeSupervisao: { nome: "Autoridade XB", site: "https://xb.test" },
+    };
+    try {
+      const texto = await politica("XB", "123");
+      expect(texto).toContain("(Nº XB 123)");
+      expect(texto).toContain("Autoridade XB");
+      expect(texto).toContain("https://xb.test");
+      expect(texto).toContain("o responsável pelo tratamento é essa empresa:");
+      expect(texto).toContain("como subcontratante");
+      expect(texto).not.toMatch(/LGPD|CNPJ|controlador/i);
+    } finally {
+      delete PERFIS_DO_PAIS.XB;
+    }
   });
 });
 

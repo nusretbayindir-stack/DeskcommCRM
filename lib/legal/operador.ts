@@ -41,7 +41,7 @@ export interface Operador {
   politicaPropria: string | null;
   /**
    * `false` quando a página foi aberta sem sessão. O texto continua íntegro:
-   * só troca a razão social por "o operador desta instalação".
+   * só troca a razão social pelo texto que a página escolhe (`nomeDoOperador`).
    */
   resolvido: boolean;
 }
@@ -161,7 +161,10 @@ export async function resolverOperador(): Promise<Operador> {
   };
 }
 
-/** Como o documento se refere ao operador quando não dá para saber quem é. */
-export function nomeDoOperador(op: Operador): string {
-  return op.razaoSocial ?? op.nome ?? "o operador desta instalação";
+/**
+ * O nome da empresa no documento. `semSessao` vem da página, já traduzido: sem
+ * sessão não há empresa para nomear, e este módulo não conhece o idioma.
+ */
+export function nomeDoOperador(op: Operador, semSessao: string): string {
+  return op.razaoSocial ?? op.nome ?? semSessao;
 }

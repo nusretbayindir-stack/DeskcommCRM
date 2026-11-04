@@ -1,5 +1,7 @@
 import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const idioma = vi.hoisted(() => ({ valor: "pt-BR" }));
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((destino: string) => {
@@ -11,7 +13,7 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: { getUser: async () => ({ data: { user: null } }) },
   }),
 }));
-vi.mock("@/lib/i18n/idiomaAnonimo", () => ({ idiomaDoVisitante: async () => "pt-BR" }));
+vi.mock("@/lib/i18n/idiomaAnonimo", () => ({ idiomaDoVisitante: async () => idioma.valor }));
 vi.mock("@/lib/legal/operador", () => ({
   resolverOperador: async () => ({
     sistema: "Marca da Revenda",
@@ -25,10 +27,15 @@ vi.mock("@/lib/legal/operador", () => ({
     // política em PT é coberto por `lgpd-rotulos-por-pais.test.tsx` (#2344).
     pais: null as string | null,
   }),
-  nomeDoOperador: () => "o operador desta instalação",
+  nomeDoOperador: (op: { razaoSocial: string | null; nome: string | null }, sem: string) =>
+    op.razaoSocial ?? op.nome ?? sem,
 }));
 
 import PrivacyPage from "./page";
+
+beforeEach(() => {
+  idioma.valor = "pt-BR";
+});
 
 describe("/legal/privacy — seção dos dados do Google", () => {
   // O Google recusou a verificação do app porque a política padrão explicava a
@@ -69,5 +76,35 @@ describe("/legal/privacy — seção dos dados do Google", () => {
       "7. Segurança",
       "8. Encarregado e contato",
     ]);
+  });
+});
+
+describe("/legal/privacy — os dois papéis do modelo de serviço", () => {
+  it("separa os dois papéis e não promete fluxo automático", async () => {
+    const { container } = render(await PrivacyPage());
+    const texto = container.textContent ?? "";
+
+    expect(texto).toContain("o controlador é essa empresa:");
+    expect(texto).toContain("o controlador é o prestador de serviço indicado no contrato");
+    expect(texto).toContain("Anexo 2 do contrato de serviço");
+    expect(texto).toContain("exportar os dados por 30 dias");
+    expect(texto).toContain("Envie o seu pedido à empresa que trata os seus dados");
+    expect(texto).not.toContain("fluxo próprio");
+    expect(texto).not.toContain("servidor do operador");
+  });
+
+  it("o Brasil não declara autoridade: a linha de reclamação não aparece", async () => {
+    const { container } = render(await PrivacyPage());
+    expect(container.textContent).not.toContain("autoridade de proteção de dados");
+  });
+
+  it("visitante sem sessão, em turco, lê tudo em turco", async () => {
+    idioma.valor = "tr";
+    const { container } = render(await PrivacyPage());
+    const texto = container.textContent ?? "";
+
+    expect(texto).toContain("sizinle yazışan işletme");
+    expect(texto).not.toContain("a empresa que fala com você");
+    expect(texto).not.toMatch(/prestador|contrato de serviço|operador/i);
   });
 });

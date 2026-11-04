@@ -50,7 +50,7 @@ test.describe("documentos legais", () => {
     await expect(page.getByRole("heading", { name: /política de privacidade/i })).toBeVisible();
     // Sem sessão não dá para saber a razão social, mas o documento não pode
     // fingir que quem responde pelos dados é o projeto de software.
-    await expect(page.getByText(/operador desta instalação/i).first()).toBeVisible();
+    await expect(page.getByText(/a empresa que fala com você/i).first()).toBeVisible();
   });
 
   test("o vizinho de /legal continua fechado — a liberação é dos dois, não do prefixo", async ({
