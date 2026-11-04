@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IDIOMAS } from "@/lib/i18n/idiomas";
+import { paisesOferecidos } from "@/lib/legal/perfil-do-pais";
 import { interfaceSettingsSchema, interfaceTemDestino } from "@/lib/navigation/interface";
 import { fusoValido } from "@/lib/tempo/fusos";
 
@@ -26,6 +27,17 @@ export const tenantCreationFields = {
    */
   locale: z.enum(IDIOMAS).optional(),
   timezone: z.string().trim().max(64).refine(fusoValido, "Fuso horário desconhecido").optional(),
+  /**
+   * O país da empresa nova. Ausente = a coluna vazia, que vale Brasil. Como o
+   * idioma e o fuso, fica fora do pedido da função SQL. Só entra país que o
+   * seletor oferece: a mesma régua de Configurações, para país sem lei revisada
+   * não chegar por API.
+   */
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .refine((c) => paisesOferecidos().some((p) => p.codigo === c), "País sem perfil revisado")
+    .optional(),
 };
 export const createTenantSchema = z
   .object({ ...tenantCreationFields, plan: tenantCreationFields.plan.default("standard") })

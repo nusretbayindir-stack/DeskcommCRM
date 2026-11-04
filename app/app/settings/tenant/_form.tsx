@@ -180,7 +180,7 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
               <SelectContent>
                 {paisesOferecidos().map((pais) => (
                   <SelectItem key={pais.codigo} value={pais.codigo}>
-                    {pais.nome}
+                    {t(pais.nome)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -191,17 +191,21 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
               )}
             </p>
             {/* Quem responde pelo documento precisa saber que a revisão foi
-                feita por IA (doc 88). O texto fala de Portugal: só o perfil PT
-                declara `revisadaPorIa`, e um teste prende isso. */}
+                feita por IA (doc 88). Um texto para cada país: só PT e BE
+                declaram `revisadaPorIa`, e um teste prende isso. */}
             {perfil.lei?.revisadaPorIa && (
               <p
                 role="note"
                 data-testid="aviso-revisao-por-ia"
                 className="rounded-md border border-warning bg-warning-bg p-3 text-xs text-warning-fg"
               >
-                {t(
-                  "A citação do RGPD (artigo 15.º do Regulamento (UE) 2016/679) foi conferida contra o texto oficial numa revisão feita por IA, sem advogado em Portugal. Os prazos do sistema (7 e 15 dias úteis) são mais curtos que o prazo legal de um mês, e o relatório de acesso ainda não traz todas as informações do art. 15.º. Trocar o país muda a regra do documento do contato: a partir daí, CPF enviado por API, importação ou integração é recusado como NIF inválido. O sistema não substitui o seu encarregado da proteção de dados: confirme com ele os textos enviados aos titulares, sobretudo nas campanhas de marketing, que em Portugal, em regra, exigem consentimento prévio (Lei 41/2004, art. 13.º-A).",
-                )}
+                {perfil.codigo === "BE"
+                  ? t(
+                      "A citação do GDPR (artigo 15 do Regulamento (UE) 2016/679) foi conferida contra o texto oficial numa revisão feita por IA, sem advogado na Bélgica. Nesta instalação, os pedidos de titular são atendidos manualmente. Trocar o país muda a regra do documento do contato: a partir daí, só número KBO/BCE é aceito, e CPF enviado por API, importação ou integração é recusado. O sistema não substitui o seu encarregado da proteção de dados: confirme com ele os textos enviados aos seus clientes.",
+                    )
+                  : t(
+                      "A citação do RGPD (artigo 15.º do Regulamento (UE) 2016/679) foi conferida contra o texto oficial numa revisão feita por IA, sem advogado em Portugal. Os prazos do sistema (7 e 15 dias úteis) são mais curtos que o prazo legal de um mês, e o relatório de acesso ainda não traz todas as informações do art. 15.º. Trocar o país muda a regra do documento do contato: a partir daí, CPF enviado por API, importação ou integração é recusado como NIF inválido. O sistema não substitui o seu encarregado da proteção de dados: confirme com ele os textos enviados aos titulares, sobretudo nas campanhas de marketing, que em Portugal, em regra, exigem consentimento prévio (Lei 41/2004, art. 13.º-A).",
+                    )}
               </p>
             )}
           </div>

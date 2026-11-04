@@ -85,14 +85,14 @@ describe("perfil de Portugal (issue #1946)", () => {
     expect(citacaoDaLei(perfilDoPais("PT"))).toBe("RGPD art. 15.º (Regulamento (UE) 2016/679)");
   });
 
-  it("só Portugal declara revisão por IA — o aviso da tela fala de RGPD e NIF", () => {
-    // O aviso de `app/app/settings/tenant/_form.tsx` é texto de Portugal. Um
-    // segundo país revisado por IA mostraria esse texto errado: ele precisa do
+  it("só Portugal e Bélgica declaram revisão por IA, cada um com o seu aviso", () => {
+    // O aviso de `app/app/settings/tenant/_form.tsx` tem um texto por país. Um
+    // terceiro país revisado por IA mostraria o texto errado: ele precisa do
     // seu, e este caso reprova até lá.
     const porIa = Object.values(PERFIS_DO_PAIS)
       .filter((p) => p.lei?.revisadaPorIa)
       .map((p) => p.codigo);
-    expect(porIa).toEqual(["PT"]);
+    expect(porIa.sort()).toEqual(["BE", "PT"]);
     // O Brasil não ganha chave no data.json (o `foraDoBrasil` continua
     // devolvendo `{}`); o campo novo do PERFIL brasileiro existe desde a
     // issue #2344 e muda só o RÓTULO que o renderizador imprime: o art. 18 da

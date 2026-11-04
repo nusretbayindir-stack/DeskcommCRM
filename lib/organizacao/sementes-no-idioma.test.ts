@@ -251,6 +251,14 @@ describe("gravarIdiomaEFuso", () => {
     ]);
   });
 
+  it("só o país: grava o país e não mexe nas sementes", async () => {
+    const { admin, chamadas } = bancoFalso({ funil: FUNIL_INTOCADO });
+    expect(await gravarIdiomaEFuso(admin, ORG, { country: "BE" })).toBe(true);
+    expect(chamadas).toEqual([
+      { tabela: "organizations", op: "update", valores: { country: "BE" }, filtros: [["id", ORG]] },
+    ]);
+  });
+
   it("a organização não gravou: devolve false e não traduz sementes para um idioma que ela não tem", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     const { admin, chamadas } = bancoFalso({ funil: FUNIL_INTOCADO, falhaEm: "organizations" });

@@ -29,6 +29,7 @@ import { useT } from "@/hooks/i18n/useT";
 import { useIdioma } from "@/lib/i18n/IdiomaProvider";
 import type { Idioma } from "@/lib/i18n/idiomas";
 import { IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
+import { PAIS_PADRAO, paisesOferecidos, perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { FUSO_PADRAO, FUSOS_OFERECIDOS } from "@/lib/tempo/fusos";
 import { copyToClipboard } from "@/lib/clipboard";
 import { formatarDinheiro } from "@/lib/cobranca/dinheiro";
@@ -92,11 +93,14 @@ const ISENTA = "isenta";
 export function NewTenantForm({
   cobranca,
   fusoInicial,
+  paisInicial,
 }: {
   /** Spec da cobrança §9: ligada, o plano de cobrança substitui o rótulo antigo (D-2). */
   cobranca: { ligada: boolean; planos: readonly PlanoParaEscolher[] };
   /** O fuso da organização de quem cria, resolvido pela página (ausente = o padrão do produto). */
   fusoInicial?: string;
+  /** O país da organização de quem cria, resolvido pela página (vazio = Brasil). */
+  paisInicial?: string | null;
 }) {
   const t = useT();
   const idioma = useIdioma();
@@ -107,6 +111,11 @@ export function NewTenantForm({
   // aqui, com o padrão de quem cria (o idioma da tela dele e o fuso da org dele).
   const [locale, setLocale] = useState<Idioma>(idioma);
   const [timezone, setTimezone] = useState(fusoInicial ?? FUSO_PADRAO);
+  // `perfilDoPais` normaliza: coluna vazia ou país sem perfil viram o Brasil, e o
+  // formulário nunca envia um código que o servidor recusaria.
+  const [pais, setPais] = useState(perfilDoPais(paisInicial).codigo);
+  const perfil = perfilDoPais(pais);
+  const paisComCnpj = pais === PAIS_PADRAO;
   const [slugLocked, setSlugLocked] = useState(false);
   const [created, setCreated] = useState<CreateTenantResponse["data"] | null>(null);
 
@@ -145,7 +154,8 @@ export function NewTenantForm({
   };
 
   const handleCnpjChange = (value: string) => {
-    setValue("cnpj", maskCnpj(value));
+    // A máscara é do CNPJ: em outro país ela destruiria o número da empresa.
+    setValue("cnpj", paisComCnpj ? maskCnpj(value) : value);
   };
 
   const onSubmit = handleSubmit(async (values) => {
@@ -161,6 +171,7 @@ export function NewTenantForm({
         owner_interface_settings: ownerInterface,
         locale,
         timezone,
+        country: pais,
       });
 
       toast.success(t("Tenant criado com sucesso!"));
@@ -194,7 +205,7 @@ export function NewTenantForm({
           {created.idioma_gravado === false && (
             <p className="text-sm text-warning-fg">
               {t(
-                "Não consegui gravar o idioma e o fuso. Ajuste nas configurações da organização antes de o responsável entrar; o convite pode ter saído em português.",
+                "Não consegui gravar o país, o idioma e o fuso. Ajuste nas configurações da organização antes de o responsável entrar; o convite pode ter saído em português.",
               )}
             </p>
           )}
@@ -292,7 +303,7 @@ export function NewTenantForm({
 
             {/* legal_name */}
             <div className="space-y-1.5">
-              <Label htmlFor="legal_name">{t("Razão social")}</Label>
+              <Label htmlFor="legal_name">{t(perfil.empresa.rotuloNomeLegal)}</Label>
               <Input
                 id="legal_name"
                 placeholder={t("Maria da Silva LTDA")}
@@ -306,13 +317,13 @@ export function NewTenantForm({
 
             {/* cnpj */}
             <div className="space-y-1.5">
-              <Label htmlFor="cnpj">CNPJ</Label>
+              <Label htmlFor="cnpj">{t(perfil.empresa.rotuloNumero)}</Label>
               <Input
                 id="cnpj"
-                placeholder="00.000.000/0000-00"
+                placeholder={paisComCnpj ? "00.000.000/0000-00" : perfil.documento.exemplo}
                 {...register("cnpj")}
                 onChange={(e) => handleCnpjChange(e.target.value)}
-                inputMode="numeric"
+                inputMode={paisComCnpj ? "numeric" : undefined}
                 maxLength={18}
                 aria-invalid={!!errors.cnpj}
                 className="font-mono"
@@ -371,8 +382,29 @@ export function NewTenantForm({
             </div>
             )}
 
-            {/* idioma e fuso da empresa nova */}
-            <div className="grid gap-5 sm:grid-cols-2">
+            {/* país, idioma e fuso da empresa nova */}
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="country">{t("País")}</Label>
+                <Select
+                  value={pais}
+                  onValueChange={(v) => {
+                    setPais(v);
+                    setTimezone(perfilDoPais(v).fusoDoSugerido);
+                  }}
+                >
+                  <SelectTrigger id="country" aria-label={t("País")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paisesOferecidos().map((p) => (
+                      <SelectItem key={p.codigo} value={p.codigo}>
+                        {t(p.nome)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="locale">{t("Idioma da organização")}</Label>
                 <Select value={locale} onValueChange={(v) => setLocale(v as Idioma)}>

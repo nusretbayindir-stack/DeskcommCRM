@@ -109,7 +109,7 @@ function padroesDoPerfil(): readonly PadraoDePiiDoPais[] {
  * que já saía apagado (o NIF sem prefixo continua saindo `[PHONE]`, como no
  * #2345) — o perfil só completa o que a cadeia não resolveu.
  */
-const PERFIL_VEM_ANTES = new Set(["iban"]);
+const PERFIL_VEM_ANTES = new Set(["iban", "ibanBE", "telefoneInternacionalBE"]);
 
 /** Aplica os padrões do perfil, na fase escolhida, com marcador do próprio perfil. */
 function aplicarPadroesDoPerfil(texto: string, fase: "antes" | "depois"): string {

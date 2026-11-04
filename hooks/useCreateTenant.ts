@@ -22,6 +22,7 @@ export interface CreateTenantPayload {
   owner_interface_settings?: InterfaceSettings;
   locale?: Idioma;
   timezone?: string;
+  country?: string;
 }
 
 export interface CreateTenantResponse {
@@ -35,7 +36,7 @@ export interface CreateTenantResponse {
       email_dispatched: boolean;
       email: string;
     } | null;
-    /** Presente quando o pedido trouxe idioma ou fuso: `false` = a organização não os gravou. */
+    /** Presente quando o pedido trouxe país, idioma ou fuso: `false` = a organização não os gravou. */
     idioma_gravado?: boolean;
   };
 }

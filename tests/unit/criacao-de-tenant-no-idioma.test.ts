@@ -127,4 +127,38 @@ describe("POST /api/v1/admin/tenants — idioma e fuso da empresa nova", () => {
     expect((await res.json()).data.idioma_gravado).toBe(false);
     erro.mockRestore();
   });
+
+  it("grava o país na organização ANTES de mandar o convite", async () => {
+    let gravadoAntesDoConvite = false;
+    h.invite.mockImplementation(async () => {
+      gravadoAntesDoConvite = escritaNaOrganizacao() !== undefined;
+      return { accept_url: "https://x/convite", expires_at: "2026-11-02T00:00:00Z", email_dispatched: true, email: "dono@example.test" };
+    });
+
+    const res = await POST(pedido({ country: "BE" }));
+
+    expect(res.status).toBe(201);
+    const cadeia = escritaNaOrganizacao();
+    expect(argumentos(cadeia!, "update")).toEqual([{ country: "BE" }]);
+    expect(valorDoFiltro(cadeia!, "eq", "id")).toBe(ORG);
+    expect(gravadoAntesDoConvite).toBe(true);
+    expect((await res.json()).data.idioma_gravado).toBe(true);
+  });
+
+  it.each(["XX", "be", "BEL"])("país sem perfil revisado (%s) → 400, nada criado", async (country) => {
+    const res = await POST(pedido({ country }));
+    expect(res.status).toBe(400);
+    expect(h.banco.rpcs).toEqual([]);
+  });
+
+  it("sem país, o país não é escrito", async () => {
+    await POST(pedido({ locale: "tr", timezone: "Europe/Brussels" }));
+    expect(argumentos(escritaNaOrganizacao()!, "update")?.[0]).not.toHaveProperty("country");
+  });
+
+  it("o país não entra no pedido da função SQL (o recibo de idempotência não muda)", async () => {
+    await POST(pedido({ country: "BE" }));
+    expect(pRequest()).toBeDefined();
+    expect(pRequest()).not.toHaveProperty("country");
+  });
 });

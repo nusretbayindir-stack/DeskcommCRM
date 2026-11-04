@@ -30,7 +30,7 @@ const BASE: TenantInput = {
   privacy_policy_url: null,
 };
 
-function tela(country: string | null, locale: "pt-BR" | "es" = "pt-BR") {
+function tela(country: string | null, locale: "pt-BR" | "es" | "tr" = "pt-BR") {
   render(
     <IdiomaProvider locale={locale}>
       <TenantForm initial={{ ...BASE, country }} />
@@ -62,5 +62,21 @@ describe("aviso de revisão por IA no seletor de país", () => {
   it("em espanhol o aviso sai traduzido", () => {
     tela("PT", "es");
     expect(screen.getByTestId("aviso-revisao-por-ia").textContent).toContain("revisión hecha por IA");
+  });
+
+  it("Bélgica escolhida: o aviso é o dela, sem falar de Portugal nem de NIF", () => {
+    tela("BE");
+    const texto = screen.getByTestId("aviso-revisao-por-ia").textContent ?? "";
+    expect(texto).toContain("sem advogado na Bélgica");
+    expect(texto).toContain("só número KBO/BCE é aceito");
+    expect(texto).not.toMatch(/Portugal|NIF|Lei 41\/2004/);
+  });
+
+  it("em turco, o aviso e o nome do país saem traduzidos", () => {
+    tela("BE", "tr");
+    expect(screen.getByTestId("aviso-revisao-por-ia").textContent).toContain(
+      "Belçikalı bir avukat bakmadı",
+    );
+    expect(screen.getByRole("combobox", { name: "Ülke" }).textContent).toContain("Belçika");
   });
 });

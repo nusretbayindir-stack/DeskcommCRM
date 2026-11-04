@@ -285,7 +285,7 @@ export function NewContactDialog({
                 validate: (valor) => {
                   const texto = (valor ?? "").trim();
                   if (texto.length === 0) return true;
-                  return perfil.documento.valida(texto) || perfil.documento.mensagemInvalido;
+                  return perfil.documento.valida(texto) || t(perfil.documento.mensagemInvalido);
                 },
               })}
             />

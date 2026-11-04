@@ -73,6 +73,10 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 | LGPD | GDPR (karar: 2026-10-21) |
 | CNPJ | vergi numarası |
 | CPF ou CNPJ | kimlik veya vergi numarası |
+| KBO/BCE | KBO/BCE (Belçika işletme numarası; `Número da empresa` = işletme numarası) |
+| prestador de serviço | hizmet veren |
+| contrato de serviço | hizmet sözleşmesi |
+| subcontratante | veri işleyen |
 | tenant | şirket ("Tenants" menüsü: "Şirketler") |
 | rodízio | dönüşümlü atama ("fila do rodízio": "dönüşümlü atama kuyruğu"). Kısa yerde "dönüşümlü" tek başına kullanılabilir. |
 | de (sayaç: "3 de 10") | "/" ("3 / 10"). Sayaç olmayan "de/da" tek başına çevrilmez: cümle `{marcador}` ile tek anahtar olur (v1.88.5). |
