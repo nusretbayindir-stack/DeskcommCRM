@@ -33,11 +33,20 @@ interface Capturado {
 
 function admin(
   canais: Array<Record<string, unknown>>,
-  abertos: Array<{ id: string; ref_id: string | null }>,
+  abertos: Array<{ id: string; ref_id: string | null; organization_id?: string }>,
   cap: Capturado,
+  locale = "pt-BR",
 ) {
   return {
     from(tabela: string) {
+      if (tabela === "organizations") {
+        const c: Record<string, unknown> = {
+          select: () => c,
+          eq: () => c,
+          maybeSingle: async () => ({ data: { locale }, error: null }),
+        };
+        return c;
+      }
       if (tabela === "channel_sessions") {
         const c: Record<string, unknown> = {
           select: () => c,
@@ -206,6 +215,27 @@ describe("canal-mudo-watcher", () => {
       action: "channel.canal_mudo_watcher_run",
       metadata: { avisados: 1, resolvidos: 0 },
     });
+  });
+
+  it("em turco, o aviso e o motivo saem no idioma da empresa", async () => {
+    const cap = vazio();
+    vi.mocked(createAdminClient).mockReturnValue(admin([canalMudo()], [], cap, "tr") as never);
+
+    await GET(req());
+
+    expect(cap.avisos).toHaveLength(1);
+    expect(cap.avisos[0]!.title).toBe("Bu kanal test modunda: AI kimseye cevap vermiyor");
+    expect(String(cap.avisos[0]!.body)).toContain("gündür bu durumda");
+    expect(String(cap.avisos[0]!.body)).not.toMatch(/modo de teste|Assim há/);
+
+    const fechar = vazio();
+    vi.mocked(createAdminClient).mockReturnValue(
+      admin([], [{ id: "aviso", ref_id: CANAL, organization_id: ORG }], fechar, "tr") as never,
+    );
+    await GET(req());
+
+    expect(fechar.resolucoes).toHaveLength(1);
+    expect(String(fechar.resolucoes[0]!.patch.body)).toContain("Sistem tarafından çözüldü: kanal arşivlendi.");
   });
 
   it("sem o segredo, 403 e não lê nada", async () => {
