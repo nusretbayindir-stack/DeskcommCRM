@@ -60,6 +60,8 @@ import { lerEstadoDoCanal } from "@/lib/channels/estado";
 import { fonteDeTemplates } from "@/lib/channels/templates-fonte";
 import { useT } from "@/hooks/i18n/useT";
 import { AgendaDePausa } from "@/components/connections/AgendaDePausa";
+import { AvisoDeRiscoDoQr } from "@/components/connections/AvisoDeRiscoDoQr";
+import { corpoDoRiscoQr } from "@/lib/channels/risco-do-qr";
 import { RenomearConexao } from "./RenomearConexao";
 
 type Variant = "success" | "warning" | "error" | "neutral";
@@ -221,6 +223,8 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
   const [creating, setCreating] = useState(false);
   const [checking, setChecking] = useState(false);
   const [qr, setQr] = useState<{ sessionId: string; title: string } | null>(null);
+  // Número novo passa pelo aviso de risco. Reconectar não: o número já existe.
+  const [avisoQrAberto, setAvisoQrAberto] = useState(false);
   const [antiBanId, setAntiBanId] = useState<string | null>(null);
   const [gruposId, setGruposId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<ChannelSession | null>(null);
@@ -275,7 +279,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
     try {
       const res = await apiClient.post<{ data: ChannelSession }>(
         "/api/v1/channel-sessions",
-        {},
+        corpoDoRiscoQr(),
         { idempotencyKey: createKey.current ??= randomId(), timeoutMs: 120_000 },
       );
       invalidate();
@@ -454,7 +458,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
               os três são a mesma escrita (`metadata.disabled`), e a diferença é
               quando — agora, ou quando o operador escolher. */}
           <AgendaDePausa canais={list} />
-          <Button size="sm" disabled={creating || !wahaConfigured} onClick={handleConnectNew}>
+          <Button size="sm" disabled={creating || !wahaConfigured} onClick={() => setAvisoQrAberto(true)}>
             {creating ? (
               <CircleNotch size={14} className="animate-spin" aria-hidden />
             ) : (
@@ -699,6 +703,23 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
           onCancel={() => setToDelete(null)}
           onDeleted={handleDeleted}
         />
+      )}
+
+      {/* Montado só quando aberto: fechar e abrir de novo começa sem o aceite. */}
+      {avisoQrAberto && (
+        <Dialog open onOpenChange={(o) => !o && setAvisoQrAberto(false)}>
+          <DialogContent className="overflow-y-auto sm:max-w-md" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle>{t("Conectar novo WhatsApp")}</DialogTitle>
+            </DialogHeader>
+            <AvisoDeRiscoDoQr
+              onContinuar={() => {
+                setAvisoQrAberto(false);
+                void handleConnectNew();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {qr && (
