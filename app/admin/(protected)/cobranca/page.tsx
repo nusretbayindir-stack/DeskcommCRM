@@ -20,6 +20,8 @@ import { ConexaoDaCobranca } from "./_conexao";
 import { PlanosDaInstalacao, type PlanoDaTela } from "./_planos";
 import { ReguaDaCobranca } from "./_regua";
 import { FaixaDoModoDeTeste, VisaoGeral } from "./_visao-geral";
+import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { fusoOferecidoOuPadrao } from "@/lib/tempo/fusos";
 import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const generateMetadata = tituloDaAba((t) => t("Cobrança — Admin Plataforma"));
@@ -56,6 +58,8 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
   const t = (texto: string) => traduzir(texto, idioma);
   const admin = createAdminClient();
   if (!(await moduloLigado(admin, "cobranca"))) notFound();
+  const usuario = await loadAuthUser();
+  const ativa = usuario ? await resolveActiveOrg(usuario) : null;
   const { aba } = await searchParams;
   const inicial: AbaDaCobranca = ABAS_DA_COBRANCA.find((a) => a === aba) ?? "visao-geral";
 
@@ -150,7 +154,7 @@ export default async function CobrancaPage({ searchParams }: { searchParams: Pro
       <AbasDaCobranca
         inicial={inicial}
         paineis={{
-          "visao-geral": <VisaoGeral dados={visao} checklist={montarChecklist(visao)} idioma={idioma} agora={agora} />,
+          "visao-geral": <VisaoGeral dados={visao} checklist={montarChecklist(visao)} idioma={idioma} agora={agora} fuso={fusoOferecidoOuPadrao(ativa?.timezone)} />,
           conexao: <ConexaoDaCobranca provedor={visao.provedor} modo={visao.modo} last4={visao.chaveLast4} urlDoWebhook={visao.urlDoWebhook} />,
           regua: <ReguaDaCobranca tolerancia={tolerancia} />,
           planos: <PlanosDaInstalacao planos={lista} provedor={visao.provedor} />,

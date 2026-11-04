@@ -18073,6 +18073,15 @@ export const DICIONARIO: Traducoes = {
   "Recebemos o pagamento e tudo voltou a funcionar. As conversas que chegaram durante a suspensão estão na Central, para revisão.": { es: "Recibimos el pago y todo volvió a funcionar. Las conversaciones que llegaron durante la suspensión están en la Central, para revisión." },
   // ─── Cobrança do revendedor — e-mails (PR 3a) ───
   "Pagar agora": { es: "Pagar ahora" },
+  "Você recebe este aviso porque administra a empresa {empresa}.": {
+    es: "Recibes este aviso porque administras la empresa {empresa}.",
+  },
+  "Esta empresa ainda não está ativa": {
+    es: "Esta empresa aún no está activa",
+  },
+  "Este convite é válido, mas a empresa ainda não está ativa, por isso não dá para entrar agora. Se o pagamento estiver pendente, conclua-o e abra este link de novo. O link vale por 24 horas; depois disso, peça um novo a quem convidou você.": {
+    es: "Esta invitación es válida, pero la empresa aún no está activa, así que no se puede entrar ahora. Si el pago está pendiente, complétalo y abre este enlace de nuevo. El enlace vale 24 horas; después, pide uno nuevo a quien te invitó.",
+  },
   "Você recebe este aviso porque administra esta empresa.": { es: "Recibes este aviso porque administras esta empresa." },
   // ─── Cobrança do revendedor — teto de IA (PR 3a) ───
   "O uso de IA do plano chegou a 80%": { es: "El uso de IA del plan llegó al 80%" },

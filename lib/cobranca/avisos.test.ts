@@ -61,6 +61,13 @@ describe("textoDoAviso", () => {
     expect(textoDoAviso("suspensa", { ...base, origem: "atraso" }).corpo).toContain("assim que o pagamento for confirmado");
   });
 
+  it("em turco, quem está com pagamento em aberto lê SEPA, nunca boleto", () => {
+    // Quem usa o sistema em turco paga em euro: boleto e Pix não existem para ele.
+    const { corpo } = textoDoAviso("venceu", { ...base, origem: "atraso", idioma: "tr" });
+    expect(corpo).toContain("SEPA");
+    expect(corpo).not.toMatch(/boleto|pix/i);
+  });
+
   it("fala espanhol", () => {
     expect(textoDoAviso("venceu", { ...base, origem: "atraso", idioma: "es" }).titulo).toBe("No identificamos el pago del 05/10");
   });
