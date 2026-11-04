@@ -58,6 +58,23 @@
  * o titular é brasileiro e as duas leis podem valer — citar o RGPD não é
  * falso, mas é incompleto.
  *
+ * ─── Bélgica: revisão por IA, por decisão do dono (2026-11-04) ────────────
+ *
+ * Em 2026-11-04 a citação `GDPR art. 15 (Regulation (EU) 2016/679)` foi conferida
+ * por IA, por decisão do dono do produto. NÃO é parecer jurídico e nenhum advogado
+ * na Bélgica a viu; a revisão de advogado está marcada para antes da primeira
+ * assinatura. Fontes conferidas nesse dia: o art. 15 no EUR-Lex (Regulamento (UE)
+ * 2016/679, "Right of access by the data subject"), o site da
+ * Gegevensbeschermingsautoriteit e a lista de feriados da FOD Werkgelegenheid
+ * (`lib/lgpd/holidays-be.ts`).
+ *
+ * O documento do contato é o número da empresa (KBO/BCE), e não o número nacional
+ * (Rijksregisternummer). A Geschillenkamer da GBA, na decisão 204/2025, leu o art.
+ * 8 da lei de 8 de agosto de 1983: sem autorização ministerial ou disposição legal
+ * expressa, usar esse número é ilícito por definição. Essa é a leitura da IA, não
+ * parecer. O sistema não pede o número nacional, e a máscara o redige se ele
+ * aparecer numa conversa.
+ *
  * ─── A separação documento × forma (regra adotada do #928) ────────────────
  *
  * Não se inventa dígito verificador. País com checksum público documentado
@@ -67,6 +84,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { HOLIDAYS_BE_ISO } from "@/lib/lgpd/holidays-be";
 import { HOLIDAYS_BR_ISO } from "@/lib/lgpd/holidays-br";
 import { HOLIDAYS_PT_ISO } from "@/lib/lgpd/holidays-pt";
 
@@ -329,6 +347,18 @@ export function isValidNif(raw: string): boolean {
   return digito === parseInt(s[8]!, 10);
 }
 
+/**
+ * O número da empresa belga (KBO/BCE): dez dígitos, o primeiro 0 ou 1, e os dois
+ * últimos iguais a 97 − (os oito primeiros módulo 97). Regra pública; respeita a
+ * régua do #928. O prefixo `BE` do número de IVA, os pontos e os espaços são só
+ * forma de escrever.
+ */
+export function isValidKbo(raw: string): boolean {
+  const s = raw.replace(/^\s*be/i, "").replace(/[\s.]/g, "");
+  if (!/^[01]\d{9}$/.test(s)) return false;
+  return 97 - (parseInt(s.slice(0, 8), 10) % 97) === parseInt(s.slice(8), 10);
+}
+
 const DOCUMENTO_BR: DocumentoDoTitular = {
   rotulo: "CPF",
   exemplo: "000.000.000-00",
@@ -483,6 +513,69 @@ const PERFIL_PT: PerfilDoPais = {
   ],
 };
 
+const DOCUMENTO_BE: DocumentoDoTitular = {
+  rotulo: "KBO/BCE",
+  exemplo: "0123.456.749",
+  regra: "dígito de controle (mod-97 do número da empresa)",
+  mensagemInvalido: "Número KBO/BCE inválido",
+  confereDigito: true,
+  // `normalizaHeader` tira acento e troca espaço por `_`, mas não mexe no `ı`
+  // turco nem no apóstrofo: as formas abaixo são as que ele entrega.
+  apelidosDoCabecalho: [
+    "kbo",
+    "bce",
+    "kbo_nummer",
+    "ondernemingsnummer",
+    "numero_d'entreprise",
+    "numero_entreprise",
+    "btw",
+    "btw_nummer",
+    "tva",
+    "numero_tva",
+    "isletme_numarası",
+  ],
+  valida: isValidKbo,
+  normaliza: (valor) => valor.replace(/\D/g, ""),
+};
+
+const PERFIL_BE: PerfilDoPais = {
+  codigo: "BE",
+  nome: "Bélgica",
+  documento: DOCUMENTO_BE,
+  empresa: {
+    rotuloNomeLegal: "Denominação social",
+    rotuloNumero: "Número da empresa (KBO/BCE)",
+  },
+  telefoneExemplo: "+32470123456",
+  idioma: "nl-BE",
+  fusoDoSugerido: "Europe/Brussels",
+  lei: {
+    nome: "GDPR",
+    numero: "Regulation (EU) 2016/679",
+    artigo: "art. 15",
+    // Revisada por IA em 2026-11-04, por decisão do dono; não é parecer jurídico.
+    // Registro completo no cabeçalho deste arquivo.
+    revisada: true,
+    revisadaPorIa: true,
+    rotuloNoDocumento: "Direito exercido",
+  },
+  // As mesmas chaves em português de Portugal: não há interface em holandês, e o
+  // `t()` traduz. Trocar por holandês exige primeiro que o idioma exista.
+  papel: {
+    controlador: "Responsável pelo tratamento",
+    encarregado: "Encarregado da proteção de dados",
+  },
+  autoridadeDeSupervisao: {
+    nome: "Gegevensbeschermingsautoriteit (GBA)",
+    site: "https://www.gegevensbeschermingsautoriteit.be",
+  },
+  calendario: {
+    feriados: HOLIDAYS_BE_ISO,
+    rotulo: "feriados nacionais belgas",
+  },
+  padroesDePii: [],
+};
+
 /**
  * O registro de países conhecidos.
  *
@@ -498,6 +591,7 @@ const PERFIL_PT: PerfilDoPais = {
 export const PERFIS_DO_PAIS: Record<CodigoDePais, PerfilDoPais> = {
   BR: PERFIL_BR,
   PT: PERFIL_PT,
+  BE: PERFIL_BE,
 };
 
 /** O perfil de um código; vazio ou desconhecido degrada para o Brasil. */
