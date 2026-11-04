@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { anonymize, padroesDaIngestao, padroesDePii } from "@/lib/ai/anonymize";
 import { mapHeader } from "@/lib/contacts/csv";
+import { traduzir } from "@/lib/i18n/dicionario";
 import {
   citacaoDaLei,
   isValidKbo,
@@ -79,6 +80,12 @@ describe("perfil da Bélgica", () => {
     ]);
     expect(ULTIMO_ANO_COBERTO).toBeGreaterThanOrEqual(new Date().getFullYear() + 2);
     expect(perfilDoPais("BE").calendario.feriados).toBe(HOLIDAYS_BE_ISO);
+  });
+
+  it("o erro do número e o rótulo da empresa saem em turco", () => {
+    expect(traduzir("Número KBO/BCE inválido", "tr")).toBe("Geçersiz KBO/BCE numarası");
+    expect(traduzir("Número KBO/BCE inválido: ", "tr")).toBe("Geçersiz KBO/BCE numarası: ");
+    expect(traduzir("Número da empresa (KBO/BCE)", "tr")).toBe("İşletme numarası (KBO)");
   });
 
   describe("máscara", () => {

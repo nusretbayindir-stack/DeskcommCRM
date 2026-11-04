@@ -12624,6 +12624,15 @@ export const DICIONARIO: Traducoes = {
   // passariam no CI e cairiam no português na tela em espanhol.
   "Moeda": { es: "Moneda" },
   "País": { es: "País" },
+  "Bélgica": { es: "Bélgica" },
+  "Brasil": { es: "Brasil" },
+  "Portugal": { es: "Portugal" },
+  "Número da empresa (KBO/BCE)": { es: "Número de empresa (KBO/BCE)" },
+  "Número KBO/BCE inválido": { es: "Número KBO/BCE no válido" },
+  "Número KBO/BCE inválido: ": { es: "Número KBO/BCE no válido: " },
+  "A citação do GDPR (artigo 15 do Regulamento (UE) 2016/679) foi conferida contra o texto oficial numa revisão feita por IA, sem advogado na Bélgica. Nesta instalação, os pedidos de titular são atendidos manualmente. Trocar o país muda a regra do documento do contato: a partir daí, só número KBO/BCE é aceito, e CPF enviado por API, importação ou integração é recusado. O sistema não substitui o seu encarregado da proteção de dados: confirme com ele os textos enviados aos seus clientes.": {
+    es: "La cita del RGPD (artículo 15 del Reglamento (UE) 2016/679) se comprobó contra el texto oficial en una revisión hecha por IA, sin abogado en Bélgica. En esta instalación, las solicitudes de los titulares se atienden manualmente. Cambiar el país cambia la regla del documento del contacto: a partir de ahí solo se acepta el número KBO/BCE, y se rechaza el CPF enviado por API, importación o integración. El sistema no sustituye a su delegado de protección de datos: confirme con él los textos enviados a sus clientes.",
+  },
   "De onde saem o documento do contato, a lei citada no documento de acesso e o prazo em dias úteis. Só aparecem países com a lei revisada — a lista é curta de propósito.": {
     es: "De aquí salen el documento del contacto, la ley citada en el documento de acceso y el plazo en días hábiles. Solo aparecen países con la ley revisada: la lista es corta a propósito.",
   },
