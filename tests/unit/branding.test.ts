@@ -1118,6 +1118,11 @@ const HOSTS_DECLARADOS: Record<string, EntradaDeHost> = {
     motivo:
       "site oficial da Gegevensbeschermingsautoriteit, a autoridade de controlo belga (`autoridadeDeSupervisao` do perfil BE em lib/legal/perfil-do-pais.ts). Sai impresso no relatório de acesso do titular e na política de privacidade: é o endereço a que a lei manda o titular ir, e não fornecedor nem marca.",
   },
+  "www.autoriteprotectiondonnees.be": {
+    categoria: "AUTORIDADE",
+    motivo:
+      "o mesmo site oficial da autoridade belga, no domínio em francês. Sai impresso na política de privacidade em francês (`AUTORIDADE_EM_FRANCES` em lib/legal/politica-belga.ts): é o endereço a que a lei manda o titular ir, e não fornecedor nem marca.",
+  },
   "deskcomm.app": {
     categoria: "PROTOCOLO",
     motivo:
@@ -1450,6 +1455,7 @@ describe("catraca de host de terceiro no código que embarca", () => {
       // alínea f) do relatório de acesso de Portugal. Categoria própria,
       // AUTORIDADE, porque não é painel, amostra nem plataforma: é o endereço
       // a que a lei manda o titular ir. País novo com lei revisada traz a sua.
+      "www.autoriteprotectiondonnees.be",
       "www.cnpd.pt",
       "www.gegevensbeschermingsautoriteit.be",
     ]);

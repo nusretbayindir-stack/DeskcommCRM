@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { loadAuthUser } from "@/lib/auth/server";
+import { valorDaInstalacao } from "@/lib/instalacao/config";
 import { nomeDoOperador, resolverOperador } from "@/lib/legal/operador";
 import { PAIS_PADRAO, perfilDoPais } from "@/lib/legal/perfil-do-pais";
+import {
+  AUTORIDADE_EM_FRANCES,
+  IDIOMAS_DA_POLITICA_BELGA,
+  POLITICA_BELGA,
+  idiomaBelgaDoVisitante,
+  lerEscolhaDeIdioma,
+} from "@/lib/legal/politica-belga";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -9,9 +19,23 @@ import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
 
-export const generateMetadata = tituloDaAba((t) => t("Política de Privacidade"));
+interface PropsDaPagina {
+  searchParams?: Promise<{ lang?: string | string[] }>;
+}
 
-export default async function PrivacyPage() {
+const tituloNoIdiomaDoProduto = tituloDaAba((t) => t("Política de Privacidade"));
+
+export async function generateMetadata({ searchParams }: PropsDaPagina = {}): Promise<Metadata> {
+  const belga = (await loadAuthUser())
+    ? null
+    : await idiomaBelgaDoVisitante(
+        (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor,
+        lerEscolhaDeIdioma((await searchParams)?.lang),
+      );
+  return belga ? { title: POLITICA_BELGA[belga]["Política de Privacidade"] } : tituloNoIdiomaDoProduto();
+}
+
+export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) {
   const op = await resolverOperador();
 
   // O operador publicou a política dele: é a dele que vale. Sem isto, o campo
@@ -27,10 +51,18 @@ export default async function PrivacyPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = await idiomaDoVisitante(
-    (user?.user_metadata?.locale as string | undefined) ?? null,
-  );
-  const t = (texto: string) => traduzir(texto, idioma);
+  // Sem sessão, numa instalação da Bélgica: holandês e francês não são idiomas do
+  // produto, então o texto vem de `politica-belga.ts`. Com sessão, nada disto vale.
+  const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
+  const semSessaoNaBelgica = !user && perfilDoPais(op.pais).codigo === "BE";
+  const belga = semSessaoNaBelgica ? await idiomaBelgaDoVisitante(op.pais, escolha) : null;
+  const idioma =
+    semSessaoNaBelgica && escolha === "tr"
+      ? "tr"
+      : await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null);
+  const textoFixo = belga ? POLITICA_BELGA[belga] : null;
+  const noIdiomaDoProduto = (texto: string) => traduzir(texto, idioma);
+  const t = (texto: string) => textoFixo?.[texto] ?? noIdiomaDoProduto(texto);
 
   // O vocabulário legal desta política é o do PAÍS da organização ativa
   // (issue #2344): no Brasil "controlador", "CNPJ" e "LGPD"; fora dele
@@ -46,10 +78,26 @@ export default async function PrivacyPage() {
   // aqui: o nome dele está no contrato de serviço.
   const perfil = perfilDoPais(op.pais);
   const foraDoBrasil = perfil.codigo !== PAIS_PADRAO;
-  const autoridade = perfil.autoridadeDeSupervisao;
+  const autoridade = belga === "fr" ? AUTORIDADE_EM_FRANCES : perfil.autoridadeDeSupervisao;
+  const linguaDaPagina = belga ?? idioma;
 
   return (
-    <>
+    <div lang={linguaDaPagina} className="space-y-6">
+      {semSessaoNaBelgica && (
+        <nav aria-label="Language" className="flex flex-wrap gap-3 text-xs">
+          {IDIOMAS_DA_POLITICA_BELGA.map(({ codigo, nome }) => (
+            <a
+              key={codigo}
+              href={`?lang=${codigo}`}
+              lang={codigo}
+              aria-current={codigo === linguaDaPagina ? "true" : undefined}
+              className={codigo === linguaDaPagina ? "font-semibold" : "underline underline-offset-2"}
+            >
+              {nome}
+            </a>
+          ))}
+        </nav>
+      )}
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{t("Política de Privacidade")}</h1>
         <p className="text-muted-foreground">
@@ -276,6 +324,6 @@ export default async function PrivacyPage() {
           .
         </p>
       </section>
-    </>
+    </div>
   );
 }
