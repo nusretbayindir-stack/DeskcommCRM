@@ -27,9 +27,15 @@ export default async function NewTenantPage() {
     if (error) throw new Error(`planos de cobrança: leitura falhou (${error.code})`);
     planos = (data ?? []) as PlanoParaEscolher[];
   }
-  // O fuso padrão da empresa nova é o da organização de quem cria. Resolvido
-  // aqui, no servidor: o fuso do navegador divergiria do render do servidor.
+  // O fuso e o país padrão da empresa nova são os da organização de quem cria.
+  // Resolvidos aqui, no servidor: o fuso do navegador divergiria do render do servidor.
   const usuario = await loadAuthUser();
   const ativa = usuario ? await resolveActiveOrg(usuario) : null;
-  return <NewTenantForm cobranca={{ ligada, planos }} fusoInicial={fusoOferecidoOuPadrao(ativa?.timezone)} />;
+  return (
+    <NewTenantForm
+      cobranca={{ ligada, planos }}
+      fusoInicial={fusoOferecidoOuPadrao(ativa?.timezone)}
+      paisInicial={ativa?.country ?? null}
+    />
+  );
 }

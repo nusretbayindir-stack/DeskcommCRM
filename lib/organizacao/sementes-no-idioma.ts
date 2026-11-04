@@ -222,7 +222,7 @@ export async function sementesNoIdioma(
 }
 
 /**
- * Grava o idioma e o fuso que quem criou a empresa escolheu e, com idioma,
+ * Grava o país, o idioma e o fuso que quem criou a empresa escolheu e, com idioma,
  * traduz as sementes. Vem ANTES do convite do dono: o e-mail sai no idioma da
  * organização. `false` = a organização não gravou — e aí as sementes ficam
  * como estão, para não traduzir para um idioma que a empresa não tem.
@@ -230,15 +230,16 @@ export async function sementesNoIdioma(
 export async function gravarIdiomaEFuso(
   admin: ReturnType<typeof createAdminClient>,
   orgId: string,
-  escolha: { locale?: Idioma; timezone?: string },
+  escolha: { locale?: Idioma; timezone?: string; country?: string },
 ): Promise<boolean> {
-  const mudancas: { locale?: Idioma; timezone?: string } = {};
+  const mudancas: { locale?: Idioma; timezone?: string; country?: string } = {};
   if (escolha.locale) mudancas.locale = escolha.locale;
   if (escolha.timezone) mudancas.timezone = escolha.timezone;
+  if (escolha.country) mudancas.country = escolha.country;
   if (Object.keys(mudancas).length === 0) return true;
 
   const gravou = await escrever(
-    "idioma e fuso da organização",
+    "país, idioma e fuso da organização",
     admin.from("organizations").update(mudancas).eq("id", orgId),
   );
   if (!gravou) return false;

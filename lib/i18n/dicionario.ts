@@ -2105,6 +2105,7 @@ export const DICIONARIO: Traducoes = {
   "Idioma da organização": { es: "Idioma de la organización" },
   "O convite do responsável e os nomes iniciais da agenda e do funil saem neste idioma.": { es: "La invitación del responsable y los nombres iniciales de la agenda y del embudo salen en este idioma." },
   "Não consegui gravar o idioma e o fuso. Ajuste nas configurações da organização antes de o responsável entrar; o convite pode ter saído em português.": { es: "No pude guardar el idioma y la zona horaria. Ajústalos en la configuración de la organización antes de que el responsable entre; la invitación puede haber salido en portugués." },
+  "Não consegui gravar o país, o idioma e o fuso. Ajuste nas configurações da organização antes de o responsável entrar; o convite pode ter saído em português.": { es: "No pude guardar el país, el idioma y la zona horaria. Ajústalos en la configuración de la organización antes de que entre el responsable; la invitación puede haber salido en portugués." },
   "Avatar URL": { es: "URL de avatar" },
   "Upload de arquivo — em breve. Cole uma URL pública.": {
     es: "La carga de archivos llegará pronto. Pega una URL pública.",

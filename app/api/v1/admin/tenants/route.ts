@@ -127,9 +127,9 @@ export async function POST(req: NextRequest) {
       );
     }
   }
-  // Idioma e fuso ficam fora do pedido da função SQL (e do hash do recibo):
+  // País, idioma e fuso ficam fora do pedido da função SQL (e do hash do recibo):
   // são gravados depois da criação e antes do convite, por `gravarIdiomaEFuso`.
-  const { locale, timezone, ...semIdiomaEFuso } = parsed.data;
+  const { locale, timezone, country, ...semIdiomaEFuso } = parsed.data;
   const normalizado = { ...semIdiomaEFuso, owner_email: parsed.data.owner_email.trim().toLowerCase() };
   const request = cobrancaLigada ? { ...normalizado, plan: undefined } : normalizado;
   const { data: org, error } = await admin.rpc("fn_create_tenant_with_owner", {
@@ -181,7 +181,9 @@ export async function POST(req: NextRequest) {
   // na retentativa (mesma chave), e é idempotente: só renomeia o que ainda é
   // semente. Falhar aqui não desfaz a empresa — a resposta conta, e a tela avisa.
   const idiomaGravado =
-    locale || timezone ? await gravarIdiomaEFuso(admin, org.id, { locale, timezone }) : undefined;
+    locale || timezone || country
+      ? await gravarIdiomaEFuso(admin, org.id, { locale, timezone, country })
+      : undefined;
   const ownerInvitation =
     request.owner_email === adminCtx.user.email?.trim().toLowerCase()
       ? null
