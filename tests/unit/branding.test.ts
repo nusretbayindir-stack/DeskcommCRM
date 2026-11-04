@@ -1113,6 +1113,11 @@ const HOSTS_DECLARADOS: Record<string, EntradaDeHost> = {
     motivo:
       "site oficial da Comissão Nacional de Proteção de Dados, a autoridade de controlo portuguesa (`autoridadeDeSupervisao` do perfil PT em lib/legal/perfil-do-pais.ts). Sai impresso no relatório de acesso do titular, alínea f) do art. 15.º, n.º 1 (#2354). O código nunca chama o host — quem o visita é o titular que vai reclamar —, e trocá-lo pelo domínio do revendedor mandaria a reclamação para quem é reclamado.",
   },
+  "www.gegevensbeschermingsautoriteit.be": {
+    categoria: "AUTORIDADE",
+    motivo:
+      "site oficial da Gegevensbeschermingsautoriteit, a autoridade de controlo belga (`autoridadeDeSupervisao` do perfil BE em lib/legal/perfil-do-pais.ts). Sai impresso no relatório de acesso do titular e na política de privacidade: é o endereço a que a lei manda o titular ir, e não fornecedor nem marca.",
+  },
   "deskcomm.app": {
     categoria: "PROTOCOLO",
     motivo:
@@ -1446,6 +1451,7 @@ describe("catraca de host de terceiro no código que embarca", () => {
       // AUTORIDADE, porque não é painel, amostra nem plataforma: é o endereço
       // a que a lei manda o titular ir. País novo com lei revisada traz a sua.
       "www.cnpd.pt",
+      "www.gegevensbeschermingsautoriteit.be",
     ]);
   });
 

@@ -124,7 +124,7 @@ async function enviarParaCada(
 
 export async function enviarAvisoAosAdmins(
   admin: SupabaseClient,
-  org: { id: string; idioma: Idioma },
+  org: { id: string; idioma: Idioma; nome?: string | null },
   texto: TextoDoAviso,
   linkDePagamento: string | null,
 ): Promise<void> {
@@ -133,6 +133,9 @@ export async function enviarAvisoAosAdmins(
     if (para.length === 0) return;
     const t = (s: string) => traduzir(s, org.idioma);
     const marca = await marcaDaSaida(org.id, { semMemo: true });
+    // Quem administra mais de uma empresa precisa saber de qual se trata. Função no
+    // `replace`: um `$` no nome não pode virar padrão de substituição.
+    const nome = org.nome?.trim();
     const email = buildEmailDaCobranca({
       titulo: texto.titulo,
       corpo: texto.corpo,
@@ -141,7 +144,9 @@ export async function enviarAvisoAosAdmins(
       botao: linkDePagamento
         ? { rotulo: t("Pagar agora"), href: linkDePagamento }
         : { rotulo: t("Abrir plano e cobrança"), href: `${base()}/app/settings/billing` },
-      rodape: t("Você recebe este aviso porque administra esta empresa."),
+      rodape: nome
+        ? t("Você recebe este aviso porque administra a empresa {empresa}.").replace("{empresa}", () => nome)
+        : t("Você recebe este aviso porque administra esta empresa."),
     });
     await enviarParaCada(para, email, marca.nome, { organization_id: org.id });
   } catch (e) {

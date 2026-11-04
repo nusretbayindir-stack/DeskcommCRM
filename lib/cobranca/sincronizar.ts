@@ -363,11 +363,17 @@ export async function aplicarRegua(
   if (!linha) return "nada";
   const { data: orgLida, error: erroDaOrg } = await admin
     .from("organizations")
-    .select("status, suspended_kind, locale, timezone")
+    .select("status, suspended_kind, locale, timezone, display_name")
     .eq("id", orgId)
     .maybeSingle();
   if (erroDaOrg) throw new Error(`cobranca: leitura da empresa falhou (${erroDaOrg.code ?? "sem_codigo"})`);
-  const org = orgLida as { status: string; suspended_kind: string | null; locale: string | null; timezone: string | null } | null;
+  const org = orgLida as {
+    status: string;
+    suspended_kind: string | null;
+    locale: string | null;
+    timezone: string | null;
+    display_name: string | null;
+  } | null;
   if (!org) return "nada";
 
   const decisao = decidirRegua(
@@ -412,6 +418,7 @@ export async function aplicarRegua(
 
   const idioma = normalizarIdioma(org.locale);
   const contexto = { idioma, fuso: org.timezone };
+  const empresa = { id: orgId, idioma, nome: org.display_name };
   const enviar = deps.enviarAviso ?? enviarAvisoAosAdmins;
   const acao = decisao.acao;
   switch (acao.tipo) {
@@ -432,7 +439,7 @@ export async function aplicarRegua(
       invalidarOrg(orgId);
       if (!mudou(data)) return "nada";
       auditar("cobranca.org_reativada", orgId, { motivo: "pagamento_confirmado" });
-      await enviar(admin, { id: orgId, idioma }, textoDoAviso("liberada", { ...contexto, data: null, origem: "atraso" }), null);
+      await enviar(admin, empresa, textoDoAviso("liberada", { ...contexto, data: null, origem: "atraso" }), null);
       return "reativar";
     }
     case "suspender": {
@@ -450,14 +457,14 @@ export async function aplicarRegua(
       // pagamento esperando, e a frase diz "assine", não "aguarde a confirmação".
       const texto = textoDoAviso("suspensa", { ...contexto, data: null, origem: acao.origem });
       if (await registrarAviso(admin, orgId, "suspensa", acao.debitoDesde, texto)) {
-        await enviar(admin, { id: orgId, idioma }, texto, linha.link_de_pagamento);
+        await enviar(admin, empresa, texto, linha.link_de_pagamento);
       }
       return "suspender";
     }
     case "avisar": {
       const texto = textoDoAviso(acao.aviso, { ...contexto, data: acao.data, origem: acao.origem });
       if (!(await registrarAviso(admin, orgId, acao.aviso, acao.debitoDesde, texto))) return "nada";
-      await enviar(admin, { id: orgId, idioma }, texto, linha.link_de_pagamento);
+      await enviar(admin, empresa, texto, linha.link_de_pagamento);
       return "avisar";
     }
     case "cancelar_no_provedor": {

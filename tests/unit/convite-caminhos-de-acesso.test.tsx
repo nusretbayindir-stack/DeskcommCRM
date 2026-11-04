@@ -2,10 +2,31 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { signInviteToken } from "@/lib/auth/invite-token";
 
-const visitante = vi.hoisted(() => ({ idioma: "pt-BR" as "pt-BR" | "es" }));
+const visitante = vi.hoisted(() => ({ idioma: "pt-BR" as "pt-BR" | "es" | "tr" }));
+const empresa = vi.hoisted(() => ({
+  linha: { status: "active" } as { status: string } | null,
+  erro: null as { message: string } | null,
+  orgLida: null as unknown,
+}));
 beforeEach(() => {
   visitante.idioma = "pt-BR";
+  empresa.linha = { status: "active" };
+  empresa.erro = null;
+  empresa.orgLida = null;
 });
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: (_coluna: string, valor: unknown) => {
+          empresa.orgLida = valor;
+          return { maybeSingle: async () => ({ data: empresa.linha, error: empresa.erro }) };
+        },
+      }),
+    }),
+  }),
+}));
 
 vi.mock("@/lib/branding/saida", () => ({
   marcaDaSaida: async () => ({ nome: "Marca sintética" }),
@@ -38,6 +59,40 @@ const token = signInviteToken({
   exp: Math.floor(Date.now() / 1000) + 3600,
 });
 const destino = `/team/accept-invite/${token}`;
+
+describe("convite de empresa que ainda não está ativa", () => {
+  const abrir = async () => {
+    const Page = (await import("@/app/team/accept-invite/[token]/page")).default;
+    return renderToStaticMarkup(await Page({ params: Promise.resolve({ token }) }));
+  };
+
+  it("⭐ empresa suspensa: diz o motivo e não manda criar conta para nada", async () => {
+    empresa.linha = { status: "suspended" };
+    const html = await abrir();
+
+    expect(html).toContain("a empresa ainda não está ativa");
+    expect(html).not.toContain("Criar minha conta");
+    expect(html).not.toContain("expirado");
+    // O id lido é o do token assinado, nunca um valor do pedido.
+    expect(empresa.orgLida).toBe("9093db4b-9d09-4a65-8f76-caf4c0b09a13");
+  });
+
+  it("em turco", async () => {
+    empresa.linha = { status: "suspended" };
+    visitante.idioma = "tr";
+    expect(await abrir()).toContain("şirket henüz açık değil");
+  });
+
+  it("empresa ativa segue o caminho de sempre", async () => {
+    expect(await abrir()).toContain("Criar minha conta");
+  });
+
+  it("leitura que falhou não fecha o convite: segue o caminho de sempre", async () => {
+    empresa.linha = null;
+    empresa.erro = { message: "falhou" };
+    expect(await abrir()).toContain("Criar minha conta");
+  });
+});
 
 describe("convite acompanha os dois caminhos", () => {
   it("destaca criar conta e preserva o token nas duas opções", async () => {

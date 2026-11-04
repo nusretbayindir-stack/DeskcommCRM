@@ -96,7 +96,7 @@ beforeEach(() => {
   m = {
     linha: { ...LINHA },
     plano: { id: "plano-a", preco_cents: 4990 },
-    org: { status: "active", suspended_kind: null, locale: "pt-BR", timezone: "America/Sao_Paulo" },
+    org: { status: "active", suspended_kind: null, locale: "pt-BR", timezone: "America/Sao_Paulo", display_name: "Loja da Ana" },
     casPerdidos: 0,
     aoPerder: null,
     avisoGanho: true,
@@ -160,6 +160,8 @@ describe("sincronizar", () => {
       action: "cobranca.estado_mudou", organizationId: ORG, metadata: { de: "ativa", para: "em_atraso", status_bruto: "past_due" },
     }));
     expect(enviarAviso.mock.calls[0]?.[3]).toBe("https://invoice.stripe.com/i/x");
+    // O nome vem da mesma leitura da empresa e chega ao rodapé do e-mail.
+    expect(enviarAviso.mock.calls[0]?.[1]).toMatchObject({ nome: "Loja da Ana" });
   });
 
   // #2609: a sincronização CONFERE o preço da assinatura no provedor contra o

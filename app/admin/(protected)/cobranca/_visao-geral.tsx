@@ -33,14 +33,17 @@ export function VisaoGeral({
   checklist,
   idioma,
   agora,
+  fuso,
 }: {
   dados: DadosDaVisaoGeral;
   checklist: readonly PassoDoChecklist[];
   idioma: Idioma;
   agora: Date;
+  /** O fuso de quem olha: renderizado no servidor, o `Intl` sem fuso escreveria UTC. */
+  fuso: string;
 }) {
   const t = (texto: string) => traduzir(texto, idioma);
-  const quando = new Intl.DateTimeFormat(idioma, { dateStyle: "short", timeStyle: "short" });
+  const quando = new Intl.DateTimeFormat(idioma, { dateStyle: "short", timeStyle: "short", timeZone: fuso });
   const proximo = checklist.find((p) => !p.feito);
   const atrasada = leituraAtrasada(dados.ultimaLeituraEm, agora, 7);
   const asaas = dados.provedor === "asaas";
