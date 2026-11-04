@@ -178,6 +178,50 @@ export async function emitirConvite(
 }
 
 /**
+ * Grava a linha de um convite que JÁ saiu fora de `emitirConvite`: o do responsável,
+ * que a criação da empresa emite com o `invite_id` do recibo de
+ * `fn_create_tenant_with_owner`. Sem ela o convite não aparece na tela de Equipe,
+ * não se revoga, e o link de pagamento do dono não acha o e-mail do cliente
+ * (`emailDoConviteDeAdminPendente`).
+ *
+ * `ignoreDuplicates` porque a retentativa com a mesma chave chega aqui com
+ * `email_dispatched: false` (ela não redispara): a linha da primeira vez é a certa,
+ * e pode até já ter sido aceita ou revogada. Lança só com o código do banco, nunca
+ * com o endereço.
+ */
+export async function registrarConviteEmitido(
+  admin: SupabaseClient,
+  params: {
+    inviteId: string;
+    organizationId: string;
+    email: string;
+    role: Role;
+    interfaceSettings?: InterfaceSettings;
+    inviterId: string;
+    inviterName: string;
+    emailDispatched: boolean;
+    expiresAt: string;
+  },
+): Promise<void> {
+  const { error } = await admin.from("team_invites").upsert(
+    {
+      id: params.inviteId,
+      organization_id: params.organizationId,
+      email: params.email,
+      role: params.role,
+      interface_settings: interfaceSettingsSchema.parse(params.interfaceSettings ?? INTERFACE_COMPLETA),
+      invited_by: params.inviterId,
+      inviter_name: params.inviterName,
+      email_dispatched: params.emailDispatched,
+      last_sent_at: new Date().toISOString(),
+      expires_at: params.expiresAt,
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (error) throw new Error(`linha do convite não gravada (${error.code ?? "sem_codigo"})`);
+}
+
+/**
  * Reenvia um convite que já existe: re-assina o token com o `invite_id` da
  * linha, dispara o e-mail de novo, audita `member.invited` (via `issueInvite`)
  * pelo ator que clicou reenviar, e renova `expires_at` / `last_sent_at` /

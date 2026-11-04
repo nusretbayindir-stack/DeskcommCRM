@@ -11,6 +11,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { lerPlano } from "@/lib/cobranca/dono";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { gravarIdiomaEFuso } from "@/lib/organizacao/sementes-no-idioma";
+import { logger } from "@/lib/logger";
+import { registrarConviteEmitido } from "@/lib/team/convites";
 import { querySchema, listarTenants } from "./_lista";
 
 // ---------------------------------------------------------------------------
@@ -184,6 +186,8 @@ export async function POST(req: NextRequest) {
     locale || timezone || country
       ? await gravarIdiomaEFuso(admin, org.id, { locale, timezone, country })
       : undefined;
+  const inviterName =
+    adminCtx.user.user_metadata?.full_name ?? adminCtx.user.email ?? "Administrador";
   const ownerInvitation =
     request.owner_email === adminCtx.user.email?.trim().toLowerCase()
       ? null
@@ -194,13 +198,35 @@ export async function POST(req: NextRequest) {
           organizationId: org.id,
           orgName: org.display_name,
           inviterId: adminCtx.user.id,
-          inviterName:
-            adminCtx.user.user_metadata?.full_name ?? adminCtx.user.email ?? "Administrador",
+          inviterName,
           requestId,
           inviteId: org.invite_id,
           issuedAt: org.issued_at,
           dispatch: org.created,
         });
+  if (ownerInvitation) {
+    // A empresa existe e o convite já saiu: falhar aqui não desfaz nada disso. O que
+    // se perde é a linha (Equipe e o link de pagamento do dono), e o log conta.
+    try {
+      await registrarConviteEmitido(admin, {
+        inviteId: ownerInvitation.invite_id,
+        organizationId: org.id,
+        email: ownerInvitation.email,
+        role: "admin",
+        interfaceSettings: request.owner_interface_settings,
+        inviterId: adminCtx.user.id,
+        inviterName,
+        emailDispatched: ownerInvitation.email_dispatched,
+        expiresAt: ownerInvitation.expires_at,
+      });
+    } catch (e) {
+      logger.warn("tenant.convite_do_responsavel_sem_linha", {
+        requestId,
+        organizationId: org.id,
+        motivo: e instanceof Error ? e.message : "desconhecido",
+      });
+    }
+  }
   return ok(
     {
       id: org.id,
