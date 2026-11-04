@@ -581,8 +581,10 @@ const PERFIL_BE: PerfilDoPais = {
     {
       tipo: "telefoneInternacionalBE",
       marcador: "[TELEFONE]",
-      fonte: "\\+32(?:[\\s./-]?\\d){8,9}",
-      naoCobre: "número belga escrito com `0032` no lugar de `+32`",
+      // `+32 (0)470 …` é a forma impressa mais comum na Bélgica, e `0032` a de quem
+      // digita sem o `+`. As duas passavam, inteiras ou pela metade.
+      fonte: "(?:\\+|\\b00)32(?:\\s?\\(0\\))?(?:[\\s./-]?\\d){8,9}",
+      naoCobre: "número belga com `32` sem `+` nem `00` na frente",
     },
     {
       tipo: "ibanBE",

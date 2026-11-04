@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { anonymize, padroesDaIngestao, padroesDePii } from "@/lib/ai/anonymize";
 import { mapHeader } from "@/lib/contacts/csv";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { scrubMessage } from "@/lib/sentry/scrub";
 import {
   citacaoDaLei,
   isValidKbo,
@@ -119,6 +120,10 @@ describe("perfil da Bélgica", () => {
       ["kbo 0403.170.701", "kbo [KBO]"],
       ["zap +32 470 12 34 56", "zap [TELEFONE]"],
       ["zap +32470123456", "zap [TELEFONE]"],
+      ["zap +32 (0)470 12 34 56", "zap [TELEFONE]"],
+      ["zap +32(0)470123456", "zap [TELEFONE]"],
+      ["zap 0032 470 12 34 56", "zap [TELEFONE]"],
+      ["zap 0032470123456", "zap [TELEFONE]"],
       ["zap 0470 12 34 56", "zap [TELEFONE]"],
       ["zap 0470/12.34.56", "zap [TELEFONE]"],
       ["vast 02 123 45 67", "vast [TELEFONE]"],
@@ -136,6 +141,31 @@ describe("perfil da Bélgica", () => {
       ]) {
         expect(anonymize(t, padroes()).anonymized).toBe(t);
       }
+    });
+
+    // O scrub é o que o Sentry e o Jev usam, e a cadeia de telefone dele roda antes dos
+    // padrões do perfil: o que ela parte por dentro não é mais reconhecido depois.
+    it.each([
+      ["IBAN BE68 5390 0754 7034 ok", "IBAN [IBAN] ok"],
+      ["IBAN BE68539007547034 ok", "IBAN [IBAN] ok"],
+      ["zap +32 470 12 34 56 ok", "zap [TELEFONE] ok"],
+      ["zap +32470123456 ok", "zap [TELEFONE] ok"],
+      ["zap +32 (0)470 12 34 56 ok", "zap [TELEFONE] ok"],
+      ["zap 0032 470 12 34 56 ok", "zap [TELEFONE] ok"],
+    ])("no scrub, %s não é partido", (entrada, saida) => {
+      expect(scrubMessage(entrada)).toBe(saida);
+    });
+
+    it.each([
+      "zap 0470 12 34 56 ok",
+      "zap 0470/12.34.56 ok",
+      "nr 85.07.30-033.28 ok",
+      "nr 85073003328 ok",
+      "btw BE0123456749 ok",
+      "btw BE 0123.456.749 ok",
+      "kbo 0403.170.701 ok",
+    ])("no scrub, %s não deixa dígito para trás", (entrada) => {
+      expect(scrubMessage(entrada)).not.toMatch(/\d/);
     });
 
     it("o CPF por baixo não perde os dígitos finais", () => {
