@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { audit } from "@/lib/audit";
 import { connectWahaChannel, renomearSessaoParaOTeto } from "./connect-waha";
 vi.mock("@/lib/audit", () => ({ audit: vi.fn() }));
 const org = "20000000-0000-4000-8000-000000000001";
 const key = "20000000-0000-4000-8000-000000000002";
 const channel = { id: key, organization_id: org, waha_session_name: "owned", status: "STARTING", archived_at: null };
+beforeEach(() => vi.mocked(audit).mockClear());
 /**
  * A linha como o banco a devolve. `reservado` é o que
  * `fn_reserve_channel_connection` retorna — e ela sobrescreve `status` com
@@ -47,8 +49,46 @@ function fixture(linha: Partial<typeof channel> & { phone_number?: string | null
     createSession: vi.fn(async (nome: string) => ({ created: true, session: { name: nome, status: "STOPPED" } })),
     startExistingSession: vi.fn(async (nome: string) => ({ name: nome, status: "SCAN_QR_CODE" })),
     deleteSession: vi.fn(async () => {}), stopSession: vi.fn(async () => {}) };
-  return { db, transport, finishes, renomeios, input: { organizationId: org, idempotencyKey: key, userId: key, requestId: key } };
+  return { db, transport, finishes, renomeios, input: {
+    organizationId: org, idempotencyKey: key, userId: key, requestId: key,
+    riscoDoQr: { aceito: true as const, versao: "v-teste", origem: "conexoes" as const },
+  } };
 }
+describe("o aceite do risco do QR", () => {
+  it("sem aceite do risco não reserva nem chama o WhatsApp", async () => {
+    const f = fixture();
+    await expect(connectWahaChannel(f.db, f.db, f.transport, { ...f.input, riscoDoQr: null }))
+      .rejects.toMatchObject({ code: "qr_risco_nao_aceito", status: 422 });
+    expect(f.db.rpc).not.toHaveBeenCalled();
+    expect(f.transport.createSession).not.toHaveBeenCalled();
+    expect(vi.mocked(audit)).not.toHaveBeenCalled();
+  });
+
+  it("com aceite grava quem, qual conexão, versão e origem", async () => {
+    const f = fixture();
+    await connectWahaChannel(f.db, f.db, f.transport, f.input);
+    expect(audit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "channel.qr_risk_accepted", actorUserId: key, organizationId: org,
+      resourceType: "channel_session", resourceId: key, requestId: key,
+      metadata: { versao: "v-teste", origem: "conexoes" },
+    }));
+  });
+
+  it("o aceite é gravado antes de falar com o WhatsApp: falha do transporte não apaga a prova", async () => {
+    const f = fixture();
+    f.transport.createSession.mockRejectedValue(new Error("timeout"));
+    await expect(connectWahaChannel(f.db, f.db, f.transport, f.input)).rejects.toThrow("connection_repair_required");
+    expect(vi.mocked(audit).mock.calls.filter(([e]) => e.action === "channel.qr_risk_accepted")).toHaveLength(1);
+  });
+
+  it("replay não grava um segundo aceite", async () => {
+    const f = fixture();
+    vi.mocked(f.db.rpc).mockResolvedValue({ data: { channel: { ...channel, status: "SCAN_QR_CODE" }, receipt_id: key, replay: true }, error: null } as never);
+    expect((await connectWahaChannel(f.db, f.db, f.transport, f.input)).replay).toBe(true);
+    expect(vi.mocked(audit).mock.calls.filter(([e]) => e.action === "channel.qr_risk_accepted")).toHaveLength(0);
+  });
+});
+
 describe("conexão recuperável", () => {
   it("publica somente o status confirmado pelo transporte e pelo DB", async () => {
     const f = fixture(); const result = await connectWahaChannel(f.db, f.db, f.transport, f.input);

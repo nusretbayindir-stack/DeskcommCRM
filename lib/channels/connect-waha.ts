@@ -10,6 +10,7 @@ import type { WahaClient } from "@/lib/waha/client";
 import { WahaSessionError } from "@/lib/waha/client";
 import { sincronizarRecebimentoDeGrupos } from "@/lib/grupos/sincronizar-filtro";
 import { lerLimiteEstourado } from "@/lib/cobranca/limites";
+import type { RiscoDoQrAceito } from "@/lib/channels/risco-do-qr";
 
 const channelSchema = z.object({
   id: z.string().uuid(), organization_id: z.string().uuid(), waha_session_name: z.string(),
@@ -30,6 +31,11 @@ type Transport = Pick<WahaClient, "createSession" | "startExistingSession" | "st
 export interface ConnectChannelInput {
   organizationId: string; idempotencyKey: string; userId: string; requestId: string;
   displayName?: string; onboarding?: boolean; restart?: boolean;
+  /**
+   * Obrigatório de propósito, e sem `?`: um chamador novo que venha do projeto
+   * principal vira erro de tipo em vez de abrir uma porta sem o aceite.
+   */
+  riscoDoQr: RiscoDoQrAceito | null;
 }
 
 /** Única reserva WAHA: auth client reserva, service client confirma por lease+org.
@@ -37,6 +43,7 @@ export interface ConnectChannelInput {
  * reutiliza o remoto existente. Nunca exclui uma sessão automaticamente.
  */
 export async function connectWahaChannel(authDb: SupabaseClient, serviceDb: SupabaseClient, waha: Transport, input: ConnectChannelInput): Promise<{ channel: z.infer<typeof channelSchema>; replay: boolean }> {
+  if (!input.riscoDoQr?.aceito) throw new ChannelConnectionError("qr_risco_nao_aceito", 422);
   if (!z.string().uuid().safeParse(input.idempotencyKey).success) throw new ChannelConnectionError("idempotency_key_required", 422);
   const hash = createHash("sha256").update(JSON.stringify({ display_name: input.displayName ?? null, onboarding: input.onboarding ?? false, restart: input.restart ?? false })).digest("hex");
   const { data, error } = await authDb.rpc("fn_reserve_channel_connection", {
@@ -56,6 +63,18 @@ export async function connectWahaChannel(authDb: SupabaseClient, serviceDb: Supa
   if (!channel || channel.organization_id !== input.organizationId) throw new ChannelConnectionError("connection_reservation_missing", 410);
   if (receipt.replay) return { channel, replay: true };
   if (!receipt.lease_token) throw new ChannelConnectionError("connection_lease_lost", 409);
+  // Antes de falar com o WhatsApp: o aceite aconteceu, e uma falha do transporte não
+  // pode apagar a prova. `await` só garante a ordem; `audit` nunca lança. O replay
+  // saiu acima, então repetir a mesma chave não grava um segundo aceite.
+  await audit({
+    action: "channel.qr_risk_accepted",
+    actorUserId: input.userId,
+    organizationId: input.organizationId,
+    resourceType: "channel_session",
+    resourceId: channel.id,
+    requestId: input.requestId,
+    metadata: { versao: input.riscoDoQr.versao, origem: input.riscoDoQr.origem },
+  });
   let created = false;
   async function finish(status: string, reason?: string) {
     const result = await serviceDb.rpc("fn_finish_channel_connection", {

@@ -301,6 +301,9 @@ export const AUDIT_ACTIONS = [
   // Gravada pelo gatilho `fn_prospeccao_saida_volta_com_a_mensagem` (0705).
   "prospecting.exit_offer_withdrawn",
   "channel.pairing_code_requested",
+  // Quem aceitou o risco de conectar este número por QR, qual versão do aviso e de
+  // qual tela (`lib/channels/risco-do-qr.ts`). É a prova da cláusula 9 do contrato.
+  "channel.qr_risk_accepted",
   "channel.social_configured",
   "channel.social_disconnected",
   "channel.social_desvinculado",

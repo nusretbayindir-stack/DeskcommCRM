@@ -31,6 +31,7 @@ import { loadAuthUser, requireAuth, orgAtivaSemPortao } from "@/lib/auth/server"
 import type { AuthUser } from "@/lib/auth/types";
 import { CHANNEL_PROVIDER_META, CHANNEL_PROVIDER_WAHA } from "@/lib/channels/capabilities";
 import { reactivateChannelSession } from "@/lib/channels/reactivate";
+import { corpoDoRiscoQr, VERSAO_DO_AVISO_QR } from "@/lib/channels/risco-do-qr";
 import { validateMetaCredentials } from "@/lib/channels/meta/validate-credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sincronizarRecebimentoDeGrupos } from "@/lib/grupos/sincronizar-filtro";
@@ -622,7 +623,11 @@ describe("POST /api/v1/channel-sessions/[id]/reconnect — canal excluído não 
 
 describe("POST /api/v1/onboarding/whatsapp/session — retomar o pareamento ressuscita", () => {
   const req = () =>
-    new Request("http://localhost/api/v1/onboarding/whatsapp/session", { method: "POST", headers: { "Idempotency-Key": USER } });
+    new Request("http://localhost/api/v1/onboarding/whatsapp/session", {
+      method: "POST",
+      headers: { "Idempotency-Key": USER, "content-type": "application/json" },
+      body: JSON.stringify(corpoDoRiscoQr()),
+    });
 
   it("⭐ linha arquivada com o mesmo nome de sessão volta ATIVA após confirmar o transporte", async () => {
     authOk();
@@ -662,6 +667,79 @@ describe("POST /api/v1/onboarding/whatsapp/session — retomar o pareamento ress
 
     expect((await POST(req())).status).toBe(200);
     expect(db.escritas.map((e) => e.tipo)).toEqual(["insert"]);
+  });
+});
+
+/**
+ * A aba velha e a chamada direta à API não passaram pelo aviso. A recusa mora no
+ * servidor, nas duas rotas: sem o aceite no corpo, nada é reservado nem chega ao
+ * WhatsApp, e a mensagem diz o que fazer.
+ */
+describe("conectar por QR exige o aceite do risco, nas duas rotas", () => {
+  const AVISO = "Para conectar pelo celular, leia o aviso e aceite o risco.";
+  const URL_ONBOARDING = "http://localhost/api/v1/onboarding/whatsapp/session";
+  const URL_CONEXOES = "http://localhost/api/v1/channel-sessions";
+  const pedido = (url: string, corpo?: unknown) =>
+    new NextRequest(url, {
+      method: "POST",
+      headers: { "Idempotency-Key": USER, "content-type": "application/json" },
+      ...(corpo === undefined ? {} : { body: JSON.stringify(corpo) }),
+    });
+
+  it("onboarding: POST sem corpo → 422 com a mensagem, e o WhatsApp não é chamado", async () => {
+    authOk();
+    const db = makeDb({ sessions: [] });
+    const waha = transporteOk();
+    const { POST } = await import("@/app/api/v1/onboarding/whatsapp/session/route");
+    const res = await POST(pedido(URL_ONBOARDING));
+
+    expect(res.status).toBe(422);
+    const corpo = await res.json();
+    expect(corpo.error.code).toBe("qr_risco_nao_aceito");
+    expect(corpo.error.message).toBe(AVISO);
+    expect(waha.createSession).not.toHaveBeenCalled();
+    expect(db.escritas).toEqual([]);
+  });
+
+  it("conexões: POST sem corpo → 422 com a mensagem, e o WhatsApp não é chamado", async () => {
+    authOk();
+    const db = makeDb({ sessions: [] });
+    const waha = transporteOk();
+    const { POST } = await import("@/app/api/v1/channel-sessions/route");
+    const res = await POST(pedido(URL_CONEXOES));
+
+    expect(res.status).toBe(422);
+    const corpo = await res.json();
+    expect(corpo.error.code).toBe("qr_risco_nao_aceito");
+    expect(corpo.error.message).toBe(AVISO);
+    expect(waha.createSession).not.toHaveBeenCalled();
+    expect(db.escritas).toEqual([]);
+  });
+
+  it("onboarding: com o aceite, conecta e registra a origem", async () => {
+    authOk();
+    makeDb({ sessions: [] });
+    transporteOk();
+    const { POST } = await import("@/app/api/v1/onboarding/whatsapp/session/route");
+
+    expect((await POST(pedido(URL_ONBOARDING, corpoDoRiscoQr()))).status).toBe(200);
+    expect(audit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "channel.qr_risk_accepted",
+      metadata: { versao: VERSAO_DO_AVISO_QR, origem: "onboarding" },
+    }));
+  });
+
+  it("conexões: com o aceite, conecta e registra a origem", async () => {
+    authOk();
+    makeDb({ sessions: [] });
+    transporteOk();
+    const { POST } = await import("@/app/api/v1/channel-sessions/route");
+
+    expect((await POST(pedido(URL_CONEXOES, corpoDoRiscoQr()))).status).toBe(201);
+    expect(audit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "channel.qr_risk_accepted",
+      metadata: { versao: VERSAO_DO_AVISO_QR, origem: "conexoes" },
+    }));
   });
 });
 
@@ -773,7 +851,11 @@ describe("toda ressurreição é auditada — nenhuma nasce muda", () => {
       chamar: async () => {
         const { POST } = await import("@/app/api/v1/onboarding/whatsapp/session/route");
         return POST(
-          new Request("http://localhost/api/v1/onboarding/whatsapp/session", { method: "POST", headers: { "Idempotency-Key": USER } }),
+          new Request("http://localhost/api/v1/onboarding/whatsapp/session", {
+            method: "POST",
+            headers: { "Idempotency-Key": USER, "content-type": "application/json" },
+            body: JSON.stringify(corpoDoRiscoQr()),
+          }),
         );
       },
     },

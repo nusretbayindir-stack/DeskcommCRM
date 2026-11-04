@@ -7483,6 +7483,24 @@ export const DICIONARIO: Traducoes = {
   "O endereço que o provedor usa para entregar as mensagens. O segredo não é mostrado de novo — para obter um novo, reconecte.": {
     es: "La dirección que el proveedor usa para entregar los mensajes. El secreto no se vuelve a mostrar. Para obtener uno nuevo, reconecta.",
   },
+  "Para conectar pelo celular, leia o aviso e aceite o risco.": {
+    es: "Para conectar por el celular, lee el aviso y acepta el riesgo.",
+  },
+  "Leia: esta conexão não é o caminho oficial da Meta": {
+    es: "Lee: esta conexión no es el camino oficial de Meta",
+  },
+  "O seu número é conectado pelo WhatsApp do seu celular. O WhatsApp pode considerar isso contrário às regras dele e restringir, bloquear temporariamente ou encerrar definitivamente o número a qualquer momento. Se o número for encerrado, você não consegue receber nem enviar mensagens por ele; reativá-lo depende do WhatsApp, não de nós.": {
+    es: "Tu número se conecta por el WhatsApp de tu celular. WhatsApp puede considerar que esto va contra sus reglas y restringir, bloquear temporalmente o cerrar definitivamente el número en cualquier momento. Si el número se cierra, no puedes recibir ni enviar mensajes por él; reactivarlo depende de WhatsApp, no de nosotros.",
+  },
+  "O sistema reduz esse risco limitando a velocidade de envio, mas não consegue eliminá-lo.": {
+    es: "El sistema reduce ese riesgo limitando la velocidad de envío, pero no puede eliminarlo.",
+  },
+  "O número e esse risco são seus. O prestador de serviço não responde pelas consequências, incluindo perda de conversas, contatos ou faturamento (detalhes: cláusula 9 do seu contrato). A conexão oficial da Meta é uma opção à parte; o cadastro na Meta e as taxas dela ficam por sua conta.": {
+    es: "El número y ese riesgo son tuyos. El prestador de servicio no responde por las consecuencias, incluida la pérdida de conversaciones, contactos o facturación (detalles: cláusula 9 de tu contrato). La conexión oficial de Meta es una opción aparte; el registro en Meta y sus tarifas corren por tu cuenta.",
+  },
+  "Li o aviso acima e aceito o risco para este número.": {
+    es: "Leí el aviso anterior y acepto el riesgo para este número.",
+  },
   "Conectar novo WhatsApp": { es: "Conectar un WhatsApp nuevo" },
   "WhatsApp conectado!": { es: "¡WhatsApp conectado!" },
   "Não foi possível carregar seus números.": { es: "No se pudieron cargar tus números." },

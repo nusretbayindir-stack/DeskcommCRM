@@ -310,6 +310,8 @@ describe("copiar detalhes de conexão no self-host HTTP", () => {
     document.execCommand = vi.fn().mockReturnValue(copied);
     render(wrap(<ConnectionsClient wahaConfigured />));
     fireEvent.click(screen.getByRole("button", { name: "Conectar novo WhatsApp" }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Li o aviso acima/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     const details = await screen.findByText(/request-owned/);
     fireEvent.click(screen.getByText("Detalhes para suporte"));
     fireEvent.click(screen.getByRole("button", { name: "Copiar detalhes" }));

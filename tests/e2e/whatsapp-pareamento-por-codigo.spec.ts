@@ -215,6 +215,7 @@ test("o código aparece; expirar o QR sem parear libera a vaga e permite retomar
     // o clique do assistente nem um pareamento físico foram exercitados aqui.
     const retomar = await page.request.post("/api/v1/onboarding/whatsapp/session", {
       headers: { "Idempotency-Key": randomUUID() },
+      data: { risco_qr: { aceito: true, versao: "e2e" } },
     });
     expect(retomar.status(), await retomar.text()).toBe(200);
     expect((await retomar.json()).data.channel_session_id).toBe(canal);

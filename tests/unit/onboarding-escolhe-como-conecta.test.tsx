@@ -56,16 +56,26 @@ vi.mock("@/components/connections/CanalParceiroClient", () => ({
 }));
 
 import { ConnectWhatsappClient } from "@/app/onboarding/connect-whatsapp/_client";
+import { VERSAO_DO_AVISO_QR } from "@/lib/channels/risco-do-qr";
 
 /** Toda chamada de rede que a tela tentar fazer passa por aqui. */
 let chamadas: string[] = [];
+/** O corpo e a chave de cada POST, na ordem. */
+let posts: { corpo: unknown; chave: string | undefined }[] = [];
 
 beforeEach(() => {
   chamadas = [];
+  posts = [];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: unknown, init?: { method?: string }) => {
+    vi.fn(async (url: unknown, init?: { method?: string; body?: string; headers?: Record<string, string> }) => {
       chamadas.push(`${init?.method ?? "GET"} ${String(url)}`);
+      if (init?.method === "POST") {
+        posts.push({
+          corpo: init.body ? JSON.parse(init.body) : null,
+          chave: init.headers?.["Idempotency-Key"],
+        });
+      }
       return {
         ok: true,
         status: 200,
@@ -80,10 +90,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function montar(props?: { oficialPodeReceber?: boolean }) {
+function montar(props?: { oficialPodeReceber?: boolean; wahaConfigured?: boolean }) {
   return render(
     <ConnectWhatsappClient
-      wahaConfigured
+      wahaConfigured={props?.wahaConfigured ?? true}
       sessionName="org_teste"
       oficialPodeReceber={props?.oficialPodeReceber ?? true}
     />,
@@ -93,6 +103,13 @@ function montar(props?: { oficialPodeReceber?: boolean }) {
 /** As chamadas que CRIAM ou consultam a sessão do canal por código. */
 function chamadasDeSessao(): string[] {
   return chamadas.filter((c) => c.includes("/onboarding/whatsapp/session"));
+}
+
+const escolherQr = () => fireEvent.click(screen.getByTestId("forma-qr").querySelector("input")!);
+const avisoNaTela = () => screen.queryByText(/esta conexão não é o caminho oficial da Meta/i);
+function aceitarRisco() {
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 }
 
 describe("o passo do telefone pergunta como a pessoa já usa o número", () => {
@@ -119,11 +136,114 @@ describe("o passo do telefone pergunta como a pessoa já usa o número", () => {
     montar();
     expect(chamadasDeSessao()).toEqual([]);
 
-    fireEvent.click(screen.getByTestId("forma-qr").querySelector("input")!);
+    escolherQr();
+    aceitarRisco();
 
     await waitFor(() => {
       expect(chamadasDeSessao().some((c) => c.startsWith("POST"))).toBe(true);
     });
+  });
+
+  it("escolher o celular mostra o aviso e nada é criado nem consultado", async () => {
+    montar();
+
+    escolherQr();
+
+    await waitFor(() => expect(avisoNaTela()).toBeTruthy());
+    expect(chamadasDeSessao()).toEqual([]);
+  });
+
+  it("aceitar cria a sessão com o aceite no corpo", async () => {
+    montar();
+
+    escolherQr();
+    aceitarRisco();
+
+    await waitFor(() => expect(posts).toHaveLength(1));
+    expect(posts[0]!.corpo).toEqual({ risco_qr: { aceito: true, versao: VERSAO_DO_AVISO_QR } });
+    expect(avisoNaTela()).toBeNull();
+  });
+
+  it("voltar e escolher de novo pede o aceite de novo, e repete a mesma chave", async () => {
+    montar();
+
+    escolherQr();
+    aceitarRisco();
+    await waitFor(() => expect(posts).toHaveLength(1));
+
+    fireEvent.click(screen.getByTestId("voltar-para-escolha"));
+    await waitFor(() => expect(screen.getByText(/como você já usa esse número/i)).toBeTruthy());
+
+    escolherQr();
+    await waitFor(() => expect(avisoNaTela()).toBeTruthy());
+    // O aviso voltou e nada saiu antes de a pessoa aceitar de novo.
+    expect(posts).toHaveLength(1);
+
+    aceitarRisco();
+    await waitFor(() => expect(posts).toHaveLength(2));
+    // A mesma chave faz o servidor responder como replay: um número, um aceite no audit.
+    expect(posts[1]!.chave).toBe(posts[0]!.chave);
+  });
+
+  it("no aviso também há saída: nenhum estado é beco", async () => {
+    montar();
+
+    escolherQr();
+
+    await waitFor(() => expect(avisoNaTela()).toBeTruthy());
+    expect(screen.getByTestId("voltar-para-escolha")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /pular por enquanto/i })).toBeTruthy();
+  });
+
+  it("gerar outro código também leva o aceite", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: unknown, init?: { method?: string; body?: string; headers?: Record<string, string> }) => {
+        if (init?.method === "POST") {
+          posts.push({ corpo: init.body ? JSON.parse(init.body) : null, chave: init.headers?.["Idempotency-Key"] });
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: { status: "FAILED", session: "org_teste" } }),
+        } as unknown as Response;
+      }),
+    );
+    montar();
+
+    escolherQr();
+    aceitarRisco();
+    await waitFor(() => expect(posts).toHaveLength(1));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Gerar novo QR Code" }));
+
+    await waitFor(() => expect(posts).toHaveLength(2));
+    expect(posts[1]!.corpo).toEqual({ risco_qr: { aceito: true, versao: VERSAO_DO_AVISO_QR } });
+  });
+
+  it("conta oficial e parceiro não veem o aviso", async () => {
+    montar();
+
+    fireEvent.click(screen.getByTestId("forma-oficial").querySelector("input")!);
+    await waitFor(() => expect(screen.getByTestId("dublê-oficial")).toBeTruthy());
+    expect(avisoNaTela()).toBeNull();
+
+    fireEvent.click(screen.getByTestId("voltar-para-escolha"));
+    await waitFor(() => expect(screen.getByTestId("forma-parceiro")).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId("forma-parceiro").querySelector("input")!);
+    await waitFor(() => expect(screen.getByTestId("dublê-parceiro")).toBeTruthy());
+    expect(avisoNaTela()).toBeNull();
+  });
+
+  it("sem WhatsApp configurado não há aviso, só a explicação de sempre", async () => {
+    montar({ wahaConfigured: false });
+
+    escolherQr();
+
+    await waitFor(() => expect(screen.getByText(/ainda não subiu/i)).toBeTruthy());
+    expect(avisoNaTela()).toBeNull();
+    expect(chamadasDeSessao()).toEqual([]);
   });
 
   it("escolher conta oficial leva ao canal oficial, e NÃO cria sessão de código", async () => {

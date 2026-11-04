@@ -214,6 +214,11 @@ test.describe("J1 — onboarding do dono numa instalação fresca", () => {
     // conta oficial entrava pelo caminho errado sem ter sido perguntado.
     await page.getByTestId("forma-qr").locator("input").click();
 
+    // Este caminho não é o oficial da Meta: o risco é aceito antes de a sessão subir.
+    await expect(page.locator('img[src*="/whatsapp/qr"]')).toHaveCount(0);
+    await page.getByRole("checkbox", { name: /Li o aviso acima/ }).check();
+    await page.getByRole("button", { name: "Continuar" }).click();
+
     // sem banner de "WAHA não está configurado"
     // O nome do transporte saiu da tela: o aviso agora fala do "WhatsApp desta
     // instalação", que é como o dono chama a coisa.
