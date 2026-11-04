@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   ator: "aaaaaaaa-0000-4000-8000-000000000001",
   escrita: vi.fn(),
   email: vi.fn(),
+  convite: vi.fn(),
   ligada: true,
   provedor: "stripe" as string | null,
   ad: { lerSituacao: vi.fn(), garantirCliente: vi.fn(), iniciarAssinatura: vi.fn() },
@@ -27,7 +28,7 @@ vi.mock("@/lib/instalacao/modulos", async (importOriginal) => ({
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => h.banco.cliente }));
 vi.mock("@/lib/audit", () => ({ audit: h.audit }));
-vi.mock("@/lib/cobranca/emails", () => ({ emailDoAdminDaEmpresa: h.email }));
+vi.mock("@/lib/cobranca/emails", () => ({ emailDoAdminDaEmpresa: h.email, emailDoConviteDeAdminPendente: h.convite }));
 vi.mock("@/lib/cobranca/configuracao", () => ({ provedorDaInstalacao: async () => h.provedor }));
 vi.mock("@/lib/cobranca/provedores", () => ({ adaptador: () => h.ad, modoDoProvedor: async () => "teste" }));
 vi.mock("@/lib/ai/dispatcher/rate-limit", () => ({ checkRateLimit: async () => ({ allowed: h.taxaOk }) }));
@@ -80,6 +81,7 @@ beforeEach(() => {
     platformAdmin: { user_id: h.ator, scope: "full", mfa_required: false },
   });
   h.email.mockResolvedValue("ana@loja.com");
+  h.convite.mockResolvedValue(null);
   h.ad.garantirCliente.mockResolvedValue("cus_novo");
   h.ad.iniciarAssinatura.mockResolvedValue({ url: "https://checkout.stripe.com/c/pay/cs_1", expiraEm: new Date("2026-10-11T12:00:00Z"), assinaturaRef: null });
 });
@@ -196,6 +198,29 @@ describe("POST /admin/tenants/[id]/assinatura/checkout — Gerar link de pagamen
     expect((await gerar()).status).toBe(200);
     expect(h.ad.garantirCliente).not.toHaveBeenCalled();
     expect(h.ad.iniciarAssinatura).toHaveBeenCalledWith(expect.objectContaining({ clienteRef: "cus_1" }));
+  });
+
+  it("⭐ empresa sem admin, com convite em aberto: o link sai com o e-mail do convidado (o convite não se aceita com a empresa suspensa)", async () => {
+    h.email.mockResolvedValue(null);
+    h.convite.mockResolvedValue("cliente@loja.com");
+    const res = await gerar();
+    expect(res.status).toBe(200);
+    expect(h.ad.garantirCliente).toHaveBeenCalledWith(expect.objectContaining({ id: TENANT, email: "cliente@loja.com" }));
+  });
+
+  it("⭐ com admin na empresa, o e-mail dele vence o de um convite em aberto", async () => {
+    h.convite.mockResolvedValue("outro@loja.com");
+    expect((await gerar()).status).toBe(200);
+    expect(h.ad.garantirCliente).toHaveBeenCalledWith(expect.objectContaining({ email: "ana@loja.com" }));
+  });
+
+  it("leitura do convite falhou: 500, sem tocar a assinatura", async () => {
+    h.email.mockResolvedValue(null);
+    h.convite.mockRejectedValue(new Error("convites ilegíveis (57014)"));
+    const res = await gerar();
+    expect(res.status).toBe(500);
+    expect((await erro(res)).code).toBe("internal_error");
+    expect(daAssinatura()).toEqual([]);
   });
 
   it("leitura dos admins falhou: 500, sem tocar a assinatura", async () => {

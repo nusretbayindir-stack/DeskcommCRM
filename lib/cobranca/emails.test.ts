@@ -11,7 +11,7 @@ vi.mock("@/lib/branding/saida", async (importOriginal) => ({
 vi.mock("@/lib/env", () => ({ env: { NEXT_PUBLIC_APP_URL: "https://crm.exemplo.com/" } }));
 vi.mock("@/lib/logger", () => ({ logger: { warn: h.aviso, error: vi.fn(), info: vi.fn() } }));
 
-import { avisarTrocaDeChave, emailDoAdminDaEmpresa, enviarAvisoAosAdmins } from "./emails";
+import { avisarTrocaDeChave, emailDoAdminDaEmpresa, emailDoConviteDeAdminPendente, enviarAvisoAosAdmins } from "./emails";
 
 const ORG = "aaaaaaaa-0000-4000-8000-000000000001";
 const TEXTO = { titulo: "Não identificamos o pagamento de 05/10", corpo: "Pague pelo link.", severidade: "warn" as const };
@@ -154,5 +154,62 @@ describe("emailDoAdminDaEmpresa (o e-mail do cliente quando o dono gera o link)"
   it("lança se a leitura dos donos falhar: sem ela, o e-mail do dono poderia ir para o provedor", async () => {
     const { admin } = montar((c) => (c.tabela === "platform_admins" ? { error: { code: "57014", message: "timeout" } } : { data: [{ user_id: "ana" }] }));
     await expect(emailDoAdminDaEmpresa(admin, ORG)).rejects.toThrow("donos ilegíveis (57014)");
+  });
+});
+
+describe("emailDoConviteDeAdminPendente (empresa com plano de 0 dias: suspensa, ninguém consegue aceitar o convite)", () => {
+  /** Responde `platform_admins` com `donos` e `team_invites` com `convites`. */
+  const comConvites = (convites: string[], donos: string[] = []) =>
+    montar((c) => ({
+      data: c.tabela === "platform_admins" ? donos.map((user_id) => ({ user_id })) : convites.map((email) => ({ email })),
+    }));
+
+  it("⭐ devolve o convite de admin em aberto desta org, o mais novo primeiro, mesmo vencido", async () => {
+    const { admin, banco } = comConvites(["cliente@loja.com"]);
+    expect(await emailDoConviteDeAdminPendente(admin, ORG)).toBe("cliente@loja.com");
+    const leitura = banco.cadeias.find((c) => c.tabela === "team_invites")!;
+    // Sem filtro de `expires_at`: o convite vencido ainda diz quem é o cliente.
+    expect(filtros(leitura)).toEqual([
+      ["eq", "organization_id", ORG],
+      ["eq", "role", "admin"],
+      ["is", "accepted_at", null],
+      ["is", "revoked_at", null],
+    ]);
+    expect(argumentos(leitura, "order")).toEqual(["created_at", { ascending: false }]);
+  });
+
+  it("⭐ convite para um dono da instalação nunca vai para o provedor, com qualquer caixa no e-mail", async () => {
+    const { admin } = comConvites(["dono@exemplo.com"], ["Dono"]);
+    expect(await emailDoConviteDeAdminPendente(admin, ORG)).toBeNull();
+  });
+
+  it("pula o convite do dono e devolve o do cliente", async () => {
+    const { admin } = comConvites(["dono@exemplo.com", "cliente@loja.com"], ["dono"]);
+    expect(await emailDoConviteDeAdminPendente(admin, ORG)).toBe("cliente@loja.com");
+  });
+
+  it("null sem convite em aberto (409 empresa_sem_email)", async () => {
+    const { admin } = comConvites([]);
+    expect(await emailDoConviteDeAdminPendente(admin, ORG)).toBeNull();
+  });
+
+  it("lança se a leitura dos convites falhar (nunca um null que vira 'sem admin')", async () => {
+    const { admin } = montar((c) => (c.tabela === "team_invites" ? { error: { code: "57014", message: "timeout" } } : { data: [] }));
+    await expect(emailDoConviteDeAdminPendente(admin, ORG)).rejects.toThrow("convites ilegíveis (57014)");
+  });
+
+  it("⭐ lança se a leitura dos donos falhar: sem ela, o e-mail do dono poderia ir para o provedor", async () => {
+    const { admin } = montar((c) =>
+      c.tabela === "platform_admins" ? { error: { code: "57014", message: "timeout" } } : { data: [{ email: "dono@exemplo.com" }] },
+    );
+    await expect(emailDoConviteDeAdminPendente(admin, ORG)).rejects.toThrow("donos ilegíveis (57014)");
+  });
+
+  it("⭐ o Auth falhou ao ler um dono: lança, nunca arrisca gravar o e-mail dele no provedor", async () => {
+    const { admin } = montar(
+      (c) => ({ data: c.tabela === "platform_admins" ? [{ user_id: "dono" }] : [{ email: "dono@exemplo.com" }] }),
+      { authFalhaPara: ["dono"] },
+    );
+    await expect(emailDoConviteDeAdminPendente(admin, ORG)).rejects.toThrow("e-mail de admin ilegível (503)");
   });
 });

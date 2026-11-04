@@ -4,6 +4,8 @@
  * manda à empresa: as mesmas três fases do "Assinar" dela
  * (`lib/cobranca/checkout.ts`), com a org do PATH e o e-mail do admin mais
  * antigo da empresa — nunca o do dono, que ficaria gravado no cliente do provedor.
+ * Sem admin ainda, vale o e-mail do convite de admin em aberto: empresa com plano
+ * de 0 dias nasce suspensa e só aceita o convite depois de pagar.
  * Fatura já aberta no provedor não é recusa aqui: o dono quer o link, e é ele.
  */
 import { randomUUID } from "node:crypto";
@@ -19,7 +21,7 @@ import {
   type PlatformAdminContext,
 } from "@/lib/auth/requirePlatformAdmin";
 import { gerarLinkDePagamento } from "@/lib/cobranca/checkout";
-import { emailDoAdminDaEmpresa } from "@/lib/cobranca/emails";
+import { emailDoAdminDaEmpresa, emailDoConviteDeAdminPendente } from "@/lib/cobranca/emails";
 import { urlDoPainelDaEmpresa } from "@/lib/cobranca/url";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { moduloLigado } from "@/lib/instalacao/modulos";
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   let email: string | null;
   try {
-    email = await emailDoAdminDaEmpresa(admin, tenantId);
+    email = (await emailDoAdminDaEmpresa(admin, tenantId)) ?? (await emailDoConviteDeAdminPendente(admin, tenantId));
   } catch (e) {
     // A mensagem leva só o código do PostgREST/Auth, nunca o endereço (`lib/cobranca/emails.ts`).
     logger.error("cobranca: admins da empresa ilegíveis no link do dono", {
