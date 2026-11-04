@@ -8,7 +8,7 @@ import { useT } from "@/hooks/i18n/useT";
 /**
  * O risco, antes do controle: mesma ordem de `PainelDeChamadaDeVoz`, e sem jargão,
  * porque quem lê é dono de negócio. O aceite vive em memória no chamador; a prova é o
- * audit que `connectWahaChannel` grava (`lib/channels/risco-do-qr.ts`). A cláusula
+ * audit que o servidor grava ao conectar (`lib/channels/risco-do-qr.ts`). A cláusula
  * citada é a do contrato de serviço: mudou lá, muda aqui e sobe `VERSAO_DO_AVISO_QR`.
  */
 export function AvisoDeRiscoDoQr({ onContinuar }: { onContinuar: () => void }) {
