@@ -12,6 +12,7 @@ import Link from "next/link";
 
 import { verifyInviteToken } from "@/lib/auth/invite-token";
 import { authRateLimited, AUTH_LIMITS } from "@/lib/auth/rate-limit";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AcceptInviteForm } from "./AcceptInviteForm";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
@@ -67,6 +68,21 @@ export default async function AcceptInvitePage({ params }: PageProps) {
         <p className="mt-2 text-sm text-muted-foreground">
           {t(
             "Este link não é válido ou já passou da janela de 24h. Peça um novo convite ao admin do tenant.",
+          )}
+        </p>
+      </Shell>
+    );
+  }
+
+  // Empresa suspensa não aceita convite (`fn_accept_team_invite`). Dizer isso antes
+  // poupa a pessoa de criar conta para ouvir que o convite "pode ter vencido".
+  if (await empresaSuspensa(payload.organization_id)) {
+    return (
+      <Shell idioma={idioma}>
+        <h1 className="text-xl font-semibold">{t("Esta empresa ainda não está ativa")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t(
+            "Este convite é válido, mas a empresa ainda não está ativa, por isso não dá para entrar agora. Se o pagamento estiver pendente, conclua-o e abra este link de novo. O link vale por 24 horas; depois disso, peça um novo a quem convidou você.",
           )}
         </p>
       </Shell>
@@ -140,6 +156,23 @@ export default async function AcceptInvitePage({ params }: PageProps) {
       <AcceptInviteForm token={token} label={t("Aceitar convite")} pendingLabel={t("Confirmando…")} failureLabel={t("Não foi possível aceitar este convite. Ele pode ter vencido ou seu acesso foi revogado. Peça um novo link ao administrador.")} planLimitLabel={t("A empresa que te convidou atingiu o limite de pessoas do plano. Avise quem te convidou.")} />
     </Shell>
   );
+}
+
+/**
+ * O id vem do token assinado, nunca do pedido, e o status é o único campo lido. Leitura
+ * que falha segue o caminho de sempre: o aceite continua recusando, no banco.
+ */
+async function empresaSuspensa(organizationId: string): Promise<boolean> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("organizations")
+      .select("status")
+      .eq("id", organizationId)
+      .maybeSingle();
+    return !error && (data as { status?: string } | null)?.status === "suspended";
+  } catch {
+    return false;
+  }
 }
 
 // Toda ramificação passa por aqui, então é aqui que o idioma chega ao

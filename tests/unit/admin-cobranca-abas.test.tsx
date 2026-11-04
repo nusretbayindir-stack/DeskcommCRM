@@ -89,8 +89,18 @@ describe("Régua", () => {
 });
 
 describe("Visão geral", () => {
+  it("⭐ os horários saem no fuso de quem olha, não no do servidor", () => {
+    const dados = { ...VAZIA, ultimoAvisoEm: "2026-11-03T21:37:00.000Z" };
+    const { container } = render(
+      <VisaoGeral dados={dados} checklist={montarChecklist(dados)} idioma="pt-BR" agora={new Date("2026-11-03T22:00:00Z")} fuso="Asia/Tokyo" />,
+    );
+    // Tóquio de propósito: não coincide com o fuso de nenhuma máquina que roda isto.
+    expect(container.textContent).toContain("06:37");
+    expect(container.textContent).not.toContain("21:37");
+  });
+
   it("⭐ cada passo do checklist diz se está feito, e o próximo leva a quem faz", () => {
-    const { container } = render(<VisaoGeral dados={VAZIA} checklist={montarChecklist(VAZIA)} idioma="pt-BR" agora={new Date("2026-10-10T12:00:00Z")} />);
+    const { container } = render(<VisaoGeral dados={VAZIA} checklist={montarChecklist(VAZIA)} idioma="pt-BR" agora={new Date("2026-10-10T12:00:00Z")} fuso="Europe/Brussels" />);
     expect(container.querySelector('[data-passo="chave"]')?.getAttribute("data-feito")).toBe("false");
     expect(screen.getByRole("link", { name: "Fazer agora" }).getAttribute("href")).toBe("/admin/cobranca?aba=conexao");
     expect(screen.queryByText(/duas assinaturas ativas/)).toBeNull();
@@ -98,19 +108,19 @@ describe("Visão geral", () => {
 
   it("problemas do dono aparecem só quando existem", () => {
     const comProblema = { ...VAZIA, problemas: { ...VAZIA.problemas, cobrancaDupla: 2 } };
-    render(<VisaoGeral dados={comProblema} checklist={montarChecklist(comProblema)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={comProblema} checklist={montarChecklist(comProblema)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/2 clientes com duas assinaturas ativas/)).toBeTruthy();
   });
 
   it("⭐ avisos recusados por assinatura viram problema com o que fazer (segredo trocado não fica em silêncio)", () => {
     const recusados = { ...VAZIA, problemas: { ...VAZIA.problemas, avisosRecusados: 4 } };
-    render(<VisaoGeral dados={recusados} checklist={montarChecklist(recusados)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={recusados} checklist={montarChecklist(recusados)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/4 avisos de pagamento recusados/)).toBeTruthy();
   });
 
   it("um problema só fala no singular, sem '(s)'", () => {
     const um = { ...VAZIA, problemas: { ...VAZIA.problemas, cobrancaDupla: 1 } };
-    render(<VisaoGeral dados={um} checklist={montarChecklist(um)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={um} checklist={montarChecklist(um)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/^1 cliente com duas assinaturas ativas/)).toBeTruthy();
   });
 
@@ -179,20 +189,20 @@ describe("Visão geral com o Asaas (PR 3b)", () => {
 
   it("⭐ avisos recusados do Asaas dizem que o token do aviso não é o do sistema e como trocá-lo, sem a palavra 'assinatura'", () => {
     const d = { ...ASAAS, problemas: { ...VAZIA.problemas, avisosRecusados: 3 } };
-    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/^3 avisos do Asaas recusados nas últimas 24 h/).textContent).toContain("troque nele o token pelo novo");
     expect(screen.queryByText(/a assinatura não confere/)).toBeNull();
   });
 
   it("avisos sem empresa, no Asaas, lembram que a conta pode ter outras vendas (o aviso assina todos os pagamentos dela)", () => {
     const d = { ...ASAAS, problemas: { ...VAZIA.problemas, avisosComErro: 1 } };
-    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/^1 aviso do provedor sem empresa correspondente/).textContent).toContain("outras vendas");
   });
 
   it("controle: na Stripe, as frases de sempre", () => {
     const d = { ...VAZIA, provedor: "stripe" as const, problemas: { ...VAZIA.problemas, avisosRecusados: 1, avisosComErro: 1 } };
-    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} />);
+    render(<VisaoGeral dados={d} checklist={montarChecklist(d)} idioma="pt-BR" agora={new Date()} fuso="Europe/Brussels" />);
     expect(screen.getByText(/a assinatura não confere/)).toBeTruthy();
     expect(screen.queryByText(/outras vendas/)).toBeNull();
   });

@@ -53,6 +53,27 @@ describe("enviarAvisoAosAdmins", () => {
     expect(h.enviar.mock.calls[0]?.[0].subject).toBe("Não identificamos o pagamento de 05/10 — Revenda");
   });
 
+  it("⭐ o rodapé diz qual é a empresa: quem administra várias sabe de qual se trata", async () => {
+    const { admin } = montar(() => ({ data: [{ user_id: "ana" }] }));
+    await enviarAvisoAosAdmins(admin, { id: ORG, idioma: "tr", nome: "Ayşe & Kızı" }, TEXTO, null);
+    const email = h.enviar.mock.calls[0]?.[0];
+    expect(email.text).toContain("Bu uyarıyı Ayşe & Kızı şirketini yönettiğiniz için alıyorsunuz.");
+    // O nome é digitado por quem cria a empresa: no HTML ele sai escapado.
+    expect(email.html).toContain("Ayşe &amp; Kızı");
+  });
+
+  it("nome com `$` não vira padrão de substituição", async () => {
+    const { admin } = montar(() => ({ data: [{ user_id: "ana" }] }));
+    await enviarAvisoAosAdmins(admin, { id: ORG, idioma: "pt-BR", nome: "Loja $& Cia" }, TEXTO, null);
+    expect(h.enviar.mock.calls[0]?.[0].text).toContain("administra a empresa Loja $& Cia.");
+  });
+
+  it("sem o nome, o rodapé é o de sempre", async () => {
+    const { admin } = montar(() => ({ data: [{ user_id: "ana" }] }));
+    await enviarAvisoAosAdmins(admin, { id: ORG, idioma: "pt-BR" }, TEXTO, null);
+    expect(h.enviar.mock.calls[0]?.[0].text).toContain("Você recebe este aviso porque administra esta empresa.");
+  });
+
   it("sem link de pagamento, o botão abre Plano e cobrança", async () => {
     const { admin } = montar(() => ({ data: [{ user_id: "ana" }] }));
     await enviarAvisoAosAdmins(admin, { id: ORG, idioma: "pt-BR" }, TEXTO, null);
