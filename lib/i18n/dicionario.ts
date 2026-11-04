@@ -7482,6 +7482,9 @@ export const DICIONARIO: Traducoes = {
   "O endereço que o provedor usa para entregar as mensagens. O segredo não é mostrado de novo — para obter um novo, reconecte.": {
     es: "La dirección que el proveedor usa para entregar los mensajes. El secreto no se vuelve a mostrar. Para obtener uno nuevo, reconecta.",
   },
+  "Para conectar pelo celular, leia o aviso e aceite o risco.": {
+    es: "Para conectar por el celular, lee el aviso y acepta el riesgo.",
+  },
   "Conectar novo WhatsApp": { es: "Conectar un WhatsApp nuevo" },
   "WhatsApp conectado!": { es: "¡WhatsApp conectado!" },
   "Não foi possível carregar seus números.": { es: "No se pudieron cargar tus números." },

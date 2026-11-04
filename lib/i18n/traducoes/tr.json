@@ -8153,6 +8153,7 @@
   "Para atendimento de clientes em volume, prefira uma chave de API da própria organização. Se configurada, ela pode servir como reserva quando a assinatura atingir limites ou falhar.": "Yüksek hacimli müşteri görüşmeleri için şirketin kendi API anahtarını kullanmak daha iyidir. Yapılandırılmışsa abonelik sınırlara ulaştığında veya başarısız olduğunda yedek olarak kullanılabilir.",
   "Para avisar ou parar no limite, ele precisa ser de pelo menos": "Sınırda uyarmak veya durdurmak için en az şu kadar olmalı:",
   "Para colocar o sistema de volta no ar na versão": "Sistemi şu sürümle yeniden çevrimiçi yapmak için",
+  "Para conectar pelo celular, leia o aviso e aceite o risco.": "Telefonla bağlanmak için uyarıyı okuyup riski kabul edin.",
   "Para conferir pelo servidor, quem tem acesso pode rodar:": "Sunucudan kontrol etmek için erişimi olan kişi şunu çalıştırabilir:",
   "Para confirmar, digite": "Onaylamak için şunu yazın:",
   "Para confirmar, digite o identificador do tenant": "Onaylamak için şirket tanımlayıcısını yazın",

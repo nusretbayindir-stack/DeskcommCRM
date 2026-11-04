@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWahaClient } from "@/lib/waha/client";
 import { connectWahaChannel, ChannelConnectionError } from "@/lib/channels/connect-waha";
+import { lerRiscoDoQr } from "@/lib/channels/risco-do-qr";
 import { loadOnboardingChannel } from "@/lib/channels/onboarding-session";
 import { traduzirLimiteDoPlano } from "@/lib/cobranca/limites";
 
@@ -37,17 +38,21 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response;
   if (await mfaEmDivida()) return fail("mfa_required", "Confirme a verificação em duas etapas.", 403, { requestId });
   const waha = getWahaClient(); if (!waha) return fail("waha_not_configured", "O serviço de conexão está indisponível. Tente novamente.", 503, { requestId });
+  // Corpo ausente ou quebrado vale "sem aceite", e quem recusa é `connectWahaChannel`.
+  const corpo: unknown = await req.json().catch(() => null);
   try {
     const result = await connectWahaChannel(await createClient(), createAdminClient(), waha, {
       organizationId: auth.org.orgId, idempotencyKey: req.headers.get("Idempotency-Key") ?? "",
       userId: auth.user.id, requestId, onboarding: true, restart: new URL(req.url).searchParams.get("restart") === "1",
+      riscoDoQr: lerRiscoDoQr(corpo, "onboarding"),
     });
     return ok({ status: result.channel.status, session: result.channel.waha_session_name, channel_session_id: result.channel.id }, { requestId });
   } catch (error) {
     const limite = traduzirLimiteDoPlano(error, auth.user.idioma);
     if (limite) return fail(limite.code, limite.message, 409, { requestId, details: limite.details });
     if (error instanceof ChannelConnectionError) return fail(error.code,
-      error.code === "connection_in_progress" ? "A conexão ainda está sendo preparada. Aguarde e tente novamente."
+      error.code === "qr_risco_nao_aceito" ? "Para conectar pelo celular, leia o aviso e aceite o risco."
+        : error.code === "connection_in_progress" ? "A conexão ainda está sendo preparada. Aguarde e tente novamente."
         : error.code === "connection_session_name_too_long" ? "O identificador desta conexão passou do limite que o WhatsApp aceita. Nada foi criado no WhatsApp — atualize o sistema e tente novamente."
         : "Não foi possível concluir a conexão. Tente novamente ou repare o número em Conexões.",
       error.status, { requestId, details: error.technical });
