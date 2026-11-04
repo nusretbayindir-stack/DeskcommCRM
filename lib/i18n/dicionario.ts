@@ -9173,6 +9173,39 @@ export const DICIONARIO: Traducoes = {
   "Termos de Uso": { es: "Términos de Uso" },
   "e a": { es: "y la" },
   "Política de Privacidade": { es: "Política de Privacidad" },
+  "Este canal está em modo de teste — a IA não responde ninguém": {
+    es: "Este canal está en modo de prueba: la IA no responde a nadie",
+  },
+  "Este canal está em modo de teste e não tem nenhum número autorizado, então a IA não responde a ninguém nele — as mensagens chegam no Inbox e ficam sem resposta automática. Em Conexões, autorize os números de teste ou abra o canal ao público.": {
+    es: "Este canal está en modo de prueba y no tiene ningún número autorizado, así que la IA no responde a nadie en él: los mensajes llegan a la Bandeja de entrada y se quedan sin respuesta automática. En Conexiones, autoriza los números de prueba o abre el canal al público.",
+  },
+  "Assim há {dias} dia(s).": {
+    es: "Así desde hace {dias} día(s).",
+  },
+  "Resolvido pelo sistema: {motivo}.": {
+    es: "Resuelto por el sistema: {motivo}.",
+  },
+  "o canal ganhou número autorizado": {
+    es: "el canal recibió un número autorizado",
+  },
+  "o canal saiu do modo de teste": {
+    es: "el canal salió del modo de prueba",
+  },
+  "o canal foi arquivado": {
+    es: "el canal se archivó",
+  },
+  "Uma informação de cliente venceu sem alguém conferir": {
+    es: "Un dato de cliente venció sin que nadie lo revisara",
+  },
+  "{n} informações de clientes venceram sem alguém conferir": {
+    es: "{n} datos de clientes vencieron sin que nadie los revisara",
+  },
+  "O assistente ouviu um dado na conversa com um cliente e ninguém confirmou a tempo. Ele saiu da ficha para não parecer que já estava salvo. Se a informação ainda importa, peça de novo ou preencha à mão.": {
+    es: "El asistente oyó un dato en la conversación con un cliente y nadie lo confirmó a tiempo. Salió de la ficha para que no pareciera que ya estaba guardado. Si la información aún importa, pídela de nuevo o complétala a mano.",
+  },
+  "O assistente ouviu alguns dados na conversa com clientes e ninguém confirmou a tempo. Eles saíram da ficha para não parecer que já estava salvo. Se a informação ainda importa, peça de novo ou preencha à mão.": {
+    es: "El asistente oyó algunos datos en la conversación con clientes y nadie los confirmó a tiempo. Salieron de la ficha para que no pareciera que ya estaban guardados. Si la información aún importa, pídela de nuevo o complétala a mano.",
+  },
   "Continuar": { es: "Continuar" },
   "Aceite os termos para continuar.": { es: "Acepta los términos para continuar." },
 
