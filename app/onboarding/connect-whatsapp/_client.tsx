@@ -5,11 +5,13 @@ import { randomId } from "@/lib/random-id";
 import { toast } from "sonner";
 import { useT } from "@/hooks/i18n/useT";
 
+import { AvisoDeRiscoDoQr } from "@/components/connections/AvisoDeRiscoDoQr";
 import { PairingOptions } from "@/components/connections/PairingOptions";
 import { Button } from "@/components/ui/button";
 import { skipWhatsapp, markWhatsappConfigured } from "@/app/actions/onboarding/skipWhatsapp";
 import { CanalOficialClient } from "@/components/connections/CanalOficialClient";
 import { CanalParceiroClient } from "@/components/connections/CanalParceiroClient";
+import { corpoDoRiscoQr } from "@/lib/channels/risco-do-qr";
 
 interface Props {
   wahaConfigured: boolean;
@@ -230,6 +232,10 @@ export function ConnectWhatsappClient({
   const t = useT();
   const [pending, startTransition] = useTransition();
   const [forma, setForma] = useState<Forma | null>(null);
+  // Vive em memória de propósito: voltar para a pergunta ou recarregar a tela pede o
+  // aceite de novo. A chave de `createKey` é a mesma, então o servidor responde como
+  // replay e o audit continua com um aceite só.
+  const [riscoAceito, setRiscoAceito] = useState(false);
   const createKey = useRef<string | null>(null);
   const restartKey = useRef<string | null>(null);
   const [info, setInfo] = useState<SessionInfo>({ status: "INIT", session: sessionName });
@@ -246,14 +252,21 @@ export function ConnectWhatsappClient({
   // nascia por código de barras só porque alguém pisou na rota, sem nunca ter
   // sido perguntado. Quem tem conta oficial já entrava pelo caminho errado
   // antes de clicar em coisa alguma, e descobria depois, em outra tela.
+  //
+  // E só depois do aceite do risco: escolher o celular mostra o aviso, e nada é
+  // criado enquanto a pessoa não aceitar.
   useEffect(() => {
-    if (forma !== "qr") return;
+    if (forma !== "qr" || !riscoAceito) return;
     if (!wahaConfigured) return;
     let cancelled = false;
     (async () => {
       setBusy(true);
       try {
-        const res = await fetch("/api/v1/onboarding/whatsapp/session", { method: "POST", headers: { "Idempotency-Key": createKey.current ??= randomId() } });
+        const res = await fetch("/api/v1/onboarding/whatsapp/session", {
+          method: "POST",
+          headers: { "Idempotency-Key": createKey.current ??= randomId(), "Content-Type": "application/json" },
+          body: JSON.stringify(corpoDoRiscoQr()),
+        });
         const json = (await res.json()) as { data?: SessionInfo; error?: { message?: string } };
         if (cancelled) return;
         if (json.data) {
@@ -279,7 +292,7 @@ export function ConnectWhatsappClient({
     return () => {
       cancelled = true;
     };
-  }, [forma, wahaConfigured, sessionName, t]);
+  }, [forma, riscoAceito, wahaConfigured, sessionName, t]);
 
   // 2) Poll status every 3 seconds until WORKING/FAILED.
   //
@@ -287,7 +300,7 @@ export function ConnectWhatsappClient({
   // batendo de 3 em 3 segundos numa sessão que nunca subiu — e a tela do lado
   // trocaria de estado sozinha por trás do formulário que a pessoa preenche.
   useEffect(() => {
-    if (forma !== "qr") return;
+    if (forma !== "qr" || !riscoAceito) return;
     if (!wahaConfigured) return;
     if (status === "WORKING" || status === "FAILED") return;
     const id = setInterval(async () => {
@@ -317,7 +330,7 @@ export function ConnectWhatsappClient({
       }
     }, 3000);
     return () => clearInterval(id);
-  }, [forma, wahaConfigured, status, sessionName, t]);
+  }, [forma, riscoAceito, wahaConfigured, status, sessionName, t]);
 
   // 3) When status → WORKING, auto-advance.
   useEffect(() => {
@@ -338,7 +351,11 @@ export function ConnectWhatsappClient({
   async function restartSession() {
     setBusy(true);
     try {
-      const res = await fetch("/api/v1/onboarding/whatsapp/session?restart=1", { method: "POST", headers: { "Idempotency-Key": restartKey.current ??= randomId() } });
+      const res = await fetch("/api/v1/onboarding/whatsapp/session?restart=1", {
+        method: "POST",
+        headers: { "Idempotency-Key": restartKey.current ??= randomId(), "Content-Type": "application/json" },
+        body: JSON.stringify(corpoDoRiscoQr()),
+      });
       const json = (await res.json()) as { data?: SessionInfo };
       if (json.data) { setInfo(json.data); restartKey.current = null; }
       else toast.error(t("Não consegui gerar outro código. Tente de novo em alguns segundos."));
@@ -350,6 +367,11 @@ export function ConnectWhatsappClient({
   }
 
   const showQr = wahaConfigured && status === "SCAN_QR_CODE";
+
+  function voltarParaEscolha() {
+    setForma(null);
+    setRiscoAceito(false);
+  }
 
   // A PERGUNTA. Enquanto ninguém respondeu, nada é criado e nada é pedido —
   // é o único estado em que esta tela não tem efeito colateral nenhum.
@@ -397,7 +419,7 @@ export function ConnectWhatsappClient({
   if (forma === "oficial" || forma === "parceiro") {
     return (
       <div className="space-y-4 rounded-lg border bg-background p-6">
-        <VoltarParaEscolha onVoltar={() => setForma(null)} />
+        <VoltarParaEscolha onVoltar={voltarParaEscolha} />
 
         {forma === "oficial" && !oficialPodeReceber && (
           <div className="rounded-md border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
@@ -422,9 +444,20 @@ export function ConnectWhatsappClient({
     );
   }
 
+  // Sem WhatsApp nesta instalação não há o que aceitar: segue a explicação de sempre.
+  if (wahaConfigured && !riscoAceito) {
+    return (
+      <div className="space-y-4 rounded-lg border bg-background p-6">
+        <VoltarParaEscolha onVoltar={voltarParaEscolha} />
+        <AvisoDeRiscoDoQr onContinuar={() => setRiscoAceito(true)} />
+        <Saidas status={status} sessionName={info.session ?? ""} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 rounded-lg border bg-background p-6">
-      <VoltarParaEscolha onVoltar={() => setForma(null)} />
+      <VoltarParaEscolha onVoltar={voltarParaEscolha} />
       {!wahaConfigured && (
         <div className="rounded-md border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
           <p className="font-medium">{t("O WhatsApp desta instalação ainda não subiu.")}</p>
