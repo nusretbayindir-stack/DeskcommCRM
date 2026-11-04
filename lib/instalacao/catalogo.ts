@@ -159,6 +159,15 @@ export const CATALOGO_DA_INSTALACAO: readonly ChaveDaInstalacao[] = [
     natureza: "texto",
     controle: "edita",
   },
+  {
+    chave: "PAIS_DA_INSTALACAO",
+    rotulo: "País das páginas legais",
+    explicacao:
+      "O país cuja lei a política de privacidade usa para quem a abre sem entrar no sistema. Escreva o código de duas letras, como BE para a Bélgica. Sem valor, vale o Brasil.",
+    grupo: "seguranca",
+    natureza: "texto",
+    controle: "edita",
+  },
 
   // ── COBRANÇA DOS SEUS CLIENTES (spec cobrança do revendedor §10) ─────────
   // Moram em /admin/cobranca. A Conexão é a ÚNICA escritora do provedor e das

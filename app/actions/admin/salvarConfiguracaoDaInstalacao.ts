@@ -7,6 +7,7 @@ import { escritaDeAdminOuRecusa } from "@/lib/auth/escritaDeAdminOuRecusa";
 import { MENSAGEM_DA_RECUSA_DE_ESCRITA } from "@/lib/auth/recusa-de-escrita-de-admin";
 import { acharChave } from "@/lib/instalacao/catalogo";
 import { estadoParaTela, gravarPelaTela, voltarAoAmbiente, type EstadoParaTela } from "@/lib/instalacao/config";
+import { paisesOferecidos } from "@/lib/legal/perfil-do-pais";
 
 /**
  * `ok: true` carrega o ESTADO NOVO da chave, relido depois da escrita.
@@ -72,9 +73,18 @@ export async function salvarConfiguracaoDaInstalacao(
     return { ok: false, erro: "Esta configuração não pode ser alterada por aqui." };
   }
 
-  const limpo = valor.trim();
+  let limpo = valor.trim();
   if (limpo.length === 0) {
     return { ok: false, erro: "Escreva um valor, ou use “Voltar ao padrão” para limpar." };
+  }
+
+  // Código errado não daria erro em lugar nenhum: `perfilDoPais` degrada para o
+  // Brasil, e a tela diria "já está valendo" com a lei errada no ar.
+  if (chave === "PAIS_DA_INSTALACAO") {
+    limpo = limpo.toUpperCase();
+    if (!paisesOferecidos().some((pais) => pais.codigo === limpo)) {
+      return { ok: false, erro: "Escreva o código de um país que o sistema oferece, como BE para a Bélgica." };
+    }
   }
 
   const r = await gravarPelaTela(chave, limpo, {

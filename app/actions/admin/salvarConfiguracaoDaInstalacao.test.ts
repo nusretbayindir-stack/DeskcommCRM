@@ -60,3 +60,29 @@ describe("as chaves da cobrança só se escrevem pela tela de Cobrança", () => 
     expect(deps.gravar).toHaveBeenCalledWith("SUPPORT_EMAIL", "ajuda@exemplo.com", expect.objectContaining({ ehSegredo: false }));
   });
 });
+
+describe("o país da instalação só aceita um país que o sistema oferece", () => {
+  // Um código errado não daria erro em lugar nenhum: `perfilDoPais` degrada para o
+  // Brasil, e a tela diria "já está valendo" com a lei errada no ar.
+  it("grava em maiúsculas o código digitado", async () => {
+    const r = await salvarConfiguracaoDaInstalacao("PAIS_DA_INSTALACAO", " be ");
+    expect(r.ok).toBe(true);
+    expect(deps.gravar).toHaveBeenCalledWith("PAIS_DA_INSTALACAO", "BE", expect.objectContaining({ ehSegredo: false }));
+  });
+
+  it.each(["XX", "Bélgica", "BEL"])("recusa %s sem gravar nem auditar", async (valor) => {
+    const r = await salvarConfiguracaoDaInstalacao("PAIS_DA_INSTALACAO", valor);
+    expect(r).toEqual({
+      ok: false,
+      erro: "Escreva o código de um país que o sistema oferece, como BE para a Bélgica.",
+    });
+    expect(deps.gravar).not.toHaveBeenCalled();
+    expect(deps.audit).not.toHaveBeenCalled();
+  });
+
+  it("controle: as outras chaves não passam pela régua do país nem mudam de caixa", async () => {
+    const r = await salvarConfiguracaoDaInstalacao("SUPPORT_EMAIL", "Ajuda@Exemplo.com");
+    expect(r.ok).toBe(true);
+    expect(deps.gravar).toHaveBeenCalledWith("SUPPORT_EMAIL", "Ajuda@Exemplo.com", expect.objectContaining({ ehSegredo: false }));
+  });
+});
