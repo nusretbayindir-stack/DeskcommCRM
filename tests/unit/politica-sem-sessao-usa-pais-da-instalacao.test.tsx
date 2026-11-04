@@ -21,6 +21,11 @@ vi.mock("next/navigation", () => ({
     throw new Error(`NEXT_REDIRECT:${destino}`);
   }),
 }));
+// Navegador em português: holandês e francês têm teste próprio
+// (`politica-belga-em-holandes-e-frances.test.tsx`).
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "accept-language": "pt-BR" }),
+}));
 vi.mock("@/lib/i18n/idiomaAnonimo", () => ({ idiomaDoVisitante: async () => "pt-BR" }));
 vi.mock("@/lib/branding/saida", () => ({ marcaDaSaida: async () => ({ nome: "Marca da Revenda" }) }));
 vi.mock("@/lib/instalacao/config", () => ({
