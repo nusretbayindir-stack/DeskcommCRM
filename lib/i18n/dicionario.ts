@@ -10327,6 +10327,45 @@ export const DICIONARIO: Traducoes = {
   "O acesso é pessoal. Você é responsável por manter sua senha em segredo e pelo que for feito com a sua conta. A verificação em duas etapas é opcional e pode ser exigida por quem administra a empresa. Avise o operador imediatamente se suspeitar de acesso indevido.": {
     es: "El acceso es personal. Eres responsable de mantener tu contraseña en secreto y de lo que se haga con tu cuenta. La verificación en dos pasos es opcional y puede exigirla quien administra la empresa. Avisa al operador de inmediato si sospechas de un acceso indebido.",
   },
+  "As regras de uso deste serviço.": {
+    es: "Las reglas de uso de este servicio.",
+  },
+  "{sistema} é oferecido e operado, pela internet, pelo prestador de serviço indicado no contrato de serviço assinado pela sua empresa. Você usa o serviço em nome da sua empresa, e os administradores dela gerenciam as contas de usuário.": {
+    es: "{sistema} es ofrecido y operado, por internet, por el prestador de servicio indicado en el contrato de servicio firmado por tu empresa. Usas el servicio en nombre de tu empresa, y sus administradores gestionan las cuentas de usuario.",
+  },
+  "Este texto trata das regras de uso do dia a dia e não altera o contrato assinado entre a sua empresa e o prestador de serviço. Em caso de conflito, vale o contrato.": {
+    es: "Este texto trata de las reglas de uso del día a día y no modifica el contrato firmado entre tu empresa y el prestador de servicio. En caso de conflicto, vale el contrato.",
+  },
+  "O serviço se baseia em software de código aberto. Os autores desse software não operam este serviço e não têm acesso ao servidor nem aos dados.": {
+    es: "El servicio se basa en software de código abierto. Los autores de ese software no operan este servicio y no tienen acceso al servidor ni a los datos.",
+  },
+  "{sistema} organiza atendimento e vendas: recebe e envia mensagens pelos canais que a sua empresa conectar, registra contatos e negócios, e permite que agentes de inteligência artificial atendam junto com pessoas, sob as regras que a sua empresa definir.": {
+    es: "{sistema} organiza atención y ventas: recibe y envía mensajes por los canales que tu empresa conecte, registra contactos y negocios, y permite que agentes de inteligencia artificial atiendan junto con personas, bajo las reglas que tu empresa defina.",
+  },
+  "O acesso é pessoal. Você é responsável por manter sua senha em segredo e pelo que for feito com a sua conta. A verificação em duas etapas é opcional e pode ser exigida por quem administra a empresa. Se suspeitar de acesso indevido, avise imediatamente o administrador da sua empresa e o prestador de serviço.": {
+    es: "El acceso es personal. Eres responsable de mantener tu contraseña en secreto y de lo que se haga con tu cuenta. La verificación en dos pasos es opcional y puede exigirla quien administra la empresa. Si sospechas de un acceso indebido, avisa de inmediato al administrador de tu empresa y al prestador de servicio.",
+  },
+  "O uso da própria conexão por QR, cujos riscos estão descritos no contrato de serviço, não se enquadra na última regra acima.": {
+    es: "El uso de la propia conexión por QR, cuyos riesgos se describen en el contrato de servicio, no entra en la última regla anterior.",
+  },
+  "Os dados inseridos aqui — contatos, conversas, negócios, arquivos — pertencem à sua empresa e às pessoas a que se referem. O tratamento desses dados é descrito na": {
+    es: "Los datos ingresados aquí — contactos, conversaciones, negocios, archivos — pertenecen a tu empresa y a las personas a las que se refieren. El tratamiento de esos datos se describe en la",
+  },
+  "6. Disponibilidade e responsabilidade": {
+    es: "6. Disponibilidad y responsabilidad",
+  },
+  "A disponibilidade, a manutenção e os limites de responsabilidade do serviço estão nas cláusulas 11 e 12 do contrato de serviço.": {
+    es: "La disponibilidad, el mantenimiento y los límites de responsabilidad del servicio están en las cláusulas 11 y 12 del contrato de servicio.",
+  },
+  "O administrador da sua empresa pode suspender o seu acesso; o prestador de serviço pode suspender o serviço nos casos previstos no contrato. Você pode pedir o encerramento da sua conta ao administrador da sua empresa. O que acontece com os dados ao fim do contrato está na cláusula 16.": {
+    es: "El administrador de tu empresa puede suspender tu acceso; el prestador de servicio puede suspender el servicio en los casos previstos en el contrato. Puedes pedir el cierre de tu cuenta al administrador de tu empresa. Lo que ocurre con los datos al terminar el contrato está en la cláusula 16.",
+  },
+  "O prestador de serviço pode atualizar este texto e avisa as mudanças relevantes antes de entrarem em vigor. Mudanças no contrato seguem a cláusula 17.": {
+    es: "El prestador de servicio puede actualizar este texto y avisa los cambios relevantes antes de que entren en vigor. Los cambios en el contrato siguen la cláusula 17.",
+  },
+  "Fale com o prestador de serviço pelo e-mail indicado no contrato de serviço. Para assuntos da sua conta de usuário, procure primeiro o administrador da sua empresa.": {
+    es: "Habla con el prestador de servicio por el correo indicado en el contrato de servicio. Para asuntos de tu cuenta de usuario, acude primero al administrador de tu empresa.",
+  },
   "4. Uso aceitável": { es: "4. Uso aceptable" },
   "Ao usar este sistema, você concorda em não:": { es: "Al usar este sistema, te comprometes a no:" },
   "enviar mensagens não solicitadas em massa, nem burlar pedidos de descadastro;": {
