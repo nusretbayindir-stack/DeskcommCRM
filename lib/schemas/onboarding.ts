@@ -66,6 +66,8 @@ export const onboardingStateSchema = z.object({
       display_name: z.string(),
       /** O ramo, na palavra do dono. Alimenta o prompt e o quadro de clientes. */
       o_que_faz: z.string().optional(),
+      /** A versão dos termos aceita (`lib/legal/versao-dos-termos.ts`). Ausente = aceite anterior a ela. */
+      terms_version: z.string().optional(),
     })
     .optional(),
   whatsapp: z

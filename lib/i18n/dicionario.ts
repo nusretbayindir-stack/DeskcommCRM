@@ -10237,6 +10237,78 @@ export const DICIONARIO: Traducoes = {
   "quem instalou e opera este sistema. Os autores do software não têm acesso a este servidor nem aos dados guardados nele, e não são responsáveis pelo tratamento nem operadores desses dados.": {
     es: "quien instaló y opera este sistema. Los autores del software no tienen acceso a este servidor ni a los datos guardados en él, y no son responsables del tratamiento ni encargados de esos datos.",
   },
+  "Como este serviço trata dados pessoais.": {
+    es: "Cómo este servicio trata los datos personales.",
+  },
+  "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o controlador é essa empresa:": {
+    es: "En los datos tratados en las conversaciones de una empresa con sus clientes (contactos, mensajes, archivos, citas), el responsable es esa empresa:",
+  },
+  "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o responsável pelo tratamento é essa empresa:": {
+    es: "En los datos tratados en las conversaciones de una empresa con sus clientes (contactos, mensajes, archivos, citas), el responsable del tratamiento es esa empresa:",
+  },
+  "O prestador de serviço trata esses dados em nome dela, como operador.": {
+    es: "El prestador de servicio trata esos datos en su nombre, como encargado.",
+  },
+  "O prestador de serviço trata esses dados em nome dela, como subcontratante.": {
+    es: "El prestador de servicio trata esos datos en su nombre, como encargado del tratamiento.",
+  },
+  "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o controlador é o prestador de serviço indicado no contrato de serviço assinado com a empresa.": {
+    es: "En los datos de la cuenta de la empresa, de sus personas de contacto y de quienes usan el sistema, el responsable es el prestador de servicio indicado en el contrato de servicio firmado con la empresa.",
+  },
+  "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o responsável pelo tratamento é o prestador de serviço indicado no contrato de serviço assinado com a empresa.": {
+    es: "En los datos de la cuenta de la empresa, de sus personas de contacto y de quienes usan el sistema, el responsable del tratamiento es el prestador de servicio indicado en el contrato de servicio firmado con la empresa.",
+  },
+  "Os autores do software de código aberto não operam o serviço e não têm acesso ao servidor nem aos dados.": {
+    es: "Los autores del software de código abierto no operan el servicio y no tienen acceso al servidor ni a los datos.",
+  },
+  "a empresa que fala com você": {
+    es: "la empresa que habla contigo",
+  },
+  "Para atender, responder, registrar o andamento do atendimento e organizar a relação comercial — inclusive por agentes de inteligência artificial que atuam sob as regras definidas pela empresa. Registros de ação são mantidos para auditoria e segurança.": {
+    es: "Para atender y responder, registrar el avance de cada atención y organizar la relación comercial, incluso mediante agentes de inteligencia artificial que actúan con las reglas que define la empresa. Los registros de acciones se conservan para auditoría y seguridad.",
+  },
+  "Os dados ficam nos servidores do serviço. Para funcionar, o prestador de serviço usa os fornecedores abaixo; a lista atualizada está no Anexo 2 do contrato de serviço:": {
+    es: "Los datos se quedan en los servidores del servicio. Para funcionar, el prestador de servicio usa los proveedores siguientes; la lista actualizada está en el Anexo 2 del contrato de servicio:",
+  },
+  "o provedor de inteligência artificial usado pelo serviço, que recebe o trecho da conversa necessário para gerar a resposta ou avaliar a conversa;": {
+    es: "el proveedor de inteligencia artificial que usa el servicio, que recibe el fragmento de la conversación necesario para generar la respuesta o evaluar la conversación;",
+  },
+  "quando o Jev é ligado (desligado por padrão), a TypeSafe AI, nos Estados Unidos, que recebe cada mensagem do cliente, sozinha e já sem CPF, telefone e e-mail, para avaliar se ele está irritado, se a mensagem tenta manipular o atendimento automático, a qual área da empresa ela se destina, se ela pede para falar com uma pessoa ou para parar de receber mensagens e, quando ela responde a um follow-up, em qual das saídas do fluxo ela se encaixa;": {
+    es: "cuando Jev está activado (desactivado por defecto), TypeSafe AI, en Estados Unidos, que recibe cada mensaje del cliente, por separado y ya sin CPF, teléfono ni correo, para evaluar si está molesto, si el mensaje intenta manipular la atención automática, a qué área de la empresa se dirige, si pide hablar con una persona o dejar de recibir mensajes y, cuando responde a un seguimiento, en cuál de las salidas del flujo encaja;",
+  },
+  "quando uma chave de Mapas é cadastrada (desligado por padrão), o Google, que recebe as coordenadas da localização que o cliente compartilhou, para devolver a rua e a cidade aproximadas;": {
+    es: "cuando se registra una clave de Mapas (desactivado por defecto), Google, que recibe las coordenadas de la ubicación que el cliente compartió, para devolver la calle y la ciudad aproximadas;",
+  },
+  "Conversas e registros de negócio são mantidos enquanto houver relação com o cliente ou obrigação legal de guarda. Arquivos de mídia têm prazo próprio, configurado pela empresa. Registros de auditoria são mantidos por período mais longo, por serem prova de quem fez o quê. Ao fim do contrato de serviço, a empresa pode exportar os dados por 30 dias; depois disso, eles são apagados, salvo se a lei exigir guarda mais longa.": {
+    es: "Las conversaciones y los registros de negocio se conservan mientras exista relación con el cliente o una obligación legal de conservarlos. Los archivos multimedia tienen un plazo propio, que configura la empresa. Los registros de auditoría se conservan por más tiempo, porque prueban quién hizo qué. Al terminar el contrato de servicio, la empresa puede exportar los datos durante 30 días; después, se eliminan, salvo que la ley exija conservarlos más tiempo.",
+  },
+  "Envie o seu pedido à empresa que trata os seus dados; o prestador de serviço a ajuda a atendê-lo. Para os dados da sua conta, você pode escrever diretamente ao prestador de serviço.": {
+    es: "Envía tu solicitud a la empresa que trata tus datos; el prestador de servicio la ayuda a atenderla. Para los datos de tu cuenta, puedes escribir directamente al prestador de servicio.",
+  },
+  "Você também pode apresentar reclamação à autoridade de proteção de dados: {autoridade} ({site}).": {
+    es: "También puedes presentar una reclamación ante la autoridad de protección de datos: {autoridade} ({site}).",
+  },
+  "A empresa ainda não publicou um endereço de contato do encarregado da proteção de dados. Os pedidos devem ser feitos pelos canais de atendimento dela.": {
+    es: "La empresa todavía no publicó una dirección de contacto del encargado de protección de datos. Las solicitudes deben hacerse por sus canales de atención.",
+  },
+  "A empresa ainda não publicou um endereço de contato do encarregado de dados. Os pedidos devem ser feitos pelos canais de atendimento dela.": {
+    es: "La empresa todavía no publicó una dirección de contacto del encargado de datos. Las solicitudes deben hacerse por sus canales de atención.",
+  },
+  "Para os dados da sua conta, fale com o prestador de serviço pelo e-mail indicado no contrato de serviço.": {
+    es: "Para los datos de tu cuenta, habla con el prestador de servicio por el correo indicado en el contrato de servicio.",
+  },
+  "mostrar a ocupação da agenda, criar, alterar e cancelar os agendamentos feitos pelo próprio usuário e evitar choque de horários. O sistema guarda no servidor do serviço o título e o horário dos eventos para calcular a ocupação, e o cálculo de horários livres usa apenas o início, o fim e a situação deles. O sistema não lê e-mails.": {
+    es: "mostrar la ocupación de la agenda, crear, modificar y cancelar las citas hechas por el propio usuario y evitar choques de horario. El sistema guarda en el servidor del servicio el título y el horario de los eventos para calcular la ocupación, y el cálculo de horarios libres usa solo el inicio, el fin y el estado de ellos. El sistema no lee correos electrónicos.",
+  },
+  "criar espaços de reunião do Google Meet quando a organização liga o Meet com acesso aberto; só o link gerado é devolvido pelo Google e guardado no servidor do serviço para o convite.": {
+    es: "crear espacios de reunión de Google Meet cuando la organización activa Meet con acceso abierto; solo el enlace generado lo devuelve Google y se guarda en el servidor del servicio para la invitación.",
+  },
+  "Os dados do Google ficam no servidor do serviço, não são vendidos, não são usados para publicidade e não são usados para treinar modelos de inteligência artificial. O uso e a transferência das informações recebidas das APIs do Google seguem a Política de Dados de Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado.": {
+    es: "Los datos de Google permanecen en el servidor del servicio, no se venden, no se usan para publicidad y no se usan para entrenar modelos de inteligencia artificial. El uso y la transferencia de la información recibida de las API de Google cumplen la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.",
+  },
+  "A conexão com a Agenda pode ser desfeita a qualquer momento em Agenda → Desconectar, e a do Google Ads é retirada pelo prestador de serviço, a pedido. Em qualquer caso, a pessoa também pode revogar o acesso diretamente em": {
+    es: "La conexión con la Agenda puede deshacerse en cualquier momento en Agenda → Desconectar, y la de Google Ads la retira el prestador de servicio, a pedido. En cualquier caso, la persona también puede revocar el acceso directamente en",
+  },
   "2. Que dados são tratados": { es: "2. Qué datos se tratan" },
   "De quem é atendido:": { es: "De quien recibe atención:" },
   "nome, telefone, e-mail quando informado, conteúdo das conversas, arquivos enviados (imagens, áudios, documentos) e o histórico de negócios.": {
@@ -10327,6 +10399,45 @@ export const DICIONARIO: Traducoes = {
   "3. Sua conta": { es: "3. Tu cuenta" },
   "O acesso é pessoal. Você é responsável por manter sua senha em segredo e pelo que for feito com a sua conta. A verificação em duas etapas é opcional e pode ser exigida por quem administra a empresa. Avise o operador imediatamente se suspeitar de acesso indevido.": {
     es: "El acceso es personal. Eres responsable de mantener tu contraseña en secreto y de lo que se haga con tu cuenta. La verificación en dos pasos es opcional y puede exigirla quien administra la empresa. Avisa al operador de inmediato si sospechas de un acceso indebido.",
+  },
+  "As regras de uso deste serviço.": {
+    es: "Las reglas de uso de este servicio.",
+  },
+  "{sistema} é oferecido e operado, pela internet, pelo prestador de serviço indicado no contrato de serviço assinado pela sua empresa. Você usa o serviço em nome da sua empresa, e os administradores dela gerenciam as contas de usuário.": {
+    es: "{sistema} es ofrecido y operado, por internet, por el prestador de servicio indicado en el contrato de servicio firmado por tu empresa. Usas el servicio en nombre de tu empresa, y sus administradores gestionan las cuentas de usuario.",
+  },
+  "Este texto trata das regras de uso do dia a dia e não altera o contrato assinado entre a sua empresa e o prestador de serviço. Em caso de conflito, vale o contrato.": {
+    es: "Este texto trata de las reglas de uso del día a día y no modifica el contrato firmado entre tu empresa y el prestador de servicio. En caso de conflicto, vale el contrato.",
+  },
+  "O serviço se baseia em software de código aberto. Os autores desse software não operam este serviço e não têm acesso ao servidor nem aos dados.": {
+    es: "El servicio se basa en software de código abierto. Los autores de ese software no operan este servicio y no tienen acceso al servidor ni a los datos.",
+  },
+  "{sistema} organiza atendimento e vendas: recebe e envia mensagens pelos canais que a sua empresa conectar, registra contatos e negócios, e permite que agentes de inteligência artificial atendam junto com pessoas, sob as regras que a sua empresa definir.": {
+    es: "{sistema} organiza atención y ventas: recibe y envía mensajes por los canales que tu empresa conecte, registra contactos y negocios, y permite que agentes de inteligencia artificial atiendan junto con personas, bajo las reglas que tu empresa defina.",
+  },
+  "O acesso é pessoal. Você é responsável por manter sua senha em segredo e pelo que for feito com a sua conta. A verificação em duas etapas é opcional e pode ser exigida por quem administra a empresa. Se suspeitar de acesso indevido, avise imediatamente o administrador da sua empresa e o prestador de serviço.": {
+    es: "El acceso es personal. Eres responsable de mantener tu contraseña en secreto y de lo que se haga con tu cuenta. La verificación en dos pasos es opcional y puede exigirla quien administra la empresa. Si sospechas de un acceso indebido, avisa de inmediato al administrador de tu empresa y al prestador de servicio.",
+  },
+  "O uso da própria conexão por QR, cujos riscos estão descritos no contrato de serviço, não se enquadra na última regra acima.": {
+    es: "El uso de la propia conexión por QR, cuyos riesgos se describen en el contrato de servicio, no entra en la última regla anterior.",
+  },
+  "Os dados inseridos aqui — contatos, conversas, negócios, arquivos — pertencem à sua empresa e às pessoas a que se referem. O tratamento desses dados é descrito na": {
+    es: "Los datos ingresados aquí — contactos, conversaciones, negocios, archivos — pertenecen a tu empresa y a las personas a las que se refieren. El tratamiento de esos datos se describe en la",
+  },
+  "6. Disponibilidade e responsabilidade": {
+    es: "6. Disponibilidad y responsabilidad",
+  },
+  "A disponibilidade, a manutenção e os limites de responsabilidade do serviço estão nas cláusulas 11 e 12 do contrato de serviço.": {
+    es: "La disponibilidad, el mantenimiento y los límites de responsabilidad del servicio están en las cláusulas 11 y 12 del contrato de servicio.",
+  },
+  "O administrador da sua empresa pode suspender o seu acesso; o prestador de serviço pode suspender o serviço nos casos previstos no contrato. Você pode pedir o encerramento da sua conta ao administrador da sua empresa. O que acontece com os dados ao fim do contrato está na cláusula 16.": {
+    es: "El administrador de tu empresa puede suspender tu acceso; el prestador de servicio puede suspender el servicio en los casos previstos en el contrato. Puedes pedir el cierre de tu cuenta al administrador de tu empresa. Lo que ocurre con los datos al terminar el contrato está en la cláusula 16.",
+  },
+  "O prestador de serviço pode atualizar este texto e avisa as mudanças relevantes antes de entrarem em vigor. Mudanças no contrato seguem a cláusula 17.": {
+    es: "El prestador de servicio puede actualizar este texto y avisa los cambios relevantes antes de que entren en vigor. Los cambios en el contrato siguen la cláusula 17.",
+  },
+  "Fale com o prestador de serviço pelo e-mail indicado no contrato de serviço. Para assuntos da sua conta de usuário, procure primeiro o administrador da sua empresa.": {
+    es: "Habla con el prestador de servicio por el correo indicado en el contrato de servicio. Para asuntos de tu cuenta de usuario, acude primero al administrador de tu empresa.",
   },
   "4. Uso aceitável": { es: "4. Uso aceptable" },
   "Ao usar este sistema, você concorda em não:": { es: "Al usar este sistema, te comprometes a no:" },

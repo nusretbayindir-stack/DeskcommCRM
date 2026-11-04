@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { nomeDoOperador, resolverOperador } from "@/lib/legal/operador";
+import { PAIS_PADRAO, perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -19,8 +20,6 @@ export default async function PrivacyPage() {
   // do banco nunca chega a um redirect.
   if (op.politicaPropria) redirect(op.politicaPropria);
 
-  const operador = nomeDoOperador(op);
-
   // Rota fora da árvore de `app/app/layout.tsx` — sem `IdiomaProvider`, então
   // resolve o idioma direto, como `admin/forbidden/page.tsx`. Página legal
   // pública: pode ser lida sem sessão, por isso `user` é opcional.
@@ -34,39 +33,61 @@ export default async function PrivacyPage() {
   const t = (texto: string) => traduzir(texto, idioma);
 
   // O vocabulário legal desta política é o do PAÍS da organização ativa
-  // (issue #2344): no Brasil "controlador", "CNPJ" e "LGPD"; em Portugal
-  // "responsável pelo tratamento" (RGPD art. 4.º, n.º 7), "NIPC" e "RGPD".
+  // (issue #2344): no Brasil "controlador", "CNPJ" e "LGPD"; fora dele
+  // "responsável pelo tratamento" (RGPD art. 4.º, n.º 7) e o RGPD, com a etiqueta
+  // do número e a autoridade que o perfil do país declara.
   // Sem sessão ou com a coluna vazia vale o Brasil — o mesmo "vazio" da
   // coluna `organizations.country`. Cada ramo é um literal em `t()`: chave de
   // dicionário nas duas direções, nunca frase montada em runtime.
-  const ePortugal = (op.pais ?? "").trim().toUpperCase() === "PT";
+  //
+  // Há dois papéis, e o texto os separa: nas conversas com os clientes dela, a
+  // empresa responde pelos dados e o prestador de serviço os trata em nome dela;
+  // nos dados da conta, quem responde é o prestador. O prestador não é nomeado
+  // aqui: o nome dele está no contrato de serviço.
+  const perfil = perfilDoPais(op.pais);
+  const foraDoBrasil = perfil.codigo !== PAIS_PADRAO;
+  const autoridade = perfil.autoridadeDeSupervisao;
 
   return (
     <>
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{t("Política de Privacidade")}</h1>
         <p className="text-muted-foreground">
-          {t("Como esta instalação do")} {op.sistema} {t("trata dados pessoais.")}
+          {t("Como este serviço trata dados pessoais.")}
         </p>
       </header>
 
       <section className="space-y-2">
         <h2 className="text-base font-semibold">
-          {ePortugal ? t("1. Quem é o responsável pelo tratamento") : t("1. Quem é o controlador")}
+          {foraDoBrasil ? t("1. Quem é o responsável pelo tratamento") : t("1. Quem é o controlador")}
         </h2>
         <p>
-          {ePortugal
-            ? t("O responsável pelo tratamento dos dados tratados aqui é")
-            : t("O controlador dos dados tratados aqui é")}{" "}
-          <strong>{operador}</strong>
-          {op.cnpj ? ` (${ePortugal ? "NIPC" : "CNPJ"} ${op.cnpj})` : ""} —{" "}
-          {ePortugal
+          {foraDoBrasil
             ? t(
-                "quem instalou e opera este sistema. Os autores do software não têm acesso a este servidor nem aos dados guardados nele, e não são responsáveis pelo tratamento nem operadores desses dados.",
+                "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o responsável pelo tratamento é essa empresa:",
               )
             : t(
-                "quem instalou e opera este sistema. Os autores do software não têm acesso a este servidor nem aos dados guardados nele, e não são controladores nem operadores desses dados.",
+                "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o controlador é essa empresa:",
+              )}{" "}
+          <strong>{nomeDoOperador(op, t("a empresa que fala com você"))}</strong>
+          {op.cnpj ? ` (${t(perfil.empresa.rotuloNumero)} ${op.cnpj})` : ""}.{" "}
+          {foraDoBrasil
+            ? t("O prestador de serviço trata esses dados em nome dela, como subcontratante.")
+            : t("O prestador de serviço trata esses dados em nome dela, como operador.")}
+        </p>
+        <p>
+          {foraDoBrasil
+            ? t(
+                "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o responsável pelo tratamento é o prestador de serviço indicado no contrato de serviço assinado com a empresa.",
+              )
+            : t(
+                "Nos dados da conta da empresa, dos contatos dela e de quem usa o sistema, o controlador é o prestador de serviço indicado no contrato de serviço assinado com a empresa.",
               )}
+        </p>
+        <p>
+          {t(
+            "Os autores do software de código aberto não operam o serviço e não têm acesso ao servidor nem aos dados.",
+          )}
         </p>
       </section>
 
@@ -90,7 +111,7 @@ export default async function PrivacyPage() {
         <h2 className="text-base font-semibold">{t("3. Para que são usados")}</h2>
         <p>
           {t(
-            "Para atender, responder, registrar o andamento do atendimento e organizar a relação comercial — inclusive por agentes de inteligência artificial que atuam sob as regras configuradas pelo operador. Registros de ação são mantidos para auditoria e segurança.",
+            "Para atender, responder, registrar o andamento do atendimento e organizar a relação comercial — inclusive por agentes de inteligência artificial que atuam sob as regras definidas pela empresa. Registros de ação são mantidos para auditoria e segurança.",
           )}
         </p>
       </section>
@@ -99,24 +120,24 @@ export default async function PrivacyPage() {
         <h2 className="text-base font-semibold">{t("4. Com quem são compartilhados")}</h2>
         <p>
           {t(
-            "Os dados ficam no servidor do operador. Para funcionar, o sistema se comunica com terceiros escolhidos e contratados pelo operador:",
+            "Os dados ficam nos servidores do serviço. Para funcionar, o prestador de serviço usa os fornecedores abaixo; a lista atualizada está no Anexo 2 do contrato de serviço:",
           )}
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>{t("a plataforma de mensagens usada para conversar com o cliente;")}</li>
           <li>
             {t(
-              "o provedor de inteligência artificial contratado pelo operador, que recebe o trecho da conversa necessário para gerar a resposta ou avaliar a conversa;",
+              "o provedor de inteligência artificial usado pelo serviço, que recebe o trecho da conversa necessário para gerar a resposta ou avaliar a conversa;",
             )}
           </li>
           <li>
             {t(
-              "quando o operador liga o Jev (desligado por padrão), a TypeSafe AI, nos Estados Unidos, que recebe cada mensagem do cliente, sozinha e já sem CPF, telefone e e-mail, para avaliar se ele está irritado, se a mensagem tenta manipular o atendimento automático, a qual área da empresa ela se destina, se ela pede para falar com uma pessoa ou para parar de receber mensagens e, quando ela responde a um follow-up, em qual das saídas do fluxo ela se encaixa;",
+              "quando o Jev é ligado (desligado por padrão), a TypeSafe AI, nos Estados Unidos, que recebe cada mensagem do cliente, sozinha e já sem CPF, telefone e e-mail, para avaliar se ele está irritado, se a mensagem tenta manipular o atendimento automático, a qual área da empresa ela se destina, se ela pede para falar com uma pessoa ou para parar de receber mensagens e, quando ela responde a um follow-up, em qual das saídas do fluxo ela se encaixa;",
             )}
           </li>
           <li>
             {t(
-              "quando o operador cadastra uma chave de Mapas (desligado por padrão), o Google, que recebe as coordenadas da localização que o cliente compartilhou, para devolver a rua e a cidade aproximadas;",
+              "quando uma chave de Mapas é cadastrada (desligado por padrão), o Google, que recebe as coordenadas da localização que o cliente compartilhou, para devolver a rua e a cidade aproximadas;",
             )}
           </li>
           <li>{t("o provedor de infraestrutura onde o servidor está hospedado.")}</li>
@@ -128,7 +149,7 @@ export default async function PrivacyPage() {
         <h2 className="text-base font-semibold">{t("5. Por quanto tempo")}</h2>
         <p>
           {t(
-            "Conversas e registros de negócio são mantidos enquanto houver relação com o cliente ou obrigação legal de guarda. Arquivos de mídia têm prazo próprio, configurado pelo operador. Registros de auditoria são mantidos por período mais longo, por serem prova de quem fez o quê.",
+            "Conversas e registros de negócio são mantidos enquanto houver relação com o cliente ou obrigação legal de guarda. Arquivos de mídia têm prazo próprio, configurado pela empresa. Registros de auditoria são mantidos por período mais longo, por serem prova de quem fez o quê. Ao fim do contrato de serviço, a empresa pode exportar os dados por 30 dias; depois disso, eles são apagados, salvo se a lei exigir guarda mais longa.",
           )}
         </p>
       </section>
@@ -136,7 +157,7 @@ export default async function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">{t("6. Seus direitos")}</h2>
         <p>
-          {ePortugal
+          {foraDoBrasil
             ? t(
                 "O RGPD garante-lhe confirmar se há tratamento, aceder aos seus dados, corrigir dados incompletos ou desatualizados, pedir anonimização ou eliminação, saber com quem foram partilhados e retirar o consentimento.",
               )
@@ -146,10 +167,16 @@ export default async function PrivacyPage() {
         </p>
         <p>
           {t(
-            "O sistema atende esses pedidos por um fluxo próprio: a exportação reúne o que existe sobre a pessoa, e a anonimização remove a identificação preservando o histórico de atendimento — por isso ela",
-          )}{" "}
-          <strong>{t("não pode ser desfeita")}</strong>.
+            "Envie o seu pedido à empresa que trata os seus dados; o prestador de serviço a ajuda a atendê-lo. Para os dados da sua conta, você pode escrever diretamente ao prestador de serviço.",
+          )}
         </p>
+        {autoridade && (
+          <p>
+            {t("Você também pode apresentar reclamação à autoridade de proteção de dados: {autoridade} ({site}).")
+              .replace("{autoridade}", autoridade.nome)
+              .replace("{site}", autoridade.site)}
+          </p>
+        )}
       </section>
 
       <section className="space-y-2">
@@ -163,12 +190,12 @@ export default async function PrivacyPage() {
 
       <section className="space-y-2">
         <h2 className="text-base font-semibold">
-          {ePortugal ? t("8. Encarregado da proteção de dados e contato") : t("8. Encarregado e contato")}
+          {foraDoBrasil ? t("8. Encarregado da proteção de dados e contato") : t("8. Encarregado e contato")}
         </h2>
         <p>
           {op.dpoEmail ? (
             <>
-              {ePortugal
+              {foraDoBrasil
                 ? t(
                     "Para exercer seus direitos ou tirar dúvidas sobre privacidade, fale com o encarregado da proteção de dados:",
                   )
@@ -180,15 +207,18 @@ export default async function PrivacyPage() {
             </>
           ) : (
             <>
-              {ePortugal
+              {foraDoBrasil
                 ? t(
-                    "O operador ainda não publicou um endereço de contato do encarregado da proteção de dados nesta instalação. Os pedidos devem ser feitos pelos canais de atendimento da própria organização.",
+                    "A empresa ainda não publicou um endereço de contato do encarregado da proteção de dados. Os pedidos devem ser feitos pelos canais de atendimento dela.",
                   )
                 : t(
-                    "O operador ainda não publicou um endereço de contato do encarregado de dados nesta instalação. Os pedidos devem ser feitos pelos canais de atendimento da própria organização.",
+                    "A empresa ainda não publicou um endereço de contato do encarregado de dados. Os pedidos devem ser feitos pelos canais de atendimento dela.",
                   )}
             </>
           )}
+        </p>
+        <p>
+          {t("Para os dados da sua conta, fale com o prestador de serviço pelo e-mail indicado no contrato de serviço.")}
         </p>
       </section>
 
@@ -210,13 +240,13 @@ export default async function PrivacyPage() {
           <li>
             <strong>{t("Google Agenda:")}</strong>{" "}
             {t(
-              "mostrar a ocupação da agenda, criar, alterar e cancelar os agendamentos feitos pelo próprio usuário e evitar choque de horários. O sistema guarda no servidor do operador o título e o horário dos eventos para calcular a ocupação, e o cálculo de horários livres usa apenas o início, o fim e a situação deles. O sistema não lê e-mails.",
+              "mostrar a ocupação da agenda, criar, alterar e cancelar os agendamentos feitos pelo próprio usuário e evitar choque de horários. O sistema guarda no servidor do serviço o título e o horário dos eventos para calcular a ocupação, e o cálculo de horários livres usa apenas o início, o fim e a situação deles. O sistema não lê e-mails.",
             )}
           </li>
           <li>
             <strong>{t("Google Meet:")}</strong>{" "}
             {t(
-              "criar espaços de reunião do Google Meet quando a organização liga o Meet com acesso aberto; só o link gerado é devolvido pelo Google e guardado no servidor do operador para o convite.",
+              "criar espaços de reunião do Google Meet quando a organização liga o Meet com acesso aberto; só o link gerado é devolvido pelo Google e guardado no servidor do serviço para o convite.",
             )}
           </li>
           <li>
@@ -228,12 +258,12 @@ export default async function PrivacyPage() {
         </ul>
         <p>
           {t(
-            "Os dados do Google ficam no servidor do operador, não são vendidos, não são usados para publicidade e não são usados para treinar modelos de inteligência artificial. O uso e a transferência das informações recebidas das APIs do Google seguem a Política de Dados de Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado.",
+            "Os dados do Google ficam no servidor do serviço, não são vendidos, não são usados para publicidade e não são usados para treinar modelos de inteligência artificial. O uso e a transferência das informações recebidas das APIs do Google seguem a Política de Dados de Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado.",
           )}
         </p>
         <p>
           {t(
-            "A conexão com a Agenda pode ser desfeita a qualquer momento em Agenda → Desconectar, e a do Google Ads é retirada pelo operador, a pedido. Em qualquer caso, a pessoa também pode revogar o acesso diretamente em",
+            "A conexão com a Agenda pode ser desfeita a qualquer momento em Agenda → Desconectar, e a do Google Ads é retirada pelo prestador de serviço, a pedido. Em qualquer caso, a pessoa também pode revogar o acesso diretamente em",
           )}{" "}
           <a
             className="underline underline-offset-2"

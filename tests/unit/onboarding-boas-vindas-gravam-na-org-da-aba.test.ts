@@ -54,6 +54,8 @@ interface Resposta {
 let responder: (c: Consulta) => Resposta;
 /** O org id que cada UPDATE de `organizations` recebeu no `.eq("id", …)`. */
 let updates: string[] = [];
+/** O que cada UPDATE de `organizations` gravou. */
+let gravacoes: Record<string, unknown>[] = [];
 
 interface Membro {
   organization_id: string;
@@ -105,6 +107,8 @@ vi.mock("@/lib/auth/server", () => ({
 }));
 
 import { acceptWelcome } from "@/app/actions/onboarding/acceptWelcome";
+import { audit } from "@/lib/audit";
+import { VERSAO_DOS_TERMOS } from "@/lib/legal/versao-dos-termos";
 
 /**
  * `acceptWelcome` grava e então `redirect("/onboarding")` — o redirect LANÇA,
@@ -164,6 +168,7 @@ function montarBanco(mundo: { jaOnboarded?: boolean } = {}) {
         };
       }
       updates.push(String(c.filtros.id ?? ""));
+      gravacoes.push(c.payload ?? {});
       return { data: null, error: null };
     }
     throw new Error(`tabela não dublada no teste: ${c.table}`);
@@ -181,9 +186,28 @@ function formulario(orgId: string, nome = "Clinica A"): FormData {
 beforeEach(() => {
   vi.clearAllMocks();
   updates = [];
+  gravacoes = [];
   mundo.membros = [mA, mB];
   mundo.support = null;
   mundo.redirects = [];
+});
+
+describe("onboarding/welcome: a versão dos termos aceita fica registrada", () => {
+  it("grava a versão no estado do onboarding e no audit", async () => {
+    montarBanco();
+
+    await executar(formulario(ORG_A));
+
+    expect(gravacoes).toHaveLength(1);
+    const estado = gravacoes[0]!.onboarding_state as { welcome?: { terms_version?: string } };
+    expect(estado.welcome?.terms_version).toBe(VERSAO_DOS_TERMOS);
+    expect(vi.mocked(audit)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "onboarding.welcome_completed",
+        metadata: expect.objectContaining({ terms_version: VERSAO_DOS_TERMOS }),
+      }),
+    );
+  });
 });
 
 describe("onboarding/welcome: boas-vindas gravam na organização da aba, não na ativa", () => {
