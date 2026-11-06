@@ -1,8 +1,9 @@
-import Link from "next/link";
+import { VoltarDaPaginaLegal } from "@/components/legal/VoltarDaPaginaLegal";
 
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { valorDaInstalacao } from "@/lib/instalacao/config";
 import { VOLTAR_NA_POLITICA_BELGA, idiomaBelgaDoVisitante } from "@/lib/legal/politica-belga";
+import { perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
@@ -30,10 +31,11 @@ export default async function LegalLayout({ children }: { children: React.ReactN
   const idioma = await idiomaDoVisitante(
     (user?.user_metadata?.locale as string | undefined) ?? null,
   );
-  // O layout não recebe o `?lang=` da página: este rótulo segue só o navegador.
-  const belga = user
-    ? null
-    : await idiomaBelgaDoVisitante((await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor, null);
+  // O layout não recebe o `?lang=` da página: este é o rótulo PADRÃO (segue o
+  // navegador); o `?lang=` é lido no cliente por `VoltarDaPaginaLegal`.
+  const paisDaInstalacao = (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor;
+  const semSessaoNaBelgica = !user && perfilDoPais(paisDaInstalacao).codigo === "BE";
+  const belga = user ? null : await idiomaBelgaDoVisitante(paisDaInstalacao, null);
 
   return (
     <IdiomaProvider locale={idioma}>
@@ -41,9 +43,11 @@ export default async function LegalLayout({ children }: { children: React.ReactN
         <header className="border-b bg-background">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-6 py-4">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{marca.nome}</p>
-            <Link href="/login" className="text-sm underline underline-offset-2">
-              {belga ? VOLTAR_NA_POLITICA_BELGA[belga] : traduzir("Voltar", idioma)}
-            </Link>
+            <VoltarDaPaginaLegal
+              padrao={belga ? VOLTAR_NA_POLITICA_BELGA[belga] : traduzir("Voltar", idioma)}
+              rotulos={{ ...VOLTAR_NA_POLITICA_BELGA, tr: traduzir("Voltar", "tr") }}
+              aceitaLang={semSessaoNaBelgica}
+            />
           </div>
         </header>
         <main className="mx-auto w-full max-w-3xl px-6 py-10">

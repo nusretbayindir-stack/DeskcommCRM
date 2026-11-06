@@ -4763,6 +4763,8 @@
   "Cada cliente vira um cartão, na primeira coluna": "Each client becomes a card, in the first column",
   "Conforme a conversa avança, ele move o cartão de coluna sozinho": "As the conversation progresses, it moves the card between columns on its own",
   "Você arrasta o cartão na mão quando quiser — o quadro é seu": "You can drag the card by hand whenever you want — the board is yours",
+  "{n} ainda sem conexão ativa": "{n} without an active connection yet",
+  "Ainda não tem conta? Crie a sua.": "Don't have an account yet? Create one.",
   "Voltar a falar com quem sumiu": "Reconnect with people who disappeared",
   "Para nenhum cliente sumir no silêncio — ele volta a falar sozinho, na hora certa.": "So no client disappears into silence — it reaches back out on its own, at the right time.",
   "O cliente para de responder no meio da conversa": "The client stops responding in the middle of the conversation",

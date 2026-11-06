@@ -17131,6 +17131,8 @@ export const DICIONARIO: Traducoes = {
   "O ritmo você ajusta na própria tela da campanha, sem descartar nada.": {
     es: "El ritmo se ajusta en la propia pantalla de la campaña, sin descartar nada.",
   },
+  "{n} ainda sem conexão ativa": { es: "{n} aún sin conexión activa" },
+  "Ainda não tem conta? Crie a sua.": { es: "¿Aún no tienes cuenta? Crea la tuya." },
   "Voltar para a campanha": { es: "Volver a la campaña" },
   "funil removido": { es: "embudo eliminado" },
   "agente indisponível": { es: "agente no disponible" },

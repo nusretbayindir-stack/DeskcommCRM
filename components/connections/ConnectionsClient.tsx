@@ -389,15 +389,22 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
     invalidate();
   }, [invalidate, t]);
 
+  // Só conta como conectado quem está de fato utilizável (WORKING): o número que
+  // ainda espera o QR tem cartão pedindo para escanear, e a frase de cima não
+  // pode dizer o contrário.
+  const conectados = list.filter((c) => lerEstadoDoCanal(c.status).utilizavel).length;
+  const aguardando = list.length - conectados;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {isError
             ? t("Não foi possível carregar seus números.")
-            : list.length === 0
+            : conectados === 0
               ? t("Nenhum número conectado ainda.")
-              : `${list.length} ${list.length === 1 ? t("número conectado") : t("números conectados")}.`}
+              : `${conectados} ${conectados === 1 ? t("número conectado") : t("números conectados")}.`}
+          {!isError && aguardando > 0 && ` ${t("{n} ainda sem conexão ativa").replace("{n}", String(aguardando))}.`}
         </p>
         <div className="flex flex-wrap gap-2">
           {list.length > 0 && (
