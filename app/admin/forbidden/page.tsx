@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { loadAuthUser } from "@/lib/auth/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
@@ -12,15 +11,11 @@ export const generateMetadata = tituloDaAba((t) => t("Acesso negado — Admin Pl
 export default async function AdminForbiddenPage() {
   // Página sem `requirePlatformAdmin()` (é o próprio destino do redirect dele)
   // — por isso resolve o idioma direto, sem passar pelo `IdiomaProvider` do
-  // layout protegido. Quem chega aqui está autenticado (o guard já mandou
-  // quem não está para `/login`), então `getUser()` sempre tem alguém.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const idioma = normalizarIdioma(
-    (user?.user_metadata?.locale as string | undefined) ?? null,
-  );
+  // layout protegido. O idioma vem da cadeia completa de `loadAuthUser`
+  // (pessoa → organização ativa → padrão): ler só `user_metadata.locale` deixava
+  // em português quem nunca escolheu idioma mas usa uma empresa em turco.
+  const user = await loadAuthUser();
+  const idioma = user?.idioma ?? "pt-BR";
 
   // Traduzir o texto não basta: o `<html lang="pt-BR">` do layout raiz só é
   // corrigido por um `IdiomaProvider`, e esta tela não está sob nenhum. Sem

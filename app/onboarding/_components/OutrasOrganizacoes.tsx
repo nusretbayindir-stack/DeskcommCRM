@@ -83,7 +83,7 @@ export function OutrasOrganizacoes({
       >
         <ArrowBendUpLeft size={14} weight="bold" aria-hidden />
         <span className="max-w-[180px] truncate">
-          {t("Voltar para")} {unica.nome}
+          {t("Voltar para {nome}").replace("{nome}", unica.nome)}
         </span>
       </Button>
     );

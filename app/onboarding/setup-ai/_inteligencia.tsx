@@ -124,7 +124,7 @@ export function InteligenciaDele({ inicial }: { inicial: EstadoDaChave }) {
               {/* A assinatura do ChatGPT nunca: ela não se cola, conecta-se pelo login em Credenciais. */}
               {PROVEDORES.filter((p) => p.id !== PROVEDOR_POR_ASSINATURA || p.id === provedor).map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.rotulo}
+                  {t(p.rotulo)}
                 </option>
               ))}
             </select>
@@ -209,7 +209,7 @@ export function InteligenciaDele({ inicial }: { inicial: EstadoDaChave }) {
   return (
     <section className="space-y-1 rounded-lg border bg-background p-5">
       <h3 className="text-sm font-medium">
-        {t("O cérebro dele:")} {chave.rotulo}
+        {t("O cérebro dele:")} {t(chave.rotulo)}
         {chave.final ? (
           <span className="ml-1 font-normal text-muted-foreground">
             ({t("final")} {chave.final})

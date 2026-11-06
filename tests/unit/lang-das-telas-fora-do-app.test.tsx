@@ -56,6 +56,7 @@ vi.mock("@/lib/auth/invite-token", () => ({ verifyInviteToken: () => null }));
 // de LGPD e a troca de org são clientes com dados próprios e ficam de fora daqui.
 // O que se mede aqui é só o `lang`.
 vi.mock("@/lib/auth/server", () => ({
+  loadAuthUser: async () => ({ idioma: locale.valor === "es" ? "es" : "pt-BR" }),
   requireAuth: async () => ({
     id: "u",
     email: "x@exemplo.com",
