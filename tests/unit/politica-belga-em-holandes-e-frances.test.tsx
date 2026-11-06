@@ -21,6 +21,7 @@ const estado = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
   redirect: vi.fn((destino: string) => {
     throw new Error(`NEXT_REDIRECT:${destino}`);
   }),
