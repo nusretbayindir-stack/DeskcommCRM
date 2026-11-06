@@ -43,11 +43,11 @@ async function linkDaLinha(org: string): Promise<{ checkout_url: string | null; 
   return r.data as { checkout_url: string | null; link_de_pagamento: string | null };
 }
 
-/** Clica em "Gerar link de pagamento" e devolve o que a rota do dono respondeu: a prova é a resposta, não o campo que já estava na tela. */
+/** Clica em "Mostrar link de pagamento" e devolve o que a rota do dono respondeu: a prova é a resposta, não o campo que já estava na tela. */
 async function gerarDeNovo(page: Page, org: string): Promise<{ status: number; url: string | undefined }> {
   const [resposta] = await Promise.all([
     page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith(`/api/v1/admin/tenants/${org}/assinatura/checkout`)),
-    page.getByRole("button", { name: "Gerar link de pagamento" }).click(),
+    page.getByRole("button", { name: "Mostrar link de pagamento" }).click(),
   ]);
   const corpo = (await resposta.json()) as { data?: { url?: string } };
   return { status: resposta.status(), url: corpo.data?.url };
@@ -122,7 +122,7 @@ test("[P0] o dono gera o link de pagamento pelo card do tenant (Asaas) e a empre
     expect((await assinaturaDe(orgB)).estado).toBe("trial");
 
     const documento = page.getByLabel("CPF ou CNPJ de quem paga");
-    const gerar = page.getByRole("button", { name: "Gerar link de pagamento" });
+    const gerar = page.getByRole("button", { name: "Mostrar link de pagamento" });
     await expect(documento, "sem CNPJ no cadastro, o campo nasce vazio").toHaveValue("");
     await expect(gerar, "sem documento o Asaas recusaria: o botão nasce desligado").toBeDisabled();
     await documento.fill(CPF.slice(0, 10) + String((Number(CPF.slice(10)) + 1) % 10));

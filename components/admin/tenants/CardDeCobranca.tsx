@@ -35,6 +35,16 @@ export interface AssinaturaDoCard {
   proximo_vencimento: string | null;
 }
 
+/**
+ * `trial` com a data de fim já passada: o plano de 0 dia nasce assim (a
+ * atribuição grava `trial_ate = agora`), e chamar isso de "Teste grátis" diz à
+ * empresa que ela ainda tem um teste que já acabou. O estado gravado não muda;
+ * só o rótulo conta o que de fato falta: o primeiro pagamento.
+ */
+export function testeJaAcabou(a: Pick<AssinaturaDoCard, "estado" | "trial_ate">, agora = Date.now()): boolean {
+  return a.estado === "trial" && a.trial_ate !== null && new Date(a.trial_ate).getTime() <= agora;
+}
+
 /** `YYYY-MM-DD` do campo de data → fim daquele dia no fuso de quem clicou, em ISO UTC. */
 export function fimDoDia(dia: string): string {
   return new Date(`${dia}T23:59:59`).toISOString();
@@ -93,7 +103,12 @@ export function CardDeCobranca({
   const router = useRouter();
   const queryClient = useQueryClient();
   const ativos = planos.filter((p) => p.arquivado_em === null);
-  const [escolhido, setEscolhido] = useState(ativos[0]?.id ?? "");
+  // O seletor abre no plano ATUAL: abrir no primeiro da lista fazia um clique
+  // distraído em "Trocar plano" mudar o plano de uma empresa sem ninguém pedir.
+  // Plano atual arquivado não está na lista, e aí vale o primeiro ativo.
+  const [escolhido, setEscolhido] = useState(
+    ativos.find((p) => p.id === assinatura?.plano_id)?.id ?? ativos[0]?.id ?? "",
+  );
   const [prazo, setPrazo] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [remover, setRemover] = useState<ReturnType<typeof oQueRemover>>([]);
@@ -165,7 +180,7 @@ export function CardDeCobranca({
             </>
           )}
           <dt className="text-muted-foreground">{t("Situação")}</dt>
-          <dd>{t(ROTULO_DO_ESTADO[assinatura.estado])}</dd>
+          <dd>{t(testeJaAcabou(assinatura) ? "Aguardando o primeiro pagamento" : ROTULO_DO_ESTADO[assinatura.estado])}</dd>
           {assinatura.trial_ate && (
             <>
               <dt className="text-muted-foreground">{t("Teste grátis até")}</dt>
@@ -214,7 +229,7 @@ export function CardDeCobranca({
             disabled={ocupado || (pedeDocumento && documentoNormalizado === null)}
             onClick={() => void gerarLink()}
           >
-            {t("Gerar link de pagamento")}
+            {t("Mostrar link de pagamento")}
           </Button>
           {link && (
             <div className="space-y-1">
@@ -223,7 +238,7 @@ export function CardDeCobranca({
                 <Input id="link-de-pagamento" className="max-w-md" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
                 <CopiarLinkDePagamento link={link} />
               </div>
-              <p className="text-xs text-muted-foreground">{t("Mande para a empresa. Se o link expirar, gere de novo.")}</p>
+              <p className="text-xs text-muted-foreground">{t("Mande para a empresa. Se o link expirar, clique de novo em Mostrar link de pagamento.")}</p>
             </div>
           )}
         </div>

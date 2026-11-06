@@ -22,6 +22,9 @@ export interface TenantOrganization {
   // A exclusão recusa a suspensão por cobrança (`lib/tenants/exclusao.ts`).
   // Opcional: fixtures antigas não o têm.
   suspended_kind?: TipoDeSuspensao | null;
+  // O motivo gravado na suspensão (`fn_suspender_org`); a faixa do topo o mostra.
+  // Opcional: fixtures antigas não o têm.
+  suspended_reason?: string | null;
   created_at: string;
   settings: Record<string, unknown> | null;
   // Dados cadastrais editáveis (os mesmos de Configurações › Empresa).

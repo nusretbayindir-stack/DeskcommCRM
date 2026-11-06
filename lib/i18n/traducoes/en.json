@@ -9525,5 +9525,8 @@
   "A versão que roda aqui, a que já existe e o que muda ao atualizar.": "The version running here, the one that already exists and what changes when updating.",
   "Chamar a equipe": "Call the team",
   "Negócio criado": "Deal created",
-  "Salve o negócio antes de anexar arquivos.": "Save the deal before attaching files."
+  "Salve o negócio antes de anexar arquivos.": "Save the deal before attaching files.",
+  "Aguardando o primeiro pagamento": "Waiting for the first payment",
+  "Mostrar link de pagamento": "Show payment link",
+  "Mande para a empresa. Se o link expirar, clique de novo em Mostrar link de pagamento.": "Send it to the company. If the link expires, click Show payment link again."
 }
