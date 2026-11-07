@@ -2381,6 +2381,8 @@
   "Lista salva.": "List saved.",
   "Deixe em branco para usar o endereço oficial do provedor. Use isto para apontar para um gateway compatível com a API da OpenAI. Um endereço na rede do servidor só funciona se quem administra a instalação o tiver liberado em Administração › Destinos internos — e, mesmo liberado, ele não vale para o endereço que esta empresa escolhe aqui.": "Leave blank to use the provider's official address. Use this to point to a gateway compatible with the OpenAI API. An address on the server's network only works if whoever manages the installation has allowed it under Administration › Internal destinations — and even then, it doesn't apply to the address this company chooses here.",
   "Descreva a regra ou o aprendizado em texto simples.": "Describe the rule or learning in plain text.",
+  "{n} ainda sem conexão ativa": "{n} without an active connection yet",
+  "Ainda não tem conta? Crie a sua.": "Don't have an account yet? Create one.",
   "Desinstalar": "Uninstall",
   "Disponível depois de salvar \"Me avisar\" — e, quando você armar a parada, ela só começa a valer 72 horas depois.": "Available after saving \"Notify me\" — and once you arm the stop, it only takes effect 72 hours later.",
   "Documento da organização": "Organization document",

@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useT } from "@/hooks/i18n/useT";
@@ -20,6 +21,9 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
   const { pendente: isPending, semResposta, enviar } = useEnvioComTeto();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  // Vindo do convite, "e-mail ou senha incorretos" também pode querer dizer
+  // "você ainda não tem conta": o caminho para criá-la leva o mesmo token.
+  const tokenDoConvite = /^\/team\/accept-invite\/([^/?#]+)/.exec(next ?? "")?.[1] ?? null;
 
   const {
     register,
@@ -107,6 +111,14 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
           role="alert"
         >
           {serverError}
+          {tokenDoConvite && serverError === t("Email ou senha incorretos.") && (
+            <>
+              {" "}
+              <Link href={`/signup?invite=${encodeURIComponent(tokenDoConvite)}`} className="underline underline-offset-4">
+                {t("Ainda não tem conta? Crie a sua.")}
+              </Link>
+            </>
+          )}
         </div>
       )}
       {semResposta && <AvisoSemResposta />}

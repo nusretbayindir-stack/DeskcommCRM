@@ -26,12 +26,15 @@ interface PropsDaPagina {
 const tituloNoIdiomaDoProduto = tituloDaAba((t) => t("Política de Privacidade"));
 
 export async function generateMetadata({ searchParams }: PropsDaPagina = {}): Promise<Metadata> {
-  const belga = (await loadAuthUser())
-    ? null
-    : await idiomaBelgaDoVisitante(
-        (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor,
-        lerEscolhaDeIdioma((await searchParams)?.lang),
-      );
+  const semSessao = !(await loadAuthUser());
+  const pais = (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor;
+  const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
+  // `?lang=tr` não é língua belga: a página inteira sai em turco (ver o corpo),
+  // e a aba tem de acompanhá-la em vez de seguir o navegador.
+  if (semSessao && escolha === "tr" && perfilDoPais(pais).codigo === "BE") {
+    return { title: traduzir("Política de Privacidade", "tr") };
+  }
+  const belga = semSessao ? await idiomaBelgaDoVisitante(pais, escolha) : null;
   return belga ? { title: POLITICA_BELGA[belga]["Política de Privacidade"] } : tituloNoIdiomaDoProduto();
 }
 

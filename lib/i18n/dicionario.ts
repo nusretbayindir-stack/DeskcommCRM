@@ -4958,6 +4958,8 @@ export const DICIONARIO: Traducoes = {
     es: "Frenar intentos de manipulación",
   },
   // A mesma pergunta, como tarefa do Jev: ele percebe e soma, não barra.
+  "{n} ainda sem conexão ativa": { es: "{n} aún sin conexión activa" },
+  "Ainda não tem conta? Crie a sua.": { es: "¿Aún no tienes cuenta? Crea la tuya." },
   "Perceber tentativa de manipulação": {
     es: "Detectar intentos de manipulación",
   },
