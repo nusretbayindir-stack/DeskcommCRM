@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { copyToClipboard } from "@/lib/clipboard";
-import { carregarCatalogo } from "@/lib/i18n/catalogos";
+import { carregarCatalogo, catalogoPronto } from "@/lib/i18n/catalogos";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMA_PADRAO, idiomaDelNavegador, type Idioma } from "@/lib/i18n/idiomas";
 
@@ -27,6 +27,10 @@ export default function GlobalError({
   const ultimoPedido = useRef(0);
   const setIdioma = useCallback((novo: Idioma) => {
     const pedido = ++ultimoPedido.current;
+    if (catalogoPronto(novo)) {
+      pintarIdioma(novo);
+      return;
+    }
     void carregarCatalogo(novo).then(() => {
       if (ultimoPedido.current === pedido) pintarIdioma(novo);
     });

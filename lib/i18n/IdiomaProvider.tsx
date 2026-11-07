@@ -82,9 +82,16 @@ export function IdiomaProvider({
   // Toda troca depois da montagem pinta só com o catálogo na mão, e o ÚLTIMO
   // pedido vence: voltar ao espanhol antes de o turco chegar não é desfeito
   // quando ele chega (o seletor faz isso quando o servidor recusa a troca).
+  // Catálogo já pronto (português, espanhol, o que já chegou): pinta na hora,
+  // como sempre pintou — esperar uma volta do microtask sem motivo atrasa o
+  // clique e quem lê a tela logo depois dele.
   const ultimoPedido = useRef(0);
   const pintarQuandoChegar = useCallback((novo: Idioma) => {
     const pedido = ++ultimoPedido.current;
+    if (catalogoPronto(novo)) {
+      setIdioma(novo);
+      return;
+    }
     void carregarCatalogo(novo).then(() => {
       if (ultimoPedido.current === pedido) setIdioma(novo);
     });
