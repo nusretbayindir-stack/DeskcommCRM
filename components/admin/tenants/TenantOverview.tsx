@@ -9,6 +9,7 @@ import type {
   TenantIntegrations,
 } from "@/hooks/useTenantDetail";
 import { useT } from "@/hooks/i18n/useT";
+import { perfilDoPais } from "@/lib/legal/perfil-do-pais";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -122,7 +123,7 @@ export function TenantOverview({ organization, counts, integrations, cobrancaLig
             <InfoRow label={t("Plano")} value={<Badge variant="neutral" className="capitalize">{plan}</Badge>} />
           )}
           <InfoRow label={t("Razão social")} value={organization.legal_name} />
-          <InfoRow label="CNPJ" value={organization.cnpj} />
+          <InfoRow label={t(perfilDoPais(organization.country).empresa.rotuloNumero)} value={organization.cnpj} />
           <InfoRow label={t("Onboarding concluído")} value={formatDate(organization.onboarded_at, tagDoIdioma)} />
           <InfoRow label={t("Criado em")} value={formatDate(organization.created_at, tagDoIdioma)} />
           {organization.suspended_at && (

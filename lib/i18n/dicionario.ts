@@ -17148,6 +17148,9 @@ export const DICIONARIO: Traducoes = {
   "O ritmo você ajusta na própria tela da campanha, sem descartar nada.": {
     es: "El ritmo se ajusta en la propia pantalla de la campaña, sin descartar nada.",
   },
+  "Aguardando o primeiro pagamento": { es: "Esperando el primer pago" },
+  "Mostrar link de pagamento": { es: "Mostrar enlace de pago" },
+  "Mande para a empresa. Se o link expirar, clique de novo em Mostrar link de pagamento.": { es: "Envíalo a la empresa. Si el enlace caduca, haz clic de nuevo en Mostrar enlace de pago." },
   "Voltar para a campanha": { es: "Volver a la campaña" },
   "funil removido": { es: "embudo eliminado" },
   "agente indisponível": { es: "agente no disponible" },

@@ -23,7 +23,7 @@ const BASE = `/api/v1/admin/tenants/${ORG}/assinatura`;
 const BASICO = { id: "cccccccc-0000-4000-8000-000000000001", nome: "Básico", arquivado_em: null };
 const PRO = { id: "cccccccc-0000-4000-8000-000000000002", nome: "Pro", arquivado_em: null };
 const VELHO = { id: "cccccccc-0000-4000-8000-000000000003", nome: "Velho", arquivado_em: "2026-09-01T00:00:00Z" };
-const EM_TESTE = { plano_id: BASICO.id, estado: "trial" as const, trial_ate: "2026-10-10T12:00:00Z", prazo_extra_ate: null, provedor: null, plano_agendado_id: null, proximo_vencimento: null };
+const EM_TESTE = { plano_id: BASICO.id, estado: "trial" as const, trial_ate: "2099-10-10T12:00:00Z", prazo_extra_ate: null, provedor: null, plano_agendado_id: null, proximo_vencimento: null };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -107,7 +107,7 @@ describe("card Cobrança do tenant", () => {
 describe("link de pagamento", () => {
   const LINK = "https://checkout.stripe.com/c/pay/cs_test_link";
   const CNPJ = "11222333000181";
-  const gerar = () => screen.getByRole("button", { name: "Gerar link de pagamento" });
+  const gerar = () => screen.getByRole("button", { name: "Mostrar link de pagamento" });
   const card = (extra: Partial<Parameters<typeof CardDeCobranca>[0]> = {}) =>
     render(<CardDeCobranca orgId={ORG} planos={[BASICO]} assinatura={EM_TESTE} suspensaPorCobranca={false} rotuloAntigo={null} {...extra} />);
 
@@ -175,10 +175,10 @@ describe("link de pagamento", () => {
 
   it("sem bloco em ativa e em isenta", () => {
     card({ assinatura: { ...EM_TESTE, estado: "ativa" } });
-    expect(screen.queryByRole("button", { name: "Gerar link de pagamento" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mostrar link de pagamento" })).toBeNull();
     cleanup();
     card({ assinatura: null, pedeDocumento: true });
-    expect(screen.queryByRole("button", { name: "Gerar link de pagamento" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mostrar link de pagamento" })).toBeNull();
     expect(screen.queryByLabelText("CPF ou CNPJ de quem paga")).toBeNull();
   });
 
@@ -199,7 +199,7 @@ describe("#2961: exceção do B (revendedor sem plano nenhum: a empresa nasce is
   it("⭐ isenta e sem plano nenhum: sem botão de gerar link, sem campo de documento, só o caminho para criar um plano", () => {
     render(<CardDeCobranca orgId={ORG} planos={[]} assinatura={null} suspensaPorCobranca={false} rotuloAntigo={null} pedeDocumento />);
     expect(screen.getByText("Isenta: não paga e não tem limites.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Gerar link de pagamento" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mostrar link de pagamento" })).toBeNull();
     expect(screen.queryByLabelText("CPF ou CNPJ de quem paga")).toBeNull();
     expect(screen.queryByRole("button", { name: "Atribuir plano" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Tornar isenta" })).toBeNull();
