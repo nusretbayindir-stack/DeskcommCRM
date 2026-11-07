@@ -1,12 +1,12 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { copyToClipboard } from "@/lib/clipboard";
-import { carregarCatalogo, catalogoPronto } from "@/lib/i18n/catalogos";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMA_PADRAO, idiomaDelNavegador, type Idioma } from "@/lib/i18n/idiomas";
+import { useTrocaComCatalogo } from "@/lib/i18n/useTrocaComCatalogo";
 
 export default function GlobalError({
   error,
@@ -21,20 +21,9 @@ export default function GlobalError({
   // quebrar a hidratação do único componente que não pode falhar.
   const [idioma, pintarIdioma] = useState<Idioma>(IDIOMA_PADRAO);
 
-  // Sem provider aqui: o catálogo do idioma é baixado à parte no navegador
-  // (`catalogos.navegador.ts`), e a página só troca de idioma depois de ele
-  // chegar — senão trocaria para o português. O último pedido vence.
-  const ultimoPedido = useRef(0);
-  const setIdioma = useCallback((novo: Idioma) => {
-    const pedido = ++ultimoPedido.current;
-    if (catalogoPronto(novo)) {
-      pintarIdioma(novo);
-      return;
-    }
-    void carregarCatalogo(novo).then(() => {
-      if (ultimoPedido.current === pedido) pintarIdioma(novo);
-    });
-  }, []);
+  // Sem provider aqui: o catálogo do idioma é baixado à parte no navegador, e
+  // a página só troca de idioma com ele na mão (a regra do `IdiomaProvider`).
+  const setIdioma = useTrocaComCatalogo(idioma, pintarIdioma);
 
   useEffect(() => {
     setIdioma(idiomaDelNavegador(navigator.languages ?? [navigator.language]));

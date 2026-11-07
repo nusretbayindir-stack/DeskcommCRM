@@ -20,6 +20,7 @@ vi.mock("@/lib/i18n/catalogos", () => ({
   entradaDoCatalogo: (idioma: string, texto: string) =>
     idioma === "tr" && controle.pronto ? controle.TURCO[texto] : undefined,
   catalogoPronto: (idioma: string) => idioma !== "tr" || controle.pronto,
+  catalogoCarregado: (idioma: string) => idioma !== "tr" || controle.pronto,
   carregarCatalogo: (idioma: string) =>
     idioma !== "tr" || controle.pronto
       ? Promise.resolve()

@@ -41,6 +41,11 @@ export function catalogoPronto(_idioma: Idioma): boolean {
   return true;
 }
 
+/** No servidor o texto de todo idioma está na mão. */
+export function catalogoCarregado(_idioma: Idioma): boolean {
+  return true;
+}
+
 /** No servidor não há o que baixar. Mesmo nome e forma do leitor do navegador. */
 export function carregarCatalogo(_idioma: Idioma): Promise<void> {
   return Promise.resolve();

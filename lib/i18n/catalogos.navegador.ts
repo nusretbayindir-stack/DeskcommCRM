@@ -16,6 +16,9 @@
  *   o idioma não tem catálogo (português, espanhol), ou a última tentativa
  *   falhou. Sem a terceira, uma falha de rede deixaria a tela suspensa para
  *   sempre; com ela, a tela abre em português e o console guarda o motivo.
+ * - `catalogoCarregado` quer dizer "o texto está na mão": o idioma não tem
+ *   catálogo ou ele chegou. Uma falha NÃO conta: a troca de idioma
+ *   (`useTrocaComCatalogo`) só pinta quando `catalogoCarregado` é verdadeiro.
  * - Depois de uma falha, um pedido explícito (trocar o idioma) tenta de novo.
  */
 import type { Idioma } from "./idiomas";
@@ -41,6 +44,11 @@ export function entradaDoCatalogo(idioma: Idioma, texto: string): string | undef
 /** Não há mais o que esperar por este idioma (ver o contrato no cabeçalho). */
 export function catalogoPronto(idioma: Idioma): boolean {
   return CARREGADORES[idioma] === undefined || carregados[idioma] !== undefined || falharam.has(idioma);
+}
+
+/** O texto do idioma está na mão (ver o contrato no cabeçalho). */
+export function catalogoCarregado(idioma: Idioma): boolean {
+  return CARREGADORES[idioma] === undefined || carregados[idioma] !== undefined;
 }
 
 /** Baixa o catálogo do idioma uma vez. Nunca rejeita. */

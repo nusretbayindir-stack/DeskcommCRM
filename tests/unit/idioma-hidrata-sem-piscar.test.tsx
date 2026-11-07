@@ -28,6 +28,8 @@ vi.mock("@/lib/i18n/catalogos", () => ({
       ? controle.TURCO[texto]
       : undefined,
   catalogoPronto: (idioma: string) => idioma !== "tr" || controle.prontos.has(idioma),
+  catalogoCarregado: (idioma: string) =>
+    idioma !== "tr" || (controle.prontos.has(idioma) && !controle.semEntradas.has(idioma)),
   carregarCatalogo: (idioma: string) => {
     if (idioma !== "tr" || controle.prontos.has(idioma)) return Promise.resolve();
     const emCurso = controle.pendentes.get(idioma);

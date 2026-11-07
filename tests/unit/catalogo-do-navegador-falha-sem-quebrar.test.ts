@@ -28,6 +28,9 @@ describe("o leitor do navegador quando o catálogo não chega", () => {
     expect(erro).toHaveBeenCalledTimes(1);
     expect(String(erro.mock.calls[0]?.[0])).toContain("[i18n] catálogo não carregou");
     expect(navegador.catalogoPronto("tr")).toBe(true);
+    // Pronto para não suspender a tela, mas o texto NÃO está na mão: a troca
+    // de idioma não pinta com isto (`useTrocaComCatalogo`).
+    expect(navegador.catalogoCarregado("tr")).toBe(false);
     expect(navegador.entradaDoCatalogo("tr", "Plano atual")).toBeUndefined();
 
     // Um pedido explícito depois é uma tentativa nova, não a falha guardada.

@@ -1,9 +1,10 @@
 "use client";
-import { createContext, use, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useContext, useEffect, useMemo, useState } from "react";
 
 import { carregarCatalogo, catalogoPronto } from "@/lib/i18n/catalogos";
 import { traduzir } from "./dicionario";
 import { normalizarIdioma, IDIOMA_PADRAO, type Idioma } from "./idiomas";
+import { useTrocaComCatalogo } from "./useTrocaComCatalogo";
 
 /**
  * O idioma da interface, com contexto PRÓPRIO — não pendurado no de autenticação.
@@ -79,23 +80,10 @@ export function IdiomaProvider({
   // cedo, e um `redirect()` viraria meta refresh em vez de 307.
   if (!catalogoPronto(idioma)) use(carregarCatalogo(idioma));
 
-  // Toda troca depois da montagem pinta só com o catálogo na mão, e o ÚLTIMO
-  // pedido vence: voltar ao espanhol antes de o turco chegar não é desfeito
-  // quando ele chega (o seletor faz isso quando o servidor recusa a troca).
-  // Catálogo já pronto (português, espanhol, o que já chegou): pinta na hora,
-  // como sempre pintou — esperar uma volta do microtask sem motivo atrasa o
-  // clique e quem lê a tela logo depois dele.
-  const ultimoPedido = useRef(0);
-  const pintarQuandoChegar = useCallback((novo: Idioma) => {
-    const pedido = ++ultimoPedido.current;
-    if (catalogoPronto(novo)) {
-      setIdioma(novo);
-      return;
-    }
-    void carregarCatalogo(novo).then(() => {
-      if (ultimoPedido.current === pedido) setIdioma(novo);
-    });
-  }, []);
+  // Toda troca depois da montagem pinta só com o texto na mão, e o último
+  // pedido vence; catálogo que falhou deixa a tela no idioma em que está.
+  // A regra é a mesma da página de erro global: `useTrocaComCatalogo`.
+  const pintarQuandoChegar = useTrocaComCatalogo(idioma, setIdioma);
 
   useEffect(() => {
     pintarQuandoChegar(doServidor);
