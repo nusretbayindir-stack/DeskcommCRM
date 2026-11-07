@@ -87,8 +87,11 @@ describe("todo catálogo de idioma", () => {
   });
 });
 
-/** O único arquivo que pode importar um catálogo (ver o cabeçalho dele). */
-const LEITOR = "lib/i18n/catalogos.ts";
+/**
+ * Os únicos arquivos que podem importar um catálogo: o leitor do servidor
+ * (estático, todos na memória) e o do navegador (`import()`, um por idioma).
+ */
+const LEITORES = ["lib/i18n/catalogos.ts", "lib/i18n/catalogos.navegador.ts"];
 
 const IMPORTACAO = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|\bimport\s+)["']([^"']+)["']/g;
 
@@ -127,7 +130,7 @@ describe("o catálogo só viaja para o navegador pelo leitor, e só o de quem ap
     expect(catalogosImportados(em("lib/i18n/x.ts"), 'import { a } from "./traducoes-util";')).toEqual([]);
   });
 
-  it(`só ${LEITOR} importa catálogo, e nunca o de um idioma em construção`, () => {
+  it(`só ${LEITORES.join(" e ")} importam catálogo, e nunca o de um idioma em construção`, () => {
     // Um catálogo importado vai no pacote de TODO usuário. O de um idioma em
     // construção não é servido a ninguém: seriam centenas de KB por uma língua
     // que ninguém pode escolher. O de um idioma visível entra uma vez, pelo
@@ -143,7 +146,7 @@ describe("o catálogo só viaja para o navegador pelo leitor, e só o de quem ap
           const rel = relative(RAIZ, caminho).split(sep).join("/");
           for (const codigo of catalogosImportados(caminho, readFileSync(caminho, "utf8"))) {
             if (!visiveis.has(codigo)) indevidos.push(`${rel} → ${codigo}.json (idioma em construção)`);
-            else if (rel !== LEITOR) indevidos.push(`${rel} → ${codigo}.json (só ${LEITOR} lê catálogo)`);
+            else if (!LEITORES.includes(rel)) indevidos.push(`${rel} → ${codigo}.json (só ${LEITORES.join(" e ")} leem catálogo)`);
           }
         }
       }

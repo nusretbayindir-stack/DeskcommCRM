@@ -55,12 +55,17 @@ jobs:
         run: pnpm build
 
       - name: Medir o pacote
-        run: pnpm tsx scripts/i18n/medir-pacote.ts --so-medir
+        id: medir
+        run: pnpm tsx scripts/i18n/medir-pacote.ts
 
+      # A sonda roda mesmo com a medição reprovada: as duas respostas juntas é
+      # que dizem o que quebrou (o catálogo no pacote errado, a tela, ou os dois).
       - name: Instalar o Chromium
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Subir o app
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
         run: |
           pnpm exec next start -p 3100 > next-start.log 2>&1 &
           for _ in $(seq 1 60); do
@@ -72,7 +77,8 @@ jobs:
           exit 1
 
       - name: Sondar o carregamento
-        run: pnpm tsx scripts/i18n/sondar-carregamento.ts --url http://127.0.0.1:3100/login --so-medir
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
+        run: pnpm tsx scripts/i18n/sondar-carregamento.ts --url http://127.0.0.1:3100/login
 
       - name: Log do app (se algo falhou)
         if: failure()

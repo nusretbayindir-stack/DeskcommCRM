@@ -1,9 +1,10 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { copyToClipboard } from "@/lib/clipboard";
+import { carregarCatalogo } from "@/lib/i18n/catalogos";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMA_PADRAO, idiomaDelNavegador, type Idioma } from "@/lib/i18n/idiomas";
 
@@ -18,11 +19,22 @@ export default function GlobalError({
   const [copied, setCopied] = useState(false);
   // Parte do padrão (igual ao do servidor) e ajusta depois de montar, para não
   // quebrar a hidratação do único componente que não pode falhar.
-  const [idioma, setIdioma] = useState<Idioma>(IDIOMA_PADRAO);
+  const [idioma, pintarIdioma] = useState<Idioma>(IDIOMA_PADRAO);
+
+  // Sem provider aqui: o catálogo do idioma é baixado à parte no navegador
+  // (`catalogos.navegador.ts`), e a página só troca de idioma depois de ele
+  // chegar — senão trocaria para o português. O último pedido vence.
+  const ultimoPedido = useRef(0);
+  const setIdioma = useCallback((novo: Idioma) => {
+    const pedido = ++ultimoPedido.current;
+    void carregarCatalogo(novo).then(() => {
+      if (ultimoPedido.current === pedido) pintarIdioma(novo);
+    });
+  }, []);
 
   useEffect(() => {
     setIdioma(idiomaDelNavegador(navigator.languages ?? [navigator.language]));
-  }, []);
+  }, [setIdioma]);
 
   useEffect(() => {
     const id = Sentry.captureException(error);

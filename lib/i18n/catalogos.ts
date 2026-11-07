@@ -1,19 +1,27 @@
 /**
- * O LEITOR DOS CATÁLOGOS — `lib/i18n/traducoes/<codigo>.json` na tela.
+ * O LEITOR DOS CATÁLOGOS NO SERVIDOR — `lib/i18n/traducoes/<codigo>.json` na memória.
+ *
+ * ─── Dois leitores, um contrato ────────────────────────────────────────────
+ *
+ * O servidor e o worker mandam mensagem para clientes de idiomas diferentes,
+ * então leem TODOS os catálogos visíveis, aqui, de forma estática. O pacote do
+ * navegador NÃO recebe este arquivo: o `resolveAlias` do `next.config.ts` o
+ * troca por `catalogos.navegador.ts`, que baixa só o catálogo de quem lê. Os
+ * dois expõem os mesmos nomes (`tests/unit/catalogo-do-navegador-tem-o-mesmo-contrato`),
+ * e quem importa escreve `@/lib/i18n/catalogos` — é por esse nome que o alias
+ * casa.
  *
  * ─── Só entra aqui o catálogo de um idioma que aparece ─────────────────────
  *
- * Um catálogo importado vai no pacote do navegador de TODO usuário. O de um
- * idioma `em_construcao` não é servido a ninguém, então pô-lo aqui seria pagar
- * centenas de KB por uma língua que ninguém pode escolher. A guarda está em
- * `tests/unit/catalogo-de-idioma-tem-forma`: este é o único arquivo que pode
- * importar um catálogo, e só o de um idioma visível.
+ * O de um idioma `em_construcao` não é servido a ninguém. A guarda está em
+ * `tests/unit/catalogo-de-idioma-tem-forma`: só os dois leitores importam
+ * catálogo, e só o de um idioma visível.
  *
  * ─── O dicionário vem antes ────────────────────────────────────────────────
  *
  * `traduzir` consulta a coluna do dicionário e só depois o catálogo; os dois
- * caem no português. A leitura é síncrona e a mesma no servidor, no worker e
- * no navegador — nada de carga assíncrona por idioma nesta fatia.
+ * caem no português. A leitura é síncrona; o que é assíncrono é só a chegada
+ * do catálogo no navegador, e quem espera por ela é o `IdiomaProvider`.
  */
 import type { Idioma } from "./idiomas";
 import tr from "./traducoes/tr.json";
@@ -26,4 +34,14 @@ export const IDIOMAS_COM_CATALOGO = Object.keys(CATALOGOS) as Idioma[];
 /** A frase no catálogo do idioma, ou `undefined` quando ele não a tem. */
 export function entradaDoCatalogo(idioma: Idioma, texto: string): string | undefined {
   return CATALOGOS[idioma]?.[texto];
+}
+
+/** No servidor todo catálogo já está na memória: não há o que esperar. */
+export function catalogoPronto(_idioma: Idioma): boolean {
+  return true;
+}
+
+/** No servidor não há o que baixar. Mesmo nome e forma do leitor do navegador. */
+export function carregarCatalogo(_idioma: Idioma): Promise<void> {
+  return Promise.resolve();
 }

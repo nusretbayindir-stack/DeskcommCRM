@@ -74,6 +74,18 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   poweredByHeader: false,
+  /**
+   * O pacote do NAVEGADOR recebe o leitor que baixa só o catálogo de quem lê
+   * (`lib/i18n/catalogos.navegador.ts`); servidor e worker seguem com
+   * `catalogos.ts`, que tem todos na memória. A chave é o nome com que os
+   * arquivos importam (`@/lib/i18n/catalogos`). A medição está em
+   * `scripts/i18n/medir-pacote.ts` e no job `idioma-no-pacote`.
+   */
+  turbopack: {
+    resolveAlias: {
+      "@/lib/i18n/catalogos": { browser: "./lib/i18n/catalogos.navegador.ts" },
+    },
+  },
   // typedRoutes moved out of experimental in Next 15.5+
   typedRoutes: true,
   experimental: {
