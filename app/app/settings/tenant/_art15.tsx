@@ -43,7 +43,17 @@ export function Art15Form({
   pais: string | null;
 }) {
   const t = useT();
-  const naoInformado = naoInformadoPelo(perfilDoPais(pais).papel.controlador);
+  // A frase do documento tem DOIS textos possíveis (o papel do país), e cada um
+  // entra em `t()` por literal: a tela fala o idioma de quem lê, e em português
+  // continua byte a byte o que o PDF imprime. Passar a frase calculada a `t()`
+  // seria dado de runtime no dicionário.
+  const frasePtDoDocumento = naoInformadoPelo(perfilDoPais(pais).papel.controlador);
+  const naoInformado =
+    frasePtDoDocumento === "não informado pelo controlador"
+      ? t("não informado pelo controlador")
+      : frasePtDoDocumento === "não informado pelo responsável pelo tratamento"
+        ? t("não informado pelo responsável pelo tratamento")
+        : frasePtDoDocumento;
   const [form, setForm] = useState<AlineasPreenchidas>(initial);
   const [salvo, setSalvo] = useState<AlineasPreenchidas>(initial);
   const [isPending, startTransition] = useTransition();

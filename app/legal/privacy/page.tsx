@@ -35,6 +35,15 @@ export async function generateMetadata({ searchParams }: PropsDaPagina = {}): Pr
   return belga ? { title: POLITICA_BELGA[belga]["Política de Privacidade"] } : tituloNoIdiomaDoProduto();
 }
 
+/**
+ * O número da empresa vem entre parênteses ("Empresa (CNPJ 00.000…)"). Quando o
+ * próprio rótulo já traz parênteses ("Número da empresa (KBO/BCE)"), eles
+ * ficariam aninhados — então o número entra depois de uma vírgula.
+ */
+function complementoDoNumero(rotulo: string, numero: string): string {
+  return rotulo.includes("(") ? `, ${rotulo} ${numero}` : ` (${rotulo} ${numero})`;
+}
+
 export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) {
   const op = await resolverOperador();
 
@@ -118,7 +127,7 @@ export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) 
                 "Nos dados tratados nas conversas de uma empresa com os clientes dela (contatos, mensagens, arquivos, agendamentos), o controlador é essa empresa:",
               )}{" "}
           <strong>{nomeDoOperador(op, t("a empresa que fala com você"))}</strong>
-          {op.cnpj ? ` (${t(perfil.empresa.rotuloNumero)} ${op.cnpj})` : ""}.{" "}
+          {op.cnpj ? complementoDoNumero(t(perfil.empresa.rotuloNumero), op.cnpj) : ""}.{" "}
           {foraDoBrasil
             ? t("O prestador de serviço trata esses dados em nome dela, como subcontratante.")
             : t("O prestador de serviço trata esses dados em nome dela, como operador.")}

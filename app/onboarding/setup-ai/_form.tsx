@@ -78,7 +78,7 @@ interface Props {
 
 export function SetupAiForm({ capacidades, conferencias }: Props) {
   const t = useT();
-  const [name, setName] = useState("Atendente IA");
+  const [name, setName] = useState(() => t("Atendente IA"));
   const [jeito, setJeito] = useState<PromptTemplate>("ecommerce_friendly");
   const [regras, setRegras] = useState("");
   const [naoPublicado, setNaoPublicado] = useState<string | null>(null);

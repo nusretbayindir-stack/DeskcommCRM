@@ -10,14 +10,16 @@ import { connectWahaChannel, ChannelConnectionError } from "@/lib/channels/conne
 import { lerRiscoDoQr } from "@/lib/channels/risco-do-qr";
 import { loadOnboardingChannel } from "@/lib/channels/onboarding-session";
 import { traduzirLimiteDoPlano } from "@/lib/cobranca/limites";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 export async function GET(): Promise<Response> {
   const requestId = randomUUID();
   const user = await loadAuthUser(); if (!user) return fail("unauthenticated", "Sessão expirada", 401, { requestId });
+  const t = (texto: string) => traduzir(texto, user.idioma);
   const ativa = await orgAtivaDaApi(user, requestId);
   if (!ativa.ok) return ativa.response;
-  const org = ativa.org; if (!org) return fail("tenant_not_found", "Sem organização ativa", 404, { requestId });
-  if (await mfaEmDivida()) return fail("mfa_required", "Confirme a verificação em duas etapas.", 403, { requestId });
+  const org = ativa.org; if (!org) return fail("tenant_not_found", t("Sem organização ativa"), 404, { requestId });
+  if (await mfaEmDivida()) return fail("mfa_required", t("Confirme a verificação em duas etapas."), 403, { requestId });
   const waha = getWahaClient(); if (!waha) return ok({ status: "WAHA_NOT_CONFIGURED", session: null }, { requestId });
   try {
     const db = await createClient(); const channel = await loadOnboardingChannel(db, org.orgId);
@@ -28,7 +30,7 @@ export async function GET(): Promise<Response> {
       .eq("organization_id", org.orgId).eq("id", channel.id).is("archived_at", null).select("id").maybeSingle();
     if (error || !data) throw new Error("connection_sync_failed");
     return ok({ status, session: channel.waha_session_name, channel_session_id: channel.id }, { requestId });
-  } catch { return fail("connection_status_failed", "Não foi possível conferir a conexão. Tente novamente.", 502, { requestId }); }
+  } catch { return fail("connection_status_failed", t("Não foi possível conferir a conexão. Tente novamente."), 502, { requestId }); }
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -36,8 +38,9 @@ export async function POST(req: Request): Promise<Response> {
   const requestId = randomUUID();
   const auth = await requireRole("admin", { requestId, resource: "channel_sessions", allowPlatformAdmin: true });
   if (!auth.ok) return auth.response;
-  if (await mfaEmDivida()) return fail("mfa_required", "Confirme a verificação em duas etapas.", 403, { requestId });
-  const waha = getWahaClient(); if (!waha) return fail("waha_not_configured", "O serviço de conexão está indisponível. Tente novamente.", 503, { requestId });
+  const t = (texto: string) => traduzir(texto, auth.user.idioma);
+  if (await mfaEmDivida()) return fail("mfa_required", t("Confirme a verificação em duas etapas."), 403, { requestId });
+  const waha = getWahaClient(); if (!waha) return fail("waha_not_configured", t("O serviço de conexão está indisponível. Tente novamente."), 503, { requestId });
   // Corpo ausente ou quebrado vale "sem aceite", e quem recusa é `connectWahaChannel`.
   const corpo: unknown = await req.json().catch(() => null);
   try {
@@ -51,11 +54,11 @@ export async function POST(req: Request): Promise<Response> {
     const limite = traduzirLimiteDoPlano(error, auth.user.idioma);
     if (limite) return fail(limite.code, limite.message, 409, { requestId, details: limite.details });
     if (error instanceof ChannelConnectionError) return fail(error.code,
-      error.code === "qr_risco_nao_aceito" ? "Para conectar pelo celular, leia o aviso e aceite o risco."
-        : error.code === "connection_in_progress" ? "A conexão ainda está sendo preparada. Aguarde e tente novamente."
-        : error.code === "connection_session_name_too_long" ? "O identificador desta conexão passou do limite que o WhatsApp aceita. Nada foi criado no WhatsApp — atualize o sistema e tente novamente."
-        : "Não foi possível concluir a conexão. Tente novamente ou repare o número em Conexões.",
+      error.code === "qr_risco_nao_aceito" ? t("Para conectar pelo celular, leia o aviso e aceite o risco.")
+        : error.code === "connection_in_progress" ? t("A conexão ainda está sendo preparada. Aguarde e tente novamente.")
+        : error.code === "connection_session_name_too_long" ? t("O identificador desta conexão passou do limite que o WhatsApp aceita. Nada foi criado no WhatsApp — atualize o sistema e tente novamente.")
+        : t("Não foi possível concluir a conexão. Tente novamente ou repare o número em Conexões."),
       error.status, { requestId, details: error.technical });
-    return fail("internal_error", "Não foi possível concluir a conexão. Tente novamente.", 500, { requestId });
+    return fail("internal_error", t("Não foi possível concluir a conexão. Tente novamente."), 500, { requestId });
   }
 }

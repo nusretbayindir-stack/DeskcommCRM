@@ -200,7 +200,7 @@ export function NewTenantForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            {t("Você já é administrador de")} {created.display_name}.
+            {t("Você já é administrador de {nome}.").replace("{nome}", created.display_name)}
           </p>
           {created.idioma_gravado === false && (
             <p className="text-sm text-warning-fg">

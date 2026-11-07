@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { traduzirErrosDeCampo } from "@/lib/api/erros-de-campo";
 import { ApiError } from "@/lib/api/types";
 import { ok, fail, noContent } from "@/lib/api/wrappers";
 import { orgAtivaDaApi, requireRole } from "@/lib/auth/require-role";
@@ -150,7 +151,7 @@ export async function PATCH(
   } catch (err) {
     if (err instanceof ApiError) {
       return fail(err.code, err.message, err.status, {
-        details: err.details as Record<string, unknown> | undefined,
+        details: traduzirErrosDeCampo(err.details, user.idioma) as Record<string, unknown> | undefined,
         requestId,
       });
     }
