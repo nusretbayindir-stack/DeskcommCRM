@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 import { ColdCall } from "./_client";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Cold Call" };
+export const generateMetadata = tituloDaAba((t) => t("Cold Call"));
 
 export default function ColdCallPage() {
   return <ColdCall />;

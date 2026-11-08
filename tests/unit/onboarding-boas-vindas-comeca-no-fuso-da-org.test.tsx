@@ -24,9 +24,11 @@ describe("boas-vindas: o fuso inicial é o da organização", () => {
   });
 
   it("fuso oferecido que a lista do onboarding não tem: entra na lista e começa nele", () => {
-    render(<WelcomeForm defaultOrgName="" orgId="o1" fusoInicial="America/Asuncion" />);
-    expect(fusoEnviado()).toBe("America/Asuncion");
-    expect(screen.getByRole("combobox").textContent).toContain("Assunção (Paraguai)");
+    // Luanda: está em `FUSOS_OFERECIDOS` e não na lista curta do onboarding
+    // (Assunção servia de exemplo até o upstream v1.104.0 pô-la na lista curta).
+    render(<WelcomeForm defaultOrgName="" orgId="o1" fusoInicial="Africa/Luanda" />);
+    expect(fusoEnviado()).toBe("Africa/Luanda");
+    expect(screen.getByRole("combobox").textContent).toContain("Luanda (Angola)");
   });
 
   it("sem fuso, ou com um que a tela não oferece: o padrão do produto", () => {

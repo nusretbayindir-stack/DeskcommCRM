@@ -58,6 +58,9 @@ const PASSOS_DEPOIS_DO_PORTAO = [
   "if (queryError)",
   "const conversations",
   "let reopened",
+  // Cache do idioma por organização (U14): só serve às conversas reabertas.
+  "const idiomaDaOrg",
+  "const idiomaDe",
   "for (c of conversations)",
   "if (reopened > 0)",
   "return",

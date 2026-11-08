@@ -109,7 +109,7 @@ export const DICIONARIO: Traducoes = {
   "não — informe o client_id": { es: "no — informa el client_id" },
   "não — o acesso é apagado só do lado de cá": { es: "no — el acceso solo se borra de este lado" },
   "revogação agendada": { es: "revocación programada" },
-  "sim": { es: "sí" },
+  "sim": { es: "si" },
   "último uso": { es: "último uso" },
   "Não consegui confirmar o canal de voz. Tente ligar de novo.": { es: "No pude confirmar el canal de voz. Intenta llamar de nuevo." },
   "Ligue para uma lista de leads, um por vez, com roteiro e resultado de cada ligação.": { es: "Llama a una lista de leads, uno por vez, con guion y resultado de cada llamada." },
@@ -14413,6 +14413,9 @@ export const DICIONARIO: Traducoes = {
   },
   "O canal indicado não pode enviar texto livre fora da janela de atendimento.": {
     es: "El canal indicado no puede enviar texto libre fuera de la ventana de atención.",
+  },
+  "O canal indicado não pode enviar texto livre fora da janela de atendimento, e o tipo não tem um modelo aprovado que sirva para o lembrete.": {
+    es: "El canal indicado no puede enviar texto libre fuera de la ventana de atención, y el tipo no tiene una plantilla aprobada que sirva para el recordatorio.",
   },
   "Não foi possível consultar o canal da reserva. A próxima rodada tentará novamente.": {
     es: "No se pudo consultar el canal de la reserva. La próxima ronda lo intentará de nuevo.",
