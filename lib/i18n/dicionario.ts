@@ -6581,7 +6581,6 @@ export const DICIONARIO: Traducoes = {
     es: "Error al cargar los datos de uso. Intenta recargar.",
   },
   "Mensagens / dia": { es: "Mensajes / día" },
-  "Custo AI / dia (US$)": { es: "Costo IA / día (US$)" },
   "AI Tokens / dia": { es: "Tokens de IA / día" },
   "Não há dados de uso no período selecionado.": {
     es: "No hay datos de uso en el período seleccionado.",
@@ -14457,7 +14456,6 @@ export const DICIONARIO: Traducoes = {
   "Chamada perdida de {telefone}": { es: "Llamada perdida de {telefone}" },
   "Quem ligou desligou antes de alguém atender.": { es: "Quien llamó colgó antes de que alguien atendiera." },
   "A chamada foi recusada.": { es: "La llamada fue rechazada." },
-  "O telefone tocou e ninguém atendeu.": { es: "El teléfono sonó y nadie atendió." },
   "A linha estava ocupada.": { es: "La línea estaba ocupada." },
   "A chamada foi cancelada.": { es: "La llamada fue cancelada." },
   "A chamada falhou antes de completar.": { es: "La llamada falló antes de completarse." },
@@ -20091,7 +20089,6 @@ export const DICIONARIO: Traducoes = {
   "Você já tem um fluxo chamado «{nome}». Abra esse ou instale com outro nome.": { es: "Ya tienes un flujo llamado «{nome}». Abre ese o instala con otro nombre." },
   "Interessado": { es: "Interesado" },
   "Sem interesse": { es: "Sin interés" },
-  "sim": { es: "si" },
   // S4 — cobrança em euro
   "Só dá para trocar para um plano na mesma moeda. Cancele e assine o plano novo.": { es: "Solo se puede cambiar a un plan en la misma moneda. Cancela y suscríbete al plan nuevo." },
   "Real (R$)": { es: "Real (R$)" },
@@ -20630,7 +20627,6 @@ export const DICIONARIO: Traducoes = {
   "Configurado automaticamente no provedor: só os eventos deste número chegam aqui.": { es: "Configurado automáticamente en el proveedor: solo los eventos de este número llegan aquí." },
   "Confira os dados da conexão.": { es: "Revisa los datos de la conexión." },
   "Aguarde um minuto antes de tentar novamente.": { es: "Espera un minuto antes de intentarlo de nuevo." },
-  "Não foi possível concluir a conexão. Tente novamente.": { es: "No se pudo completar la conexión. Inténtalo de nuevo." },
   "Este número foi conectado pela instalação. Para usar a sua chave, exclua a conexão atual em Conexões antes.": { es: "Este número fue conectado por la instalación. Para usar tu clave, elimina antes la conexión actual en Conexiones." },
   "Esta instalação não tem conta no provedor para conectar com um clique. Use a sua própria chave.": { es: "Esta instalación no tiene cuenta en el proveedor para conectar con un clic. Usa tu propia clave." },
   "Este número foi conectado com a chave própria da organização. Para conectar pela instalação, exclua a conexão atual em Conexões antes.": { es: "Este número fue conectado con la clave propia de la organización. Para conectarlo por la instalación, elimina antes la conexión actual en Conexiones." },

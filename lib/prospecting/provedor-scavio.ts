@@ -61,6 +61,9 @@ const MARCA = "scavio:";
 const CONECTIVO: Record<Idioma, string> = {
   "pt-BR": "em",
   es: "en",
+  // O turco marca o lugar com sufixo ("İstanbul'da"), não com palavra solta:
+  // sem conectivo, "nicho local" é a busca que um turco digitaria.
+  tr: "",
 };
 
 interface BuscaCodificada {
