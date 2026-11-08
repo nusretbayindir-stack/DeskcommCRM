@@ -2,7 +2,7 @@
 
 Bu dosya, `lib/i18n/traducoes/fr.json` kataloğunu çevirenlerin tek başvuru kaynağıdır. Kataloğun anahtarı Portekizce ekran metnidir. Değeri o metnin Fransızcasıdır: Belçika'da, Belçika kullanımıyla. Çeviri bağlamı için her anahtarın İspanyolcası, İngilizcesi ve Türkçesi de verilir. Türkçe metin Belçika'ya göre düzeltildiği için Portekizce metin Brezilya'ya özgü bir şey söylüyorsa Türkçesi esas alınır.
 
-**Durum: taslak.** Onaylayan: ürün sahibinin seçtiği Fransızca okuyucu. İnceleme, bu dosyadan üretilen okuma ve not sayfasında yapılır (Görev 4, Adım 9). Bu sözlük onaylanmadan Fransızca katalog çevrilmez.
+**Durum: onaylandı** (2026-11-08, ürün sahibinin seçtiği Fransızca okuyucu; okuma ve not sayfasında). Fransızca katalog bu sözlükle çevrilir. Bir terimi ya da kuralı değiştirmek de onay ister.
 
 Çeviri süreci:
 
@@ -205,19 +205,3 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 **Durdurma kelimeleri çevrilmez.** Metin müşterinin yazacağı bir kelimeyi söylüyorsa (`responda PARAR`, `envie SAIR`, `BAJA`, `STOP`), Fransızcada **STOP** yazılır: "Demandez au client d'envoyer STOP." Sistem bu kelimeyi her dilde tanır.
 
 Tırnak içindeki örnek adlar (`etiqueta “cliente”` gibi) çevrilir: « client ». Bunlar kayıtlı veri değil, açıklamadaki örneklerdir.
-
-## Onayda karar verilecekler
-
-Bu bölüm taslak içindir; onaydan sonra silinir. Okuyucuya gidecek Fransızca özette de bu sorular yer alır.
-
-| Terim | Seçilen | Diğer seçenek | Neden bu seçildi |
-|---|---|---|---|
-| lead | prospect | lead, piste | Belçika'da Fransızca satış dilinde yaygın; "piste" daha çok Kanada kullanımı |
-| funil | pipeline | entonnoir de vente | Fransızca CRM ekranlarında aşamalı pano için yaygın ad |
-| plano | formule | forfait, abonnement | "forfait" telefon tarifesi çağrıştırır; "abonnement" zaten assinatura için kullanılıyor |
-| atendente | conseiller | agent | "agent" IA asistanıyla karışır; Görev 8'in kuralları da "conseiller" kullanıyor |
-| atendimento | prise en charge | service client | Ekranda hem destek hem satış görüşmesini kapsıyor |
-| follow-up | message de relance | suivi | "relance" müşteriye yeniden yazmak demek; "suivi" izleme (acompanhamento) için ayrıldı |
-| noktalama | `:` `;` `?` `!` önünde bölünmez boşluk | boşluksuz | Fransızca yazım kuralı; Belçika'da gayriresmî metinlerde boşluksuz da görülür |
-| saat | 14:30 | 14 h 30, 14h30 | Biçimler tek kalıptan geliyor; okuyucu "14h30" isterse tarih kalıpları değişir |
-| CPF | numéro d'identification | numéro de registre national | Ürün kişiden ulusal sicil numarası istemez (GBA/APD'nin 204/2025 kararı) |
