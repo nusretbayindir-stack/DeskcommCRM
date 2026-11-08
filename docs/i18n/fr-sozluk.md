@@ -2,7 +2,7 @@
 
 Bu dosya, `lib/i18n/traducoes/fr.json` kataloğunu çevirenlerin tek başvuru kaynağıdır. Kataloğun anahtarı Portekizce ekran metnidir. Değeri o metnin Fransızcasıdır: Belçika'da, Belçika kullanımıyla. Çeviri bağlamı için her anahtarın İspanyolcası, İngilizcesi ve Türkçesi de verilir. Türkçe metin Belçika'ya göre düzeltildiği için Portekizce metin Brezilya'ya özgü bir şey söylüyorsa Türkçesi esas alınır.
 
-**Durum: taslak.** Onaylayan: ürün sahibinin tanıdığı, Fransızca okuyan kişi. Okuyucuya bu dosyanın Fransızca bir özeti PDF ya da belge olarak gönderilir (Görev 4, Adım 9). Bu sözlük onaylanmadan Fransızca katalog çevrilmez.
+**Durum: taslak.** Onaylayan: ürün sahibinin seçtiği Fransızca okuyucu. İnceleme, bu dosyadan üretilen okuma ve not sayfasında yapılır (Görev 4, Adım 9). Bu sözlük onaylanmadan Fransızca katalog çevrilmez.
 
 Çeviri süreci:
 
