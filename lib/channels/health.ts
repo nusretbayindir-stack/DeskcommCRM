@@ -486,9 +486,10 @@ export async function sincronizarSaudeDaConexao(
 
   // A frase gravada é a que a Central mostra: no idioma da organização. A
   // decisão acima não depende dele; só aqui, quando o aviso vai mesmo entrar.
-  // Lido do banco mesmo quando quem chama não passou `idioma` (o webhook de
-  // status passa o padrão do produto).
-  const idiomaDaOrg = await idiomaDaOrgPeloSupabase(admin, sessao.organization_id);
+  // Quem chama e já leu o idioma (a varredura) o passa; quem não passou (o
+  // webhook de status fica no padrão do produto) tem o idioma lido do banco.
+  const idiomaDaOrg =
+    idioma !== "pt-BR" ? idioma : await idiomaDaOrgPeloSupabase(admin, sessao.organization_id);
   const texto = avisoDaConexao(saude, apelido, idiomaDaOrg) ?? aviso;
   await admin.from("agent_inbox_items").insert({
     organization_id: sessao.organization_id,
