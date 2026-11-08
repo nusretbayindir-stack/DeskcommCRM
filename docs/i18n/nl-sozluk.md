@@ -2,7 +2,7 @@
 
 Bu dosya, `lib/i18n/traducoes/nl.json` kataloğunu çevirenlerin tek başvuru kaynağıdır. Kataloğun anahtarı Portekizce ekran metnidir. Değeri o metnin Hollandacasıdır: Belçika'da, Flaman kullanımıyla. Çeviri bağlamı için her anahtarın İspanyolcası, İngilizcesi ve Türkçesi de verilir. Türkçe metin Belçika'ya göre düzeltildiği için Portekizce metin Brezilya'ya özgü bir şey söylüyorsa Türkçesi esas alınır.
 
-**Durum: taslak.** Onaylayan: ürün sahibi. Bu sözlük onaylanmadan Hollandaca katalog çevrilmez.
+**Durum: onaylandı** (2026-11-08, ürün sahibi). Hollandaca katalog bu sözlükle çevrilir. Bir terimi ya da kuralı değiştirmek de ürün sahibinin onayını ister.
 
 Çeviri süreci:
 
@@ -204,20 +204,3 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 **Durdurma kelimeleri çevrilmez.** Metin müşterinin yazacağı bir kelimeyi söylüyorsa (`responda PARAR`, `envie SAIR`, `BAJA`, `STOP`), Hollandacada **STOP** yazılır: "Vraag de klant om STOP te sturen." Sistem bu kelimeyi her dilde tanır.
 
 Tırnak içindeki örnek adlar (`etiqueta “cliente”` gibi) çevrilir: “klant”. Bunlar kayıtlı veri değil, açıklamadaki örneklerdir.
-
-## Onayda karar verilecekler
-
-Bu bölüm taslak içindir; onaydan sonra silinir. Her satırda seçilen karşılık ve diğer seçenek var. Değiştirmek istediğinizi yazmanız yeterli.
-
-| Terim | Seçilen | Diğer seçenek | Neden bu seçildi |
-|---|---|---|---|
-| lead | lead | prospect | Flaman satış dilinde "leads opvolgen" yaygın |
-| funil | pijplijn | verkooptrechter, salesfunnel | Hollandaca CRM ekranlarında aşamalı pano için yaygın ad |
-| negócio / oportunidade | verkoopkans | deal | Herkesin anlayacağı Hollandaca kelime |
-| plano | plan | formule | Yazılım fiyat sayfalarında yaygın; "formule" daha çok telefon ve enerji tarifeleri için |
-| caixa de entrada | inbox | postvak IN | Kısa ve WhatsApp ekranlarıyla uyumlu |
-| painel | dashboard | overzicht | Yazılımda yaygın |
-| caso | dossier | zaak | Belçika'da "dossier" günlük dil |
-| atendimento | klantcontact | behandeling, klantenservice | Ekranda hem destek hem satış görüşmesini kapsıyor |
-| follow-up | opvolgbericht | follow-upbericht | Hollandaca ve kısa |
-| CPF | identificatienummer | rijksregisternummer | Ürün kişiden ulusal sicil numarası istemez (GBA'nın 204/2025 kararı) |
