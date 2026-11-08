@@ -17,7 +17,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const controle = vi.hoisted(() => ({
   falhar: false,
   tentativas: 0,
+  // O JSON só "chega" quando o teste abre o portão: sem isto, numa máquina
+  // rápida a tentativa termina antes do segundo clique, e o caso "dois cliques
+  // com o download em curso" vira "clique, falha, clique de novo".
+  portao: Promise.resolve(),
+  abrir: () => {},
 }));
+
+function fecharPortao() {
+  controle.portao = new Promise<void>((abrir) => {
+    controle.abrir = abrir;
+  });
+}
 
 vi.mock("@sentry/nextjs", () => ({ captureException: () => "evento-de-teste" }));
 
@@ -33,12 +44,14 @@ beforeEach(() => {
   vi.doMock("@/lib/i18n/catalogos", async () => await import("@/lib/i18n/catalogos.navegador"));
   vi.doMock("@/lib/i18n/traducoes/tr.json", async () => {
     controle.tentativas += 1;
+    await controle.portao;
     if (controle.falhar) throw new Error("o arquivo do catálogo sumiu no deploy");
     return { default: { "Plano atual": "Mevcut plan", "Algo deu errado": "Bir şeyler ters gitti" } };
   });
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   controle.falhar = false;
   controle.tentativas = 0;
+  fecharPortao();
   erroNoConsole = vi.spyOn(console, "error").mockImplementation(() => {});
   raiz = document.createElement("div");
   document.body.appendChild(raiz);
@@ -56,12 +69,18 @@ const clicar = (rotulo: string) =>
     [...raiz.querySelectorAll("button")].find((b) => b.textContent === rotulo)?.click();
   });
 
-/** Espera a tentativa EM CURSO do turco terminar (o leitor devolve a mesma promessa). */
+/**
+ * Deixa a tentativa EM CURSO do turco terminar e espera por ela. Com o portão
+ * fechado ela ainda está em curso, e o leitor devolve a mesma promessa.
+ */
 async function terminarTentativa() {
   const leitor = await import("@/lib/i18n/catalogos");
+  const emCurso = leitor.carregarCatalogo("tr");
   await act(async () => {
-    await leitor.carregarCatalogo("tr");
+    controle.abrir();
+    await emCurso;
   });
+  fecharPortao();
 }
 
 async function montarProvider(locale: string) {
