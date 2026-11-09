@@ -258,6 +258,13 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
       "Este job confere que o build `standalone` do app leva o `mysql2`. É INFORMATIVO — não é check " +
       "obrigatório. Se não rodar, uma imagem sem o driver só aparece quando alguém conecta um MySQL na VPS.",
   },
+  "idioma-no-pacote.yml::pacote-e-sonda": {
+    condicao: null,
+    efeito:
+      "Este job mede onde cada catálogo de idioma vai parar no pacote do navegador e abre a tela de entrar " +
+      "num Chromium de verdade. É INFORMATIVO — não é check obrigatório. Se não rodar, um catálogo que " +
+      "volte ao pacote de todo usuário, ou a tela que pisca em português, só aparece em produção.",
+  },
 
   // --- e o que legitimamente tem interruptor -----------------------------------
   "acolhida.yml::acolher": {
