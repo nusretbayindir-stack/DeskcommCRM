@@ -16,6 +16,20 @@
  */
 import type { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
+import { traduzir } from '@/lib/i18n/dicionario';
+import { emCadaIdioma, noIdiomaDaOrgSql } from '@/lib/i18n/em-cada-idioma';
+
+/**
+ * O alerta `job_dead` nasce no mesmo statement que mata o job, então o idioma da
+ * empresa só é conhecido dentro do SQL: título e rótulo vão em todo idioma e o
+ * SQL escolhe pelo `organizations.locale` da linha (`lib/i18n/em-cada-idioma.ts`).
+ */
+const tituloDoJobMorto = () =>
+  JSON.stringify(emCadaIdioma((idioma) => traduzir('Job descartado após esgotar tentativas', idioma)));
+const rotuloDoMotivo = () => JSON.stringify(emCadaIdioma((idioma) => traduzir('Motivo:', idioma)));
+const localeDaLinha = (tabela: string) =>
+  `(select o.locale from organizations o where o.id = ${tabela}.organization_id)`;
+
 export type JobKind =
   | 'inbound_turn'
   | 'followup_turn'
@@ -386,20 +400,20 @@ export async function failJob(
      alert as (
        insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
        select organization_id, 'job_dead', 'critical',
-              'Job descartado após esgotar tentativas',
+              ${noIdiomaDaOrgSql('$5', localeDaLinha('updated'))},
               -- O erro que matou o job vai JUNTO. Antes o corpo era só
               -- 'kind=...; attempts=5' e jogava fora a única informação que
               -- resolveria: o aviso existia, e não dizia nada. Caso real desta
               -- VPS: 16 alertas críticos idênticos enquanto o erro guardado em
               -- last_error dizia exatamente o que configurar.
               'kind=' || kind || '; attempts=' || attempts
-                || coalesce(chr(10) || 'Motivo: ' || left(last_error, 400), ''),
+                || coalesce(chr(10) || ${noIdiomaDaOrgSql('$6', localeDaLinha('updated'))} || ' ' || left(last_error, 400), ''),
               'job_queue', id
        from updated
        where status = 'dead'
      )
      select * from updated`,
-    [jobId, workerId, normalizeError(error), acquiredAt ?? null],
+    [jobId, workerId, normalizeError(error), acquiredAt ?? null, tituloDoJobMorto(), rotuloDoMotivo()],
   );
   return rows[0] ?? null;
 }
@@ -511,20 +525,20 @@ export async function reapExpiredJobs(
      alert as (
        insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
        select organization_id, 'job_dead', 'critical',
-              'Job descartado após esgotar tentativas',
+              ${noIdiomaDaOrgSql('$2', localeDaLinha('expired'))},
               -- O erro que matou o job vai JUNTO. Antes o corpo era só
               -- 'kind=...; attempts=5' e jogava fora a única informação que
               -- resolveria: o aviso existia, e não dizia nada. Caso real desta
               -- VPS: 16 alertas críticos idênticos enquanto o erro guardado em
               -- last_error dizia exatamente o que configurar.
               'kind=' || kind || '; attempts=' || attempts
-                || coalesce(chr(10) || 'Motivo: ' || left(last_error, 400), ''),
+                || coalesce(chr(10) || ${noIdiomaDaOrgSql('$3', localeDaLinha('expired'))} || ' ' || left(last_error, 400), ''),
               'job_queue', id
        from expired
        where status = 'dead'
      )
      select id, status from expired`,
-    [opts.visibilityTimeoutMs],
+    [opts.visibilityTimeoutMs, tituloDoJobMorto(), rotuloDoMotivo()],
   );
   return {
     revived: rows.filter((r) => r.status === 'pending').length,

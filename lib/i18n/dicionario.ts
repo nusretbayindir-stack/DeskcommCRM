@@ -14318,6 +14318,11 @@ export const DICIONARIO: Traducoes = {
   "{tipo} — appointment_no_show": { es: "{tipo}" },
   // A aba da ficha do contato (app/app/contacts/[id]/_client.tsx); "LGPD" já existe acima.
   "Timeline": { es: "Cronología" },
+  // ─── A Central de avisos no idioma da empresa (S2a Task 5, U14) ───
+  // Avisos para a EQUIPE, gravados no idioma da organização
+  // (tests/unit/central-fala-o-idioma-da-org.test.ts). Bloco do fork.
+  "Job descartado após esgotar tentativas": { es: "Tarea en segundo plano descartada tras agotar los intentos" },
+  // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {
