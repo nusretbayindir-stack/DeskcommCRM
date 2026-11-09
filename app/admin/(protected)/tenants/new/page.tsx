@@ -1,4 +1,5 @@
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { lerMoldeDeIa } from "@/lib/instalacao/molde-de-ia-servidor";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fusoOferecidoOuPadrao } from "@/lib/tempo/fusos";
@@ -36,6 +37,20 @@ export default async function NewTenantPage() {
       cobranca={{ ligada, planos }}
       fusoInicial={fusoOferecidoOuPadrao(ativa?.timezone)}
       paisInicial={ativa?.country ?? null}
+      moldeDeIa={await nomeDoMoldeDeIa(admin)}
     />
   );
+}
+
+/**
+ * O molde de IA em vigor (migration 9096), pelo nome — ou `null` quando não há
+ * molde ou a leitura falhou. Falhar aqui NÃO lança, ao contrário dos planos: o
+ * aviso é informação, e sem ele o formulário cria a empresa do mesmo jeito.
+ */
+async function nomeDoMoldeDeIa(admin: ReturnType<typeof createAdminClient>): Promise<{ nome: string } | null> {
+  const moldeId = await lerMoldeDeIa(admin);
+  if (!moldeId) return null;
+  const { data } = await admin.from("organizations").select("display_name").eq("id", moldeId).maybeSingle();
+  const nome = (data as { display_name?: string | null } | null)?.display_name?.trim();
+  return nome ? { nome } : null;
 }
