@@ -1,0 +1,85 @@
+name: idioma-no-pacote
+
+# O catálogo de cada idioma viaja sozinho para o navegador: build de produção,
+# medição do pacote (`scripts/i18n/medir-pacote.ts`) e sonda num Chromium de
+# verdade (`scripts/i18n/sondar-carregamento.ts`). O e2e não roda no fork, e
+# este é o único job que abre a tela. INFORMATIVO: não é status check
+# obrigatório. Só leitura do repositório; o relatório vai para o resumo do job.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/i18n/**"
+      - "next.config.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "scripts/i18n/**"
+      - ".github/workflows/idioma-no-pacote.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pacote-e-sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ${{ github.workflow }}-pacote-e-sonda-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    # Valores de mentira, de propósito: a sonda abre só a tela de entrar, que
+    # cai no padrão quando o banco não responde. Nenhum segredo entra aqui.
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      SENTRY_DSN: "off"
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "chave-falsa-da-sonda"
+      SUPABASE_SERVICE_ROLE_KEY: "chave-falsa-da-sonda"
+      SUPABASE_DB_URL: "postgres://sonda:sonda@127.0.0.1:54322/sonda"
+      UPSTASH_REDIS_REST_URL: "http://127.0.0.1:8079"
+      UPSTASH_REDIS_REST_TOKEN: "token-falso-da-sonda"
+      WAHA_API_BASE_URL: "http://127.0.0.1:3000"
+      WAHA_API_KEY: "chave-falsa-da-sonda"
+      WAHA_WEBHOOK_BASE_URL: "http://127.0.0.1:3100"
+      WAHA_BYO_ENCRYPTION_KEY: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      AI_CRED_AES_KEY: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      CPF_ENCRYPTION_KEY: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      INTERNAL_SECRET: "segredo-falso-da-sonda"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/preparar-node
+        timeout-minutes: 5
+
+      - name: Build
+        run: pnpm build
+
+      - name: Medir o pacote
+        id: medir
+        run: pnpm tsx scripts/i18n/medir-pacote.ts
+
+      # A sonda roda mesmo com a medição reprovada: as duas respostas juntas é
+      # que dizem o que quebrou (o catálogo no pacote errado, a tela, ou os dois).
+      - name: Instalar o Chromium
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Subir o app
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
+        run: |
+          pnpm exec next start -p 3100 > next-start.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -s -o /dev/null http://127.0.0.1:3100/login && exit 0
+            sleep 2
+          done
+          echo "::error::o app não respondeu em 120 s"
+          tail -50 next-start.log
+          exit 1
+
+      - name: Sondar o carregamento
+        if: ${{ !cancelled() && steps.medir.outcome != 'skipped' }}
+        run: pnpm tsx scripts/i18n/sondar-carregamento.ts --url http://127.0.0.1:3100/login
+
+      - name: Log do app (se algo falhou)
+        if: failure()
+        run: tail -80 next-start.log || true

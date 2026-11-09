@@ -31,7 +31,9 @@
  * chave crua nem para erro. Uma tradução incompleta não pode deixar a tela pior
  * do que estava.
  */
-import { entradaDoCatalogo } from "./catalogos";
+// Pelo nome `@/`, e não `./catalogos`: é por ele que o `resolveAlias` do
+// `next.config.ts` troca o leitor no pacote do navegador.
+import { entradaDoCatalogo } from "@/lib/i18n/catalogos";
 import type { Idioma } from "./idiomas";
 import { TEXTOS_AGENDA_CONFIGURACAO } from "./agenda-configuracao";
 import { TEXTOS_AGENDA_SERVICOS } from "./agenda-servicos";

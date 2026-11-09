@@ -1,8 +1,10 @@
 "use client";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, use, useContext, useEffect, useMemo, useState } from "react";
 
+import { carregarCatalogo, catalogoPronto } from "@/lib/i18n/catalogos";
 import { traduzir } from "./dicionario";
 import { normalizarIdioma, IDIOMA_PADRAO, type Idioma } from "./idiomas";
+import { useTrocaComCatalogo } from "./useTrocaComCatalogo";
 
 /**
  * O idioma da interface, com contexto PRÓPRIO — não pendurado no de autenticação.
@@ -68,9 +70,24 @@ export function IdiomaProvider({
   const doServidor = normalizarIdioma(locale);
   const [idioma, setIdioma] = useState<Idioma>(doServidor);
 
+  // ─── O catálogo chega antes da tela ──────────────────────────────────────
+  //
+  // No navegador o catálogo do idioma é baixado à parte (`catalogos.navegador.ts`).
+  // Na hidratação e na navegação (ambas em transição), o `use()` suspende até
+  // ele chegar: o React mantém o HTML que o servidor já mandou traduzido, em
+  // vez de pintar o português e trocar depois. Sem `<Suspense>` novo aqui, de
+  // propósito: uma fronteira em volta da árvore inteira começaria o streaming
+  // cedo, e um `redirect()` viraria meta refresh em vez de 307.
+  if (!catalogoPronto(idioma)) use(carregarCatalogo(idioma));
+
+  // Toda troca depois da montagem pinta só com o texto na mão, e o último
+  // pedido vence; catálogo que falhou deixa a tela no idioma em que está.
+  // A regra é a mesma da página de erro global: `useTrocaComCatalogo`.
+  const pintarQuandoChegar = useTrocaComCatalogo(idioma, setIdioma);
+
   useEffect(() => {
-    setIdioma(doServidor);
-  }, [doServidor]);
+    pintarQuandoChegar(doServidor);
+  }, [doServidor, pintarQuandoChegar]);
 
   // O espelho de fora da árvore segue o idioma EM VIGOR, não o do servidor:
   // quem troca no seletor vê o toast de erro já no idioma novo, sem esperar o
@@ -84,7 +101,7 @@ export function IdiomaProvider({
     };
   }, [idioma]);
 
-  const valor = useMemo(() => ({ idioma, aplicar: setIdioma }), [idioma]);
+  const valor = useMemo(() => ({ idioma, aplicar: pintarQuandoChegar }), [idioma, pintarQuandoChegar]);
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;
 }
 
@@ -102,11 +119,12 @@ export function useIdioma(): Idioma {
 }
 
 /**
- * Pinta a interface no idioma novo AGORA, sem esperar o servidor.
+ * Pinta a interface no idioma novo assim que o catálogo dele chega, sem esperar
+ * o servidor. Até lá a tela fica no idioma em que está — nunca no português de
+ * passagem.
  *
  * Quem chama é o seletor do topo, junto com a gravação. Se a gravação falhar,
- * o `useEffect` acima devolve o valor do servidor no próximo render — a tela
- * não fica mentindo que salvou.
+ * o seletor pede o idioma anterior, e o último pedido vence.
  */
 export function useAplicarIdioma(): (idioma: Idioma) => void {
   return useContext(Ctx).aplicar;

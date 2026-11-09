@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMA_PADRAO, idiomaDelNavegador, type Idioma } from "@/lib/i18n/idiomas";
+import { useTrocaComCatalogo } from "@/lib/i18n/useTrocaComCatalogo";
 
 export default function GlobalError({
   error,
@@ -18,11 +19,15 @@ export default function GlobalError({
   const [copied, setCopied] = useState(false);
   // Parte do padrão (igual ao do servidor) e ajusta depois de montar, para não
   // quebrar a hidratação do único componente que não pode falhar.
-  const [idioma, setIdioma] = useState<Idioma>(IDIOMA_PADRAO);
+  const [idioma, pintarIdioma] = useState<Idioma>(IDIOMA_PADRAO);
+
+  // Sem provider aqui: o catálogo do idioma é baixado à parte no navegador, e
+  // a página só troca de idioma com ele na mão (a regra do `IdiomaProvider`).
+  const setIdioma = useTrocaComCatalogo(idioma, pintarIdioma);
 
   useEffect(() => {
     setIdioma(idiomaDelNavegador(navigator.languages ?? [navigator.language]));
-  }, []);
+  }, [setIdioma]);
 
   useEffect(() => {
     const id = Sentry.captureException(error);

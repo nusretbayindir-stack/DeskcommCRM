@@ -87,8 +87,11 @@ describe("todo catálogo de idioma", () => {
   });
 });
 
-/** O único arquivo que pode importar um catálogo (ver o cabeçalho dele). */
-const LEITOR = "lib/i18n/catalogos.ts";
+/**
+ * Os únicos arquivos que podem importar um catálogo: o leitor do servidor
+ * (estático, todos na memória) e o do navegador (`import()`, um por idioma).
+ */
+const LEITORES = ["lib/i18n/catalogos.ts", "lib/i18n/catalogos.navegador.ts"];
 
 const IMPORTACAO = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|\bimport\s+)["']([^"']+)["']/g;
 
@@ -127,7 +130,7 @@ describe("o catálogo só viaja para o navegador pelo leitor, e só o de quem ap
     expect(catalogosImportados(em("lib/i18n/x.ts"), 'import { a } from "./traducoes-util";')).toEqual([]);
   });
 
-  it(`só ${LEITOR} importa catálogo, e nunca o de um idioma em construção`, () => {
+  it(`só ${LEITORES.join(" e ")} importam catálogo, e nunca o de um idioma em construção`, () => {
     // Um catálogo importado vai no pacote de TODO usuário. O de um idioma em
     // construção não é servido a ninguém: seriam centenas de KB por uma língua
     // que ninguém pode escolher. O de um idioma visível entra uma vez, pelo
@@ -143,12 +146,72 @@ describe("o catálogo só viaja para o navegador pelo leitor, e só o de quem ap
           const rel = relative(RAIZ, caminho).split(sep).join("/");
           for (const codigo of catalogosImportados(caminho, readFileSync(caminho, "utf8"))) {
             if (!visiveis.has(codigo)) indevidos.push(`${rel} → ${codigo}.json (idioma em construção)`);
-            else if (rel !== LEITOR) indevidos.push(`${rel} → ${codigo}.json (só ${LEITOR} lê catálogo)`);
+            else if (!LEITORES.includes(rel)) indevidos.push(`${rel} → ${codigo}.json (só ${LEITORES.join(" e ")} leem catálogo)`);
           }
         }
       }
     };
     for (const area of ["app", "components", "lib", "hooks", "workers"]) varrer(join(RAIZ, area));
     expect(indevidos).toEqual([]);
+  });
+});
+
+/**
+ * O nome pelo qual o `resolveAlias` do `next.config.ts` troca o leitor do
+ * servidor pelo do navegador. O alias casa com o TEXTO do pedido: `./catalogos`
+ * ou `../i18n/catalogos` chegam ao mesmo arquivo e levam todos os catálogos ao
+ * navegador, sem teste vermelho — só o pacote engorda. O `dicionario.ts` da
+ * projeto principal importa `./catalogos`; uma sincronização que aceite a
+ * linha de lá desfaz o alias calada.
+ */
+const NOME_DO_LEITOR = "@/lib/i18n/catalogos";
+const LEITOR_DO_SERVIDOR = join(RAIZ, "lib", "i18n", "catalogos");
+
+/** Os pedidos de uma fonte que chegam ao leitor do servidor por outro nome. */
+function importacoesForaDoAlias(caminho: string, fonte: string): string[] {
+  const fora: string[] = [];
+  for (const [, alvo = ""] of fonte.matchAll(IMPORTACAO)) {
+    const resolvido = alvo.startsWith("@/")
+      ? join(RAIZ, alvo.slice(2))
+      : alvo.startsWith(".")
+        ? resolve(dirname(caminho), alvo)
+        : null;
+    if (!resolvido || resolvido.replace(/\.(ts|tsx|js|mjs)$/, "") !== LEITOR_DO_SERVIDOR) continue;
+    if (alvo !== NOME_DO_LEITOR) fora.push(alvo);
+  }
+  return fora;
+}
+
+describe("quem lê catálogo pede o leitor pelo nome que o alias conhece", () => {
+  it("o detector acha o leitor do servidor pedido por outro caminho", () => {
+    const em = (arquivo: string) => join(RAIZ, arquivo);
+    expect(importacoesForaDoAlias(em("lib/i18n/x.ts"), 'import { a } from "./catalogos";')).toEqual(["./catalogos"]);
+    expect(
+      importacoesForaDoAlias(em("components/shell/x.tsx"), 'import { a } from "../../lib/i18n/catalogos";'),
+    ).toEqual(["../../lib/i18n/catalogos"]);
+    expect(importacoesForaDoAlias(em("app/x.tsx"), 'import { a } from "@/lib/i18n/catalogos.ts";')).toEqual([
+      "@/lib/i18n/catalogos.ts",
+    ]);
+    expect(importacoesForaDoAlias(em("app/x.tsx"), 'import { a } from "@/lib/i18n/catalogos";')).toEqual([]);
+    expect(importacoesForaDoAlias(em("lib/i18n/x.ts"), 'import { a } from "./catalogos.navegador";')).toEqual([]);
+  });
+
+  it(`todo import do leitor do servidor é escrito "${NOME_DO_LEITOR}"`, () => {
+    const fora: string[] = [];
+    const varrer = (pasta: string) => {
+      for (const entrada of readdirSync(pasta, { withFileTypes: true })) {
+        if (entrada.name === "node_modules" || entrada.name.startsWith(".")) continue;
+        const caminho = join(pasta, entrada.name);
+        if (entrada.isDirectory()) varrer(caminho);
+        else if (/\.(ts|tsx|js|mjs)$/.test(entrada.name) && !/\.test\./.test(entrada.name)) {
+          const rel = relative(RAIZ, caminho).split(sep).join("/");
+          for (const alvo of importacoesForaDoAlias(caminho, readFileSync(caminho, "utf8"))) {
+            fora.push(`${rel} → "${alvo}"`);
+          }
+        }
+      }
+    };
+    for (const area of ["app", "components", "lib", "hooks", "workers"]) varrer(join(RAIZ, area));
+    expect(fora, `escreva "${NOME_DO_LEITOR}": é o único pedido que o resolveAlias troca no navegador`).toEqual([]);
   });
 });
