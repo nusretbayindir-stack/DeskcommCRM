@@ -42,9 +42,9 @@ Bunlar ekranı bozar. Birleştirme aracı ve testler bu tür hataları reddeder.
 
 Bu adlar olduğu gibi yazılır:
 
-WhatsApp, Instagram, Meta, API, CSV, PIX, Stripe, Asaas, OpenAI, Anthropic, Claude, Supabase, Google, Gmail, GDPR, SMTP, JSON, PDF, URL, Webhook
+WhatsApp, Instagram, Meta, API, CSV, PIX, Stripe, Asaas, OpenAI, Anthropic, Claude, Supabase, Google, Gmail, GDPR, SMTP, JSON, PDF, URL, Webhook, Cold Call
 
-Ürün adı (marka) da çevrilmez.
+Ürün adı (marka) da çevrilmez. "Cold Call" ekran ve huni adıdır, İngilizce kalır (kullanıcının kararı, 2026-11-09; Türkçe sözlükle aynı).
 
 ## Tarih kalıpları
 
