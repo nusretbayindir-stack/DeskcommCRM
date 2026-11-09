@@ -35,9 +35,9 @@ Bunlar ekranı bozar. Birleştirme aracı ve testler bu tür hataları reddeder.
 
 Bu adlar olduğu gibi yazılır:
 
-WhatsApp, Instagram, Meta, API, CSV, PIX, Stripe, Asaas, OpenAI, Anthropic, Claude, Supabase, Google, Gmail, GDPR, SMTP, JSON, PDF, URL, Webhook
+WhatsApp, Instagram, Meta, API, CSV, PIX, Stripe, Asaas, OpenAI, Anthropic, Claude, Supabase, Google, Gmail, GDPR, SMTP, JSON, PDF, URL, Webhook, Cold Call
 
-Ürün adı (marka) da çevrilmez.
+Ürün adı (marka) da çevrilmez. "Cold Call" ekran ve huni adıdır; huni veritabanında bu adla açılır (`app/api/v1/cold-call/route.ts`). Karar: 2026-11-09.
 
 ## Tarih kalıpları
 
@@ -108,7 +108,7 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 | configurações | ayarlar |
 | usuário | kullanıcı |
 | permissão | yetki |
-| papel / função | rol |
+| papel / função (kullanıcının yetkisi) | rol |
 | dono | sahip |
 | administrador | yönetici |
 | relatório | rapor |
@@ -175,6 +175,22 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 | dispensar (öneri) | yok say |
 | lateral (Gelen kutusunun yan paneli) | yan panel |
 | agente do servidor (güncelleme programı) | sunucu ajanı (AI asistanı değildir) |
+| broadcast (gönderim hızı seçeneği) | toplu yayın ("disparo" toplu gönderimdir, karıştırılmaz) |
+| molde (de IA) | kalıp ("şablon" mesaj şablonudur) |
+| função (AI ayarı: hangi işte hangi model) | işlev |
+| ponto (AI sağlayıcıları paneli) | nokta |
+| lista de espera | bekleme listesi |
+| caixa postal (arama sonucu) | telesekreter |
+| roteiro (Cold Call) | senaryo |
+| discador (do aparelho) | arama ekranı |
+| canal de voz | ses kanalı ("sesli kanal" değil) |
+| pessoa (otomasyonun, kuralın karşısındaki insan) | ekip üyesi; atamada temsilci. Tek başına "kişi" müşteri kişisi (contato) diye okunur. |
+| pessoa (departman üyesi) | üye ("Adicionar pessoa": "Üye ekle") |
+| CPF (tek başına, kişi kaydındaki belge alanı) | kimlik numarası. Kod Brezilya kontrol hanesini gerçekten denetliyorsa ("CPF (confere o dígito)", Brezilya profilinin hata mesajı) CPF kalır. |
+| aprendizado | öğrenilen bilgi ("öğrenim" eğitim demektir, kullanılmaz) |
+| chat | sohbet ("conversa" her zaman konuşmadır) |
+| janela de atendimento / janela de 24 horas | görüşme penceresi / 24 saatlik pencere ("janela de envio" gönderim aralığıdır) |
+| servidor MCP / ferramenta / Leitura / Escrita | MCP sunucusu / araç / Okuma / Yazma. Cümle başında "Yazma araçları…" yazılır; tek başına "Yazma," emir gibi okunur. |
 
 **CSV sütun adları çevrilmez.** `nome, telefone, email, cpf, nascimento, tags` gibi sütun adları içe aktarıcının tanıdığı başlıklardır (`lib/contacts/csv.ts`). Metinde olduğu gibi kalır.
 
