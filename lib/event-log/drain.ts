@@ -6,12 +6,11 @@
  * handler no registry e ficam intocados.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import {
   avisoDeEventoMorto,
-  IA_QUE_NAO_RESPONDEU,
-  MENSAGEM_DO_NUMERO_OFICIAL_QUE_NAO_ENTROU,
-  MENSAGEM_DO_NUMERO_OFICIAL_SEM_ATENDIMENTO,
-  MENSAGEM_QUE_NAO_ENTROU,
+  FAMILIAS_COM_TITULO_PROPRIO,
+  tituloEmTodoIdioma,
 } from "@/lib/event-log/aviso-de-evento-morto";
 import { dispatchEvent, getRegisteredHandlers, type EventRow } from "@/lib/event-log/dispatcher";
 import { logger } from "@/lib/logger";
@@ -77,6 +76,10 @@ function backoffAt(attempts: number): string {
  * família e fica fora da consulta: sem isso, ele aberto calaria a mídia, e a
  * mídia aberta já não o cala (`aviso-de-evento-morto.ts`, "as duas famílias").
  *
+ * O aviso sai no idioma da empresa, lido só quando ele vai mesmo ser gravado; o
+ * título de cada família é excluído em TODO idioma, porque o aviso aberto dela
+ * pode ter nascido antes de a empresa trocar de idioma (S2a Task 5, U14).
+ *
  * Fire-and-forget: falhar ao avisar não pode derrubar o dreno.
  *
  * Exportada (além de `drainEventLog`) porque é ELA que a corrida da issue #880
@@ -90,18 +93,15 @@ export async function avisarEventoMorto(
   motivo: string,
 ): Promise<void> {
   try {
-    const { data: jaAberto } = await admin
+    let abertos = admin
       .from("agent_inbox_items")
       .select("id")
       .eq("organization_id", row.organization_id)
       .eq("kind", "event_dead")
-      .eq("status", "open")
-      .neq("title", IA_QUE_NAO_RESPONDEU.titulo)
-      .neq("title", MENSAGEM_QUE_NAO_ENTROU.titulo)
-      .neq("title", MENSAGEM_DO_NUMERO_OFICIAL_QUE_NAO_ENTROU.titulo)
-      .neq("title", MENSAGEM_DO_NUMERO_OFICIAL_SEM_ATENDIMENTO.titulo)
-      .limit(1)
-      .maybeSingle();
+      .eq("status", "open");
+    for (const familia of FAMILIAS_COM_TITULO_PROPRIO)
+      for (const titulo of tituloEmTodoIdioma(familia)) abertos = abertos.neq("title", titulo);
+    const { data: jaAberto } = await abertos.limit(1).maybeSingle();
     if (jaAberto) return;
 
     // `critical` e não `warn`: é a mesma classe de `job_dead` — algo que o
@@ -111,11 +111,11 @@ export async function avisarEventoMorto(
     // que esta função existe para tornar visível.
     // O texto é o MESMO do dreno do agent-engine (`edge/crm/drain.ts`), que
     // desiste do `ai_agent.dispatch_requested` — ver `aviso-de-evento-morto.ts`.
-    const { title, body } = avisoDeEventoMorto({
-      eventType: row.event_type,
-      tentativas: row.attempts + 1,
-      motivo,
-    });
+    const idioma = await idiomaDaOrgPeloSupabase(admin, row.organization_id);
+    const { title, body } = avisoDeEventoMorto(
+      { eventType: row.event_type, tentativas: row.attempts + 1, motivo },
+      idioma,
+    );
     const { error } = await admin.from("agent_inbox_items").insert({
       organization_id: row.organization_id,
       kind: "event_dead",

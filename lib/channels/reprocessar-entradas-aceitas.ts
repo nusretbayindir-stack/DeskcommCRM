@@ -36,12 +36,14 @@
  * Mora em `lib/channels/` porque nomeia o canal (pela lista de
  * `CANAIS_QUE_RESPONDEM_ANTES`); a rota do cron só autentica e audita.
  */
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import {
   avisoDaMensagemDoNumeroOficial,
   type EfeitoDoEvento,
   MENSAGEM_DO_NUMERO_OFICIAL_QUE_NAO_ENTROU,
   MENSAGEM_DO_NUMERO_OFICIAL_SEM_ATENDIMENTO,
+  tituloEmTodoIdioma,
 } from "@/lib/event-log/aviso-de-evento-morto";
 import { logger } from "@/lib/logger";
 import { ehPedidoDeOptOut } from "@/lib/opt-out/deteccao";
@@ -123,7 +125,11 @@ async function marcarMorta(admin: Admin, linha: LinhaAceita, motivo: string, ten
   }
 }
 
-/** Um aviso aberto por organização enquanto durar — Central inundada ninguém lê. */
+/**
+ * Um aviso aberto por organização enquanto durar — Central inundada ninguém lê.
+ * No idioma da empresa, lido só quando o aviso vai mesmo ser gravado; o aberto é
+ * procurado pelo título em todo idioma (S2a Task 5, U14).
+ */
 async function avisarMensagemPerdida(
   admin: Admin,
   linha: LinhaAceita,
@@ -138,11 +144,16 @@ async function avisarMensagemPerdida(
       .eq("organization_id", linha.organization_id)
       .eq("kind", "event_dead")
       .eq("status", "open")
-      .eq("title", efeito.titulo)
+      .in("title", tituloEmTodoIdioma(efeito))
       .limit(1)
       .maybeSingle();
     if (jaAberto) return;
-    const { title, body } = avisoDaMensagemDoNumeroOficial({ eventType: eventoDa(linha), tentativas, motivo }, efeito);
+    const idioma = await idiomaDaOrgPeloSupabase(admin, linha.organization_id);
+    const { title, body } = avisoDaMensagemDoNumeroOficial(
+      { eventType: eventoDa(linha), tentativas, motivo },
+      efeito,
+      idioma,
+    );
     const { error } = await admin.from("agent_inbox_items").insert({
       organization_id: linha.organization_id,
       kind: "event_dead",

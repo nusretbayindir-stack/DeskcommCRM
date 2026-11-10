@@ -14355,6 +14355,47 @@ export const DICIONARIO: Traducoes = {
   "O gasto de IA deste mês chegou a {gasto} de um limite de {teto} ({pct}%), e você escolheu que a IA parasse ao chegar nele. As conversas que estavam sendo atendidas foram para a FILA DE ATENDIMENTO HUMANO — ninguém ficou sem próximo passo, mas alguém precisa responder. Aumentar o limite ou desligar a parada em Uso de IA › Orçamento evita paradas NOVAS; cada conversa já parada volta ao automático pelo botão \"Devolver ao automático\" no cabeçalho dela.": {
     es: "El gasto de IA de este mes llegó a {gasto} de un límite de {teto} ({pct}%), y elegiste que la IA se detuviera al alcanzarlo. Las conversaciones que se estaban atendiendo pasaron a la COLA DE ATENCIÓN HUMANA: nadie se quedó sin un siguiente paso, pero alguien tiene que responder. Aumentar el límite o desactivar la parada en Uso de IA › Presupuesto evita paradas NUEVAS; cada conversación ya detenida vuelve al automático con el botón \"Devolver al automático\" de su encabezado.",
   },
+  // lib/event-log/aviso-de-evento-morto.ts (TEXTOS_DO_AVISO), a família event_dead
+  "Detalhe técnico, para quem der suporte:": { es: "Detalle técnico, para quien dé soporte:" },
+  "evento {tipo}, {tentativas}; motivo: {motivo}": { es: "evento {tipo}, {tentativas}; causa: {motivo}" },
+  "nenhuma tentativa": { es: "ningún intento" },
+  "1 tentativa": { es: "1 intento" },
+  "{n} tentativas": { es: "{n} intentos" },
+  "A IA deixou de responder uma mensagem de cliente": { es: "La IA dejó de responder un mensaje de un cliente" },
+  "Um cliente escreveu e a IA não respondeu; se ele não escrever de novo, a conversa fica sem resposta. Abra o Inbox e responda as conversas que estão esperando.": {
+    es: "Un cliente escribió y la IA no respondió; si no vuelve a escribir, la conversación se queda sin respuesta. Abre el Inbox y responde las conversaciones que están esperando.",
+  },
+  "Enquanto este aviso estiver aberto, outras respostas da IA que pararem de tentar não abrem aviso novo: depois de corrigida a causa, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otras respuestas de la IA que dejen de intentarse no abren un aviso nuevo: una vez corregida la causa, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem de WhatsApp não entrou no CRM": { es: "Un mensaje de WhatsApp no entró al CRM" },
+  "Um cliente mandou mensagem, mas o banco de dados estava indisponível e ela não pôde ser gravada, mesmo depois de várias tentativas. Ela não aparece no Inbox e a IA não a respondeu: confira no celular do número as conversas recebidas nesse horário e responda por lá.": {
+    es: "Un cliente envió un mensaje, pero la base de datos no estaba disponible y no se pudo guardar, ni siquiera después de varios intentos. No aparece en el Inbox y la IA no lo respondió: revisa en el celular del número las conversaciones recibidas a esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens que também não entrarem não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes que tampoco entren no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem do número oficial não entrou no CRM": { es: "Un mensaje del número oficial no entró al CRM" },
+  "Um cliente escreveu para o número oficial, mas a mensagem não pôde ser gravada, mesmo depois de várias tentativas. Ela não aparece no Inbox e a IA não a respondeu: confira no painel do provedor do número as conversas desse horário e responda por lá.": {
+    es: "Un cliente escribió al número oficial, pero el mensaje no se pudo guardar, ni siquiera después de varios intentos. No aparece en el Inbox y la IA no lo respondió: revisa en el panel del proveedor del número las conversaciones de esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens do número oficial que também não entrarem não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes del número oficial que tampoco entren no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem do número oficial ficou sem atendimento": { es: "Un mensaje del número oficial se quedó sin atención" },
+  "Um cliente escreveu para o número oficial e a mensagem está no Inbox, mas o processamento dela parou no meio e o prazo para retomá-lo passou. A IA não vai responder essa mensagem e nenhum negócio nasce dela: confira as conversas desse horário e responda por lá.": {
+    es: "Un cliente escribió al número oficial y el mensaje está en el Inbox, pero su procesamiento se detuvo a mitad de camino y pasó el plazo para retomarlo. La IA no responderá ese mensaje y no nacerá ningún negocio de él: revisa las conversaciones de esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens na mesma situação não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes en la misma situación no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma tarefa automática parou de tentar": { es: "Una tarea automática dejó de intentarlo" },
+  "Uma tarefa automática do sistema falhou e parou de tentar: o que ela ia fazer não aconteceu, e não será tentado de novo.": {
+    es: "Una tarea automática del sistema falló y dejó de intentarlo: lo que iba a hacer no ocurrió y no se volverá a intentar.",
+  },
+  "Enquanto este aviso estiver aberto, outras tarefas automáticas que pararem de tentar não abrem aviso novo (a IA que deixa de responder um cliente abre o seu próprio): depois de corrigida a causa, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otras tareas automáticas que dejen de intentarlo no abren un aviso nuevo (la IA que deja de responder a un cliente abre el suyo propio): una vez corregida la causa, márcalo como resuelto para volver a recibir avisos.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

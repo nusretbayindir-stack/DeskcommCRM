@@ -28,6 +28,7 @@ import {
   ultimaRespostaDaIa,
 } from './intervalo-entre-respostas';
 import { avisoDeEventoMorto, IA_QUE_NAO_RESPONDEU } from '@/lib/event-log/aviso-de-evento-morto';
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
 import { acordarLacoDeEventLog } from '@/lib/event-log/sinal-de-trabalho';
 import { canalDesativado } from '@/lib/channels/desativado';
 import { TETO_DA_ESPERA_DA_DERIVACAO_MS } from '@/lib/messaging/media/derivable';
@@ -183,6 +184,12 @@ export async function drainTick(pool: pg.Pool, knobs: DrainKnobs, log: Logger): 
  *
  * Fire-and-forget: falhar ao avisar não pode derrubar o tick, que ainda tem o
  * resto do lote para drenar.
+ *
+ * No idioma da empresa (S2a Task 5, U14), lido antes do insert: o dedupe é pelo
+ * título nesse idioma, e por organização o idioma é um só. Leitura que falha
+ * vira português (`idiomaDaOrgPeloPg` não lança) e o aviso sai do mesmo jeito.
+ * Se a empresa trocar de idioma com um aviso destes aberto, abre-se um segundo,
+ * no idioma novo: um aviso a mais, nunca um a menos.
  */
 async function avisarDespachoMorto(
   pool: pg.Pool,
@@ -190,14 +197,18 @@ async function avisarDespachoMorto(
   motivo: string,
   log: Logger,
 ): Promise<void> {
-  const { title, body } = avisoDeEventoMorto({
-    eventType: 'ai_agent.dispatch_requested',
-    // `attempts` já foi incrementado no claim: é a contagem com esta tentativa.
-    tentativas: event.attempts,
-    motivo,
-    efeito: IA_QUE_NAO_RESPONDEU,
-  });
   try {
+    const idioma = await idiomaDaOrgPeloPg(pool, event.organization_id);
+    const { title, body } = avisoDeEventoMorto(
+      {
+        eventType: 'ai_agent.dispatch_requested',
+        // `attempts` já foi incrementado no claim: é a contagem com esta tentativa.
+        tentativas: event.attempts,
+        motivo,
+        efeito: IA_QUE_NAO_RESPONDEU,
+      },
+      idioma,
+    );
     await insertInboxItem(
       pool,
       event.organization_id,
