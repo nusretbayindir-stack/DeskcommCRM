@@ -49,7 +49,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/ai/credenciais/aviso-da-assinatura.ts",
   "lib/followup/engine.ts",
   "lib/followup/turn-bridge.ts",
-  "lib/leads/aviso-de-etapa.handler.ts",
   "lib/leads/risk-seed.ts",
   "workers/media-derive-worker.ts",
 ]);

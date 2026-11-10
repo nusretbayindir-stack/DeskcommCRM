@@ -27,7 +27,7 @@
  * como foram gravados (`./aviso-de-etapa.ts`).
  */
 import type { EventHandler, EventRow, HandlerResult } from "@/lib/event-log/dispatcher";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { corpoDoAvisoDeEtapa, tituloDoAvisoDeEtapa } from "./aviso-de-etapa";
@@ -72,12 +72,9 @@ async function handle(row: EventRow): Promise<HandlerResult> {
   const lida = etapa as { name: string; avisar_na_central: boolean | null } | null;
   if (!lida?.avisar_na_central) return resultado("skipped", "etapa_sem_aviso");
 
-  const { data: org } = await admin
-    .from("organizations")
-    .select("locale")
-    .eq("id", row.organization_id)
-    .maybeSingle();
-  const idioma = normalizarIdioma((org as { locale?: string | null } | null)?.locale);
+  // O leitor comum do idioma da empresa (não lança: leitura que falha vira o
+  // padrão), o mesmo dos outros avisos da Central (S2a Task 5, U14).
+  const idioma = await idiomaDaOrgPeloSupabase(admin, row.organization_id);
   const titulo = tituloDoAvisoDeEtapa(lida.name, idioma);
 
   // Um aviso aberto por negócio e etapa: o mesmo evento reprocessado, ou um
