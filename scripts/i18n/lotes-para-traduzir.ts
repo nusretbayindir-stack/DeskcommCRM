@@ -5,7 +5,8 @@
  *
  * O que falta é a união das chaves do dicionário com as de `traducoes/en.json`,
  * menos o que o catálogo do idioma já tem. Cada lote leva o espanhol e o inglês
- * da frase como contexto: `{ "<chave pt>": { "es"?: string, "en"?: string } }`.
+ * da frase como contexto, e o turco para quem não traduz o turco (`./contexto-do-lote.ts`):
+ * `{ "<chave pt>": { "es"?: string, "en"?: string, "tr"?: string } }`.
  *
  * Recusa pasta que já tem lote: um lote velho ao lado dos novos, com a mesma
  * numeração, juntaria tradução de uma frase na chave de outra rodada.
@@ -16,6 +17,8 @@ import { join, resolve } from "node:path";
 
 import { DICIONARIO } from "../../lib/i18n/dicionario";
 import en from "../../lib/i18n/traducoes/en.json";
+import tr from "../../lib/i18n/traducoes/tr.json";
+import { contextoDaFrase, type ContextoDaFrase } from "./contexto-do-lote";
 import { chavesParaTraduzir } from "./lotes";
 
 function argumento(nome: string): string {
@@ -60,9 +63,9 @@ if (velhos.length > 0) {
 let lotes = 0;
 for (let inicio = 0; inicio < chaves.length; inicio += tamanho) {
   lotes += 1;
-  const lote: Record<string, { es?: string; en?: string }> = {};
+  const lote: Record<string, ContextoDaFrase> = {};
   for (const chave of chaves.slice(inicio, inicio + tamanho)) {
-    lote[chave] = { es: DICIONARIO[chave]?.es, en: ingles[chave] };
+    lote[chave] = contextoDaFrase(chave, idioma, { dicionario: DICIONARIO, ingles, turco: tr as Record<string, string> });
   }
   const nome = `lote-${String(lotes).padStart(3, "0")}.json`;
   writeFileSync(join(saida, nome), `${JSON.stringify(lote, null, 2)}\n`, "utf8");
