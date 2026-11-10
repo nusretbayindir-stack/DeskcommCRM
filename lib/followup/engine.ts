@@ -69,6 +69,14 @@ import { renderizarTextoDeFollowup } from "@/lib/automation/texto-do-followup";
 import type { EventRow } from "@/lib/event-log/dispatcher";
 import { quandoDoRetornoVivo, reavaliarDepoisDoRetorno } from "./retorno-segura-o-fluxo";
 import { triggerConfigSchema } from "./api-schemas";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
+import {
+  avisoDeFluxoParado,
+  avisoDeRetornoCancelado,
+  avisoDeRetornoSemVaga,
+  textoDaRecuperacaoEsgotada,
+} from "./avisos-da-central";
 
 // O teto de ticks do relógio. O número mora em `custo-no-motor.ts` porque a
 // publicação também precisa dele (#2965): contar o caminho linear pelos mesmos
@@ -206,6 +214,15 @@ export interface AdminClient {
   updateEnrollment(id: string, orgId: string, patch: EnrollmentPatch): Promise<void>;
   loadFlowPointerName(orgId: string, pointerId: string): Promise<string | null>;
   insertDeadInboxItem(item: { organization_id: string; title: string; body: string; ref_id: string }): Promise<void>;
+  /**
+   * O idioma da empresa, para o aviso que vai à Central (S2a Task 5, U14): a
+   * Central mostra o texto como foi gravado. Opcional como os demais avisos —
+   * o dublê que não o tem grava em português (`IDIOMA_PADRAO`); os dois
+   * adaptadores de produção (Supabase aqui, pg em `turn-bridge.ts`) o têm, e
+   * `avisos-do-followup-no-idioma.test.ts` vigia. Nunca lança: leitura que
+   * falha vira o padrão.
+   */
+  idiomaDaOrg?(orgId: string): Promise<Idioma>;
   /**
    * Nó `internal_task` (#1540): grava a tarefa no CRM para o contato da
    * inscrição. Opcional como os demais avisos deste adaptador — só a produção
@@ -474,10 +491,10 @@ async function markDead(
   // status='dead' gravado e o aviso NUNCA sair — enrollment morto em
   // silêncio. Duplicata visível > perda silenciosa.
   const flowName = (await db.loadFlowPointerName(enrollment.organization_id, enrollment.pointer_id)) ?? enrollment.pointer_id;
+  const idioma = await idiomaDoAviso(db, enrollment.organization_id);
   await db.insertDeadInboxItem({
     organization_id: enrollment.organization_id,
-    title: "Um fluxo de follow-up parou de tentar",
-    body: `O fluxo "${flowName}" (enrollment ${enrollment.id}) foi marcado como "dead": ${sanitized}`,
+    ...avisoDeFluxoParado({ nome: flowName, id: enrollment.id, motivo: sanitized }, idioma),
     ref_id: enrollment.id,
   });
 
@@ -577,13 +594,10 @@ async function adiarPelaVagaOcupada(
     const nome =
       (await db.loadFlowPointerName(enrollment.organization_id, enrollment.pointer_id)) ??
       enrollment.pointer_id;
+    const idioma = await idiomaDoAviso(db, enrollment.organization_id);
     await db.insertDeadInboxItem({
       organization_id: enrollment.organization_id,
-      title: "Um retorno programado não pôde ser enviado",
-      body:
-        `O fluxo "${nome}" esperou 7 dias o outro acompanhamento deste contato terminar, ` +
-        `e o envio foi cancelado (enrollment ${enrollment.id}). ` +
-        `Fale com o contato por outro caminho se ainda fizer sentido.`,
+      ...avisoDeRetornoSemVaga({ nome, id: enrollment.id }, idioma),
       ref_id: enrollment.id,
     });
     await db.insertEnrollmentEvent({
@@ -924,17 +938,23 @@ export async function avancarEnrollmentAtivo(
  * fecha ou é substituído, `assertAgenda` quando a inscrição deixa de ser a
  * vigente daquele nó. Gravar "atendimento encerrado" para as duas faz a Central
  * contar uma história que a agenda não contou: `Motivo:` no dossiê precisa
- * distinguir as duas.
+ * distinguir as duas. A frase longa do aviso (no idioma da empresa) mora em
+ * `avisos-da-central.ts`, escolhida pela `causa` daqui (S2a Task 5).
  */
 const MOTIVO_DA_FRONTEIRA_VENCIDA = {
   curto: "Atendimento encerrado ou substituído",
-  explica: "o atendimento que o originou foi encerrado ou substituído",
+  causa: "fronteira",
 } as const;
 
 const MOTIVO_DA_AGENDA_VENCIDA = {
   curto: "Agenda do acompanhamento vencida",
-  explica: "a agenda do acompanhamento deixou de valer",
+  causa: "agenda",
 } as const;
+
+/** O idioma do aviso da Central: o da empresa, ou o padrão quando o adaptador não o lê. */
+async function idiomaDoAviso(db: AdminClient, orgId: string): Promise<Idioma> {
+  return (await db.idiomaDaOrg?.(orgId)) ?? IDIOMA_PADRAO;
+}
 
 async function processEnrollment(
   deps: TickDeps,
@@ -1001,13 +1021,10 @@ async function processEnrollment(
       const nome =
         (await db.loadFlowPointerName(enrollment.organization_id, enrollment.pointer_id)) ??
         enrollment.pointer_id;
+      const idioma = await idiomaDoAviso(db, enrollment.organization_id);
       await db.insertDeadInboxItem({
         organization_id: enrollment.organization_id,
-        title: "Um retorno programado não pôde ser enviado",
-        body:
-          `O fluxo "${nome}" esperava a data do retorno, mas ${causa.explica} ` +
-          `no meio da espera, e o envio foi cancelado ` +
-          `(enrollment ${enrollment.id}). Fale com o contato por outro caminho se ainda fizer sentido.`,
+        ...avisoDeRetornoCancelado({ nome, id: enrollment.id, causa: causa.causa }, idioma),
         ref_id: enrollment.id,
       });
     }
@@ -1523,6 +1540,9 @@ export function createSupabaseAdminClient(admin: SupabaseClient): AdminClient {
       });
       if (error) throw new Error(error.message);
     },
+    async idiomaDaOrg(orgId) {
+      return idiomaDaOrgPeloSupabase(admin, orgId);
+    },
     async criarTarefaInterna(item) {
       // O negócio NÃO vem na inscrição (migration 0054 guarda o contato), então
       // ele é resolvido aqui do mesmo jeito que `loadLeadFacts` resolve: o
@@ -1730,6 +1750,8 @@ export function createSupabaseAdminClient(admin: SupabaseClient): AdminClient {
         if ((contato as { is_anonymized: boolean | null } | null)?.is_anonymized === true) return;
       }
 
+      // No idioma da empresa (S2a Task 5): lido só quando o aviso vai mesmo sair.
+      const aviso = textoDaRecuperacaoEsgotada(await idiomaDaOrgPeloSupabase(admin, item.organization_id));
       const { error } = await admin.from("agent_inbox_items").insert({
         organization_id: item.organization_id,
         // Reusa o kind da 0224 (mesma família: "a recuperação desta falta
@@ -1737,10 +1759,8 @@ export function createSupabaseAdminClient(admin: SupabaseClient): AdminClient {
         // Central já sabe renderizar `ref_kind='appointment'`.
         kind: "appointment_recovery_review",
         severity: "warn",
-        title: "Cliente faltou e não respondeu à recuperação",
-        body:
-          "As mensagens de reengajamento pós-falta foram enviadas e o cliente não respondeu. " +
-          "Decida o próximo passo e mova o card no funil.",
+        title: aviso.title,
+        body: aviso.body,
         ref_kind: "appointment",
         ref_id: item.appointment_id,
         appointment_revision: item.appointment_revision,

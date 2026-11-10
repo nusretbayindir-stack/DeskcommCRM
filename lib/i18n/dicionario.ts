@@ -14429,6 +14429,25 @@ export const DICIONARIO: Traducoes = {
   "O processamento que transforma as mensagens recebidas em respostas da IA parou de avançar. As mensagens continuam chegando e ficando registradas, mas a IA não responde até o processamento voltar. Quem administra a instalação deve revisar o serviço do worker (log e /healthz) e reiniciá-lo se ele não voltar sozinho.": {
     es: "El procesamiento que convierte los mensajes recibidos en respuestas de la IA dejó de avanzar. Los mensajes siguen llegando y quedando registrados, pero la IA no responde hasta que el procesamiento se reanude. Quien administra la instalación debe revisar el servicio del worker (log y /healthz) y reiniciarlo si no se recupera solo.",
   },
+  // avisos do acompanhamento (lib/followup/avisos-da-central.ts)
+  "O fluxo \"{nome}\" (enrollment {id}) foi marcado como \"dead\": {motivo}": {
+    es: "El flujo \"{nome}\" (enrollment {id}) se marcó como \"dead\": {motivo}",
+  },
+  "Um retorno programado não pôde ser enviado": { es: "No se pudo enviar un seguimiento programado" },
+  "O fluxo \"{nome}\" esperou 7 dias o outro acompanhamento deste contato terminar, e o envio foi cancelado (enrollment {id}). Fale com o contato por outro caminho se ainda fizer sentido.": {
+    es: "El flujo \"{nome}\" esperó 7 días a que terminara el otro seguimiento de este contacto, y el envío se canceló (enrollment {id}). Habla con el contacto por otro medio si todavía tiene sentido.",
+  },
+  "O fluxo \"{nome}\" esperava a data do retorno, mas {causa} no meio da espera, e o envio foi cancelado (enrollment {id}). Fale com o contato por outro caminho se ainda fizer sentido.": {
+    es: "El flujo \"{nome}\" esperaba la fecha del seguimiento programado, pero {causa} durante la espera, y el envío se canceló (enrollment {id}). Habla con el contacto por otro medio si todavía tiene sentido.",
+  },
+  "o atendimento que o originou foi encerrado ou substituído": {
+    es: "la atención que lo originó se cerró o fue sustituida",
+  },
+  "a agenda do acompanhamento deixou de valer": { es: "la agenda del seguimiento dejó de ser válida" },
+  "Cliente faltou e não respondeu à recuperação": { es: "El cliente faltó y no respondió a la recuperación" },
+  "As mensagens de reengajamento pós-falta foram enviadas e o cliente não respondeu. Decida o próximo passo e mova o card no funil.": {
+    es: "Se enviaron los mensajes de reenganche tras la ausencia y el cliente no respondió. Decide el siguiente paso y mueve la tarjeta en el embudo.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

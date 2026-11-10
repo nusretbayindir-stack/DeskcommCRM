@@ -47,8 +47,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/agent-engine/guardrails/lgpd/legal-basis.ts",
   "lib/agent-engine/obs/metrics.ts",
   "lib/ai/credenciais/aviso-da-assinatura.ts",
-  "lib/followup/engine.ts",
-  "lib/followup/turn-bridge.ts",
   "lib/leads/risk-seed.ts",
   "workers/media-derive-worker.ts",
 ]);
