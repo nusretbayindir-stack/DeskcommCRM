@@ -1,8 +1,9 @@
 /**
  * OS AVISOS QUE O BANCO GRAVA NA CENTRAL SAEM NO IDIOMA DA EMPRESA (S2a, U14).
  *
- * Seis funções SQL do upstream gravam aviso na Central (`agent_inbox_items`)
- * com título e corpo em português escritos no próprio corpo. Reescrevê-las
+ * Funções SQL do upstream gravam na Central (`agent_inbox_items`) título e
+ * corpo em português escritos no próprio corpo — num insert, num update (a
+ * anonimização) ou chamando `fn_agent_legacy_notice` com texto fixo. Reescrevê-las
  * seria copiar o corpo inteiro de cada uma para o fork, e a cada sincronização
  * ou a nossa cópia apagaria uma correção do upstream, ou a dele apagaria a
  * tradução sem ninguém ver. Em vez disso, o gatilho
@@ -26,9 +27,9 @@ import { IDIOMA_PADRAO, IDIOMAS, type Idioma } from "@/lib/i18n/idiomas";
 /** O texto em português, exatamente como a função SQL o escreve. `{n}` é sempre um número. */
 const TEXTOS = {
   acompanhamentoTitulo: "O acompanhamento não conseguiu enviar a mensagem",
+  /** O corpo quando o job não tem erro: `coalesce(j.last_error, 'envio indisponível')`. */
+  acompanhamentoCorpoPadrao: "Abra o acompanhamento e confira o canal. Motivo: envio indisponível",
   acompanhamentoCorpo: "Abra o acompanhamento e confira o canal. Motivo: {motivo}",
-  /** O motivo quando o job não tem erro: `coalesce(j.last_error, 'envio indisponível')`. */
-  acompanhamentoMotivoPadrao: "envio indisponível",
   semResponsavelTitulo: "Uma conversa aguarda um responsável",
   semResponsavelCanal: "Confira o canal de origem desta conversa nas Conexões.",
   semResponsavelEquipe:
@@ -57,6 +58,9 @@ const TEXTOS = {
   recuperacaoSemFluxo:
     "Configure um fluxo de recuperação e habilite-o em um assistente publicado. Esta falta não será iniciada retroativamente.",
   recuperacaoContexto: "O contexto mudou ou não há contato vinculado. Abra o compromisso e escolha o próximo passo.",
+  legadoRecuperadoTitulo: "Agente recuperado",
+  legadoRecuperadoCorpo: "A configuração foi recuperada. As respostas usam a versão publicada.",
+  contatoAnonimizado: "Contato anonimizado.",
 } as const satisfies Record<string, string>;
 
 export type ChaveDoAvisoDoBanco = keyof typeof TEXTOS;
@@ -68,42 +72,76 @@ export type ChaveDoAvisoDoBanco = keyof typeof TEXTOS;
  */
 export type FormaDoAviso = "campo" | "frase";
 
-/**
- * De que função vem cada texto, na ordem em que o gatilho aplica. O corpo do
- * acompanhamento é traduzido inteiro com o motivo cru (é o erro técnico do
- * job); depois a frase do motivo padrão, se for ela.
- */
-export const ORIGEM_DOS_AVISOS: ReadonlyArray<{ chave: ChaveDoAvisoDoBanco; funcao: string; forma: FormaDoAviso }> = [
-  { chave: "acompanhamentoTitulo", funcao: "fn_followup_inline_settle", forma: "campo" },
-  { chave: "acompanhamentoCorpo", funcao: "fn_followup_inline_settle", forma: "campo" },
-  { chave: "acompanhamentoMotivoPadrao", funcao: "fn_followup_inline_settle", forma: "frase" },
-  { chave: "semResponsavelTitulo", funcao: "fn_routing_unassigned_notice", forma: "campo" },
-  { chave: "semResponsavelCanal", funcao: "fn_routing_unassigned_notice", forma: "campo" },
-  { chave: "semResponsavelEquipe", funcao: "fn_routing_unassigned_notice", forma: "campo" },
-  { chave: "reuniaoTitulo", funcao: "fn_meet_notice", forma: "campo" },
-  { chave: "reuniaoCorpo", funcao: "fn_meet_notice", forma: "campo" },
-  { chave: "presencaVencidaTitulo", funcao: "fn_appointment_confirmation_sweep", forma: "campo" },
-  { chave: "presencaTitulo", funcao: "fn_appointment_confirmation_sweep", forma: "campo" },
-  { chave: "presencaCorpo", funcao: "fn_appointment_confirmation_sweep", forma: "campo" },
-  { chave: "reativadaConversasTitulo", funcao: "fn_reativar_organizacao", forma: "campo" },
-  { chave: "reativadaAgendamentosTitulo", funcao: "fn_reativar_organizacao", forma: "campo" },
-  { chave: "reativadaUmaConversa", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "reativadaConversas", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "reativadaUmAgendamento", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "reativadaAgendamentos", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "reativadaUmPasso", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "reativadaPassos", funcao: "fn_reativar_organizacao", forma: "frase" },
-  { chave: "recuperacaoTitulo", funcao: "fn_appointment_recover", forma: "campo" },
-  { chave: "recuperacaoOutroFluxo", funcao: "fn_appointment_recover", forma: "campo" },
-  { chave: "recuperacaoAmbigua", funcao: "fn_appointment_recover", forma: "campo" },
-  { chave: "recuperacaoSemFluxo", funcao: "fn_appointment_recover", forma: "campo" },
-  { chave: "recuperacaoContexto", funcao: "fn_appointment_recover", forma: "campo" },
-];
+export interface OrigemDoAviso {
+  chave: ChaveDoAvisoDoBanco;
+  /** As funções SQL que escrevem o texto (insert, update de title/body, ou chamada a uma das `FUNCOES_COM_TEXTO_DE_QUEM_CHAMA`). */
+  funcoes: readonly string[];
+  forma: FormaDoAviso;
+  /**
+   * Os literais em que a função monta o texto, quando não é um só com
+   * `{marcas}` no lugar do variável: `'…Motivo: '||coalesce(j.last_error,'envio indisponível')`.
+   */
+  pedacosNoSql?: readonly string[];
+}
 
 /**
- * Funções que gravam na Central o texto que RECEBEM: quem traduz é quem chama,
- * em TypeScript, e as guardas da Central olham essas chamadas
- * (`central-fala-o-idioma-da-org`, `central-sem-portugues-fixo`).
+ * De que função vem cada texto, na ordem em que o gatilho aplica: o específico
+ * antes do genérico que também o casaria (o corpo com o motivo padrão antes de
+ * `{motivo}`). O motivo de verdade passa cru: é o erro técnico do job.
+ */
+export const ORIGEM_DOS_AVISOS: readonly OrigemDoAviso[] = [
+  { chave: "acompanhamentoTitulo", funcoes: ["fn_followup_inline_settle"], forma: "campo" },
+  {
+    chave: "acompanhamentoCorpoPadrao",
+    funcoes: ["fn_followup_inline_settle"],
+    forma: "campo",
+    pedacosNoSql: ["Abra o acompanhamento e confira o canal. Motivo: ", "envio indisponível"],
+  },
+  { chave: "acompanhamentoCorpo", funcoes: ["fn_followup_inline_settle"], forma: "campo" },
+  { chave: "semResponsavelTitulo", funcoes: ["fn_routing_unassigned_notice"], forma: "campo" },
+  { chave: "semResponsavelCanal", funcoes: ["fn_routing_unassigned_notice"], forma: "campo" },
+  { chave: "semResponsavelEquipe", funcoes: ["fn_routing_unassigned_notice"], forma: "campo" },
+  { chave: "reuniaoTitulo", funcoes: ["fn_meet_notice"], forma: "campo" },
+  { chave: "reuniaoCorpo", funcoes: ["fn_meet_notice"], forma: "campo" },
+  { chave: "presencaVencidaTitulo", funcoes: ["fn_appointment_confirmation_sweep"], forma: "campo" },
+  { chave: "presencaTitulo", funcoes: ["fn_appointment_confirmation_sweep"], forma: "campo" },
+  { chave: "presencaCorpo", funcoes: ["fn_appointment_confirmation_sweep"], forma: "campo" },
+  { chave: "reativadaConversasTitulo", funcoes: ["fn_reativar_organizacao"], forma: "campo" },
+  { chave: "reativadaAgendamentosTitulo", funcoes: ["fn_reativar_organizacao"], forma: "campo" },
+  { chave: "reativadaUmaConversa", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "reativadaConversas", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "reativadaUmAgendamento", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "reativadaAgendamentos", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "reativadaUmPasso", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "reativadaPassos", funcoes: ["fn_reativar_organizacao"], forma: "frase" },
+  { chave: "recuperacaoTitulo", funcoes: ["fn_appointment_recover"], forma: "campo" },
+  { chave: "recuperacaoOutroFluxo", funcoes: ["fn_appointment_recover"], forma: "campo" },
+  { chave: "recuperacaoAmbigua", funcoes: ["fn_appointment_recover"], forma: "campo" },
+  { chave: "recuperacaoSemFluxo", funcoes: ["fn_appointment_recover"], forma: "campo" },
+  { chave: "recuperacaoContexto", funcoes: ["fn_appointment_recover"], forma: "campo" },
+  // O gatilho do upstream que avisa o agente legado publicado chama fn_agent_legacy_notice com texto fixo.
+  { chave: "legadoRecuperadoTitulo", funcoes: ["fn_agent_legacy_published"], forma: "campo" },
+  { chave: "legadoRecuperadoCorpo", funcoes: ["fn_agent_legacy_published"], forma: "campo" },
+  // A anonimização (LGPD) troca o corpo do aviso por este texto, num update.
+  {
+    chave: "contatoAnonimizado",
+    funcoes: ["fn_anonimizar_aviso_de_remetente", "fn_lgpd_cascade_redact_contact", "fn_meet_redact_contact"],
+    forma: "campo",
+  },
+];
+
+/** Os literais que a função escreve para este texto: `pedacosNoSql`, ou o texto sem as `{marcas}`. */
+export function pedacosDoAviso(origem: OrigemDoAviso): string[] {
+  return origem.pedacosNoSql
+    ? [...origem.pedacosNoSql]
+    : TEXTOS[origem.chave].split(/\{[a-z]+\}/).filter((p) => p.length > 0);
+}
+
+/**
+ * Funções que gravam na Central o texto que RECEBEM: quem traduz é quem chama.
+ * Em TypeScript, as guardas da Central olham essas chamadas
+ * (`central-fala-o-idioma-da-org`, `central-sem-portugues-fixo`); em SQL, quem
+ * as chama com texto fixo entra em `ORIGEM_DOS_AVISOS`.
  */
 export const FUNCOES_COM_TEXTO_DE_QUEM_CHAMA = {
   fn_agent_legacy_notice: ["p_title", "p_body"],

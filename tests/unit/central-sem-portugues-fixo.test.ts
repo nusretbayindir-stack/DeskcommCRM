@@ -168,10 +168,14 @@ function analisar(caminho: string, fonte: string): Achado[] {
         no.expression.name.text === "rpc" &&
         funcao &&
         ts.isStringLiteralLike(funcao) &&
-        funcao.text in PARAMETROS_DE_TEXTO &&
+        Object.hasOwn(PARAMETROS_DE_TEXTO, funcao.text) &&
         argumentos
       ) {
-        varrerObjetos(argumentos, PARAMETROS_DE_TEXTO[funcao.text]);
+        const nomes = PARAMETROS_DE_TEXTO[funcao.text]!;
+        varrerObjetos(argumentos, nomes);
+        // `rpc("fn_…", args)`: o objeto montado antes, numa variável do arquivo.
+        const x = desembrulhar(argumentos);
+        if (ts.isIdentifier(x)) (declaracoes.get(x.text) ?? []).forEach((d) => varrerObjetos(d, nomes));
       }
 
       const [sql, params] = no.arguments;
@@ -216,9 +220,12 @@ describe("nenhum texto fixo em português vai para a Central", () => {
       await db.query(\`insert into agent_inbox_items (title) select 'Cliente faltou e não respondeu'\`, []);
       await db.rpc("fn_agent_legacy_notice", { p_org: o, p_title: "Agente precisa concluir a configuração", p_body: traduzir("x", idioma) });
       await db.rpc("fn_que_nao_grava_na_central", { p_title: "Um título que não vai para a Central" });
+      const args = { p_org: o, p_titulo: "O aviso de cobrança em português fixo", p_corpo: corpo };
+      await db.rpc("fn_cobranca_registrar_aviso", args);
+      await db.rpc("constructor", { p_title: "Uma chave do protótipo não é função da Central" });
     `;
     const r = analisar(join(RAIZ, "exemplo.ts"), exemplo);
-    expect(r.map((a) => a.linha)).toEqual([3, 3, 4, 5, 6, 7]);
+    expect(r.map((a) => a.linha)).toEqual([3, 3, 4, 5, 6, 7, 9]);
   });
 
   it("nenhuma gravação na Central leva prosa portuguesa fixa", () => {

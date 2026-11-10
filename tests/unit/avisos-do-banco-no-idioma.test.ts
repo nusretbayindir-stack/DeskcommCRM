@@ -8,12 +8,14 @@ import {
   marcasDoTexto,
   ORIGEM_DOS_AVISOS,
   padroesDoGatilho,
+  pedacosDoAviso,
   type PassoDoGatilho,
   textoDoAvisoDoBanco,
   textoOriginalDoAvisoDoBanco,
 } from "@/lib/ai/avisos-do-banco";
 import { IDIOMA_PADRAO, IDIOMAS, type Idioma } from "@/lib/i18n/idiomas";
 import { preencher } from "@/lib/i18n/preencher";
+import { IDIOMAS_EM_CONSTRUCAO } from "@/lib/i18n/registro";
 
 /**
  * OS AVISOS QUE O BANCO GRAVA NA CENTRAL SAEM NO IDIOMA DA EMPRESA (S2a, U14):
@@ -25,17 +27,22 @@ import { preencher } from "@/lib/i18n/preencher";
  * português sem ninguém ver, ou uma função nova gravar na Central. Este
  * arquivo transforma os dois em vermelho, medindo a ÚLTIMA definição de cada
  * função no baseline — a que o banco instala (CLAUDE.md, doutrina 10).
+ *
+ * "Gravar na Central" aqui é: `insert into agent_inbox_items`, `update
+ * agent_inbox_items set title/body = '<literal>'` (a anonimização) e chamar uma
+ * das `FUNCOES_COM_TEXTO_DE_QUEM_CHAMA` com texto fixo (revisão do PR #43, I1/I2).
  */
 
 const RAIZ = join(__dirname, "..", "..");
 const BASELINE = readFileSync(join(RAIZ, "supabase", "baseline.sql"), "utf8");
 const CAMINHO_DA_MIGRATION = join(RAIZ, "supabase", "migrations", "20261110170002_7002_central_no_idioma_da_empresa.sql");
 const FUNCAO_DO_GATILHO = "fn_central_no_idioma_da_empresa";
+const RECEBEM_O_TEXTO = Object.keys(FUNCOES_COM_TEXTO_DE_QUEM_CHAMA);
 
-/** Varredura em ordem: para cada função, a última definição do arquivo vence. */
+/** Varredura em ordem: para cada função, a última definição do arquivo vence. Aceita `"public"."fn_x"`. */
 function ultimasDefinicoes(sql: string): Map<string, string> {
   const definicoes = new Map<string, string>();
-  for (const m of sql.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\(/gi)) {
+  for (const m of sql.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z0-9_]+)"?\s*\(/gi)) {
     const resto = sql.slice(m.index);
     const abertura = /\bas\s+(\$[a-z_]*\$)/i.exec(resto);
     if (!abertura) continue;
@@ -47,11 +54,11 @@ function ultimasDefinicoes(sql: string): Map<string, string> {
   return definicoes;
 }
 
-/** As instruções `insert into … agent_inbox_items … ;` do corpo, sem comentários e sem cortar em `;` de string. */
-function insercoesNaCentral(corpo: string): string[] {
+/** As instruções que começam no padrão e vão até o `;`, sem comentários e sem cortar em `;` de string. */
+function instrucoes(corpo: string, inicio: RegExp): string[] {
   const semComentario = corpo.replace(/--[^\n]*/g, "");
-  const instrucoes: string[] = [];
-  for (const m of semComentario.matchAll(/insert\s+into\s+(?:public\.)?agent_inbox_items/gi)) {
+  const achadas: string[] = [];
+  for (const m of semComentario.matchAll(inicio)) {
     let i = m.index;
     let emString = false;
     for (; i < semComentario.length; i++) {
@@ -59,9 +66,9 @@ function insercoesNaCentral(corpo: string): string[] {
       if (c === "'") emString = !emString;
       else if (c === ";" && !emString) break;
     }
-    instrucoes.push(semComentario.slice(m.index, i));
+    achadas.push(semComentario.slice(m.index, i));
   }
-  return instrucoes;
+  return achadas;
 }
 
 /** Os literais de string do SQL, com `''` desfeito. */
@@ -69,63 +76,85 @@ function literais(sql: string): string[] {
   return [...sql.matchAll(/'((?:[^']|'')*)'/g)].map((m) => m[1]!.replace(/''/g, "'"));
 }
 
-/** O texto sem as marcas: os pedaços que a função escreve como literal. */
-function pedacos(texto: string): string[] {
-  return texto.split(/\{[a-z]+\}/).filter((p) => p.length > 0);
+/**
+ * Texto, não identificador (`'job_dead'`, `'warn'`) nem separador (o `' '` do
+ * `concat_ws`): tem espaço ao lado de outro caractere (`'Compromisso: '` conta).
+ * Sem o `%s` do `format`.
+ */
+const ehTexto = (l: string) => /\S\s|\s\S/.test(l);
+const semFormat = (l: string) => l.replace(/^%s/, "");
+
+interface EscritaNaCentral {
+  insercoes: number;
+  /** Os literais de texto que a função escreve no título ou no corpo de um aviso. */
+  textos: string[];
+}
+
+function escritaNaCentral(nome: string, corpo: string): EscritaNaCentral {
+  const insercoes = instrucoes(corpo, /insert\s+into\s+(?:public\.)?agent_inbox_items\b/gi);
+  const atualizacoes = instrucoes(corpo, /update\s+(?:public\.)?agent_inbox_items\b/gi).flatMap((u) =>
+    [...u.matchAll(/\b(?:title|body)\s*=\s*'((?:[^']|'')*)'/gi)].map((m) => m[1]!.replace(/''/g, "'")),
+  );
+  const chamadas = RECEBEM_O_TEXTO.filter((f) => f !== nome).flatMap((f) =>
+    instrucoes(corpo, new RegExp(`\\b(?:public\\.)?${f}\\s*\\(`, "gi")).flatMap(literais),
+  );
+  return {
+    insercoes: insercoes.length,
+    textos: [...insercoes.flatMap(literais), ...atualizacoes, ...chamadas].filter(ehTexto).map(semFormat),
+  };
 }
 
 const DEFINICOES = ultimasDefinicoes(BASELINE);
-const FUNCOES_TRADUZIDAS = [...new Set(ORIGEM_DOS_AVISOS.map((o) => o.funcao))];
+const ESCRITAS = new Map([...DEFINICOES].map(([nome, corpo]) => [nome, escritaNaCentral(nome, corpo)]));
+const FUNCOES_TRADUZIDAS = [...new Set(ORIGEM_DOS_AVISOS.flatMap((o) => o.funcoes))];
 
 describe("avisos do banco: o que o gatilho reconhece é o que o banco escreve", () => {
-  it("controle: a varredura acha as funções e o insert de cada uma", () => {
-    expect(DEFINICOES.size).toBeGreaterThan(300);
+  it("controle: a varredura acha as funções, inclusive as de nome entre aspas, e o texto de cada uma", () => {
+    expect(DEFINICOES.size).toBeGreaterThan(400);
     for (const funcao of FUNCOES_TRADUZIDAS) {
       expect(DEFINICOES.get(funcao), funcao).toBeDefined();
-      expect(insercoesNaCentral(DEFINICOES.get(funcao)!).length, funcao).toBeGreaterThan(0);
+      expect(ESCRITAS.get(funcao)!.textos.length, funcao).toBeGreaterThan(0);
     }
   });
 
-  it("⭐ cada texto está, pedaço a pedaço, na última definição da função que o grava", () => {
-    const sumidos = ORIGEM_DOS_AVISOS.flatMap(({ chave, funcao }) => {
-      const corpo = insercoesNaCentral(DEFINICOES.get(funcao) ?? "").join("\n");
-      return pedacos(textoOriginalDoAvisoDoBanco(chave))
-        .filter((p) => !literais(corpo).some((l) => l.includes(p)))
-        .map((p) => `${funcao} (${chave}): «${p}»`);
-    });
+  it("⭐ cada texto está, pedaço a pedaço, na última definição de cada função que o grava", () => {
+    const sumidos = ORIGEM_DOS_AVISOS.flatMap((origem) =>
+      origem.funcoes.flatMap((funcao) => {
+        const escritos = ESCRITAS.get(funcao)?.textos ?? [];
+        return pedacosDoAviso(origem)
+          .filter((p) => !escritos.includes(p))
+          .map((p) => `${funcao} (${origem.chave}): «${p}»`);
+      }),
+    );
     // Vermelho aqui: o upstream mudou o texto. O gatilho deixou de casar e o aviso voltou ao
     // português. Atualize o texto em lib/ai/avisos-do-banco.ts e no catálogo, e o jsonb do gatilho
     // numa migration nova.
     expect(sumidos).toEqual([]);
   });
 
-  it("⭐ todo pedaço em português que essas funções gravam na Central tem padrão no gatilho", () => {
+  it("⭐ todo texto em português que essas funções gravam na Central tem padrão no gatilho", () => {
     const semPadrao = FUNCOES_TRADUZIDAS.flatMap((funcao) => {
-      const conhecidos = ORIGEM_DOS_AVISOS.filter((o) => o.funcao === funcao).flatMap((o) =>
-        pedacos(textoOriginalDoAvisoDoBanco(o.chave)),
-      );
-      return insercoesNaCentral(DEFINICOES.get(funcao) ?? "")
-        .flatMap(literais)
-        .filter((l) => /\s/.test(l.trim())) // identificador ('job_dead', 'warn') não é texto
-        .map((l) => l.replace(/^%s/, ""))
-        .filter((l) => !conhecidos.some((p) => p.includes(l)))
+      const conhecidos = ORIGEM_DOS_AVISOS.filter((o) => o.funcoes.includes(funcao)).flatMap(pedacosDoAviso);
+      return (ESCRITAS.get(funcao)?.textos ?? [])
+        .filter((l) => !conhecidos.includes(l))
         .map((l) => `${funcao}: «${l}»`);
     });
     expect(semPadrao).toEqual([]);
   });
 
-  it("⭐ toda função que grava na Central no baseline está declarada (função nova do upstream = vermelho)", () => {
-    const gravam = [...DEFINICOES]
-      .filter(([nome, corpo]) => nome !== FUNCAO_DO_GATILHO && insercoesNaCentral(corpo).length > 0)
+  it("⭐ toda função que grava texto na Central no baseline está declarada (função nova do upstream = vermelho)", () => {
+    const gravam = [...ESCRITAS]
+      .filter(([nome, e]) => nome !== FUNCAO_DO_GATILHO && (e.insercoes > 0 || e.textos.length > 0))
       .map(([nome]) => nome)
       .sort();
-    const declaradas = [...FUNCOES_TRADUZIDAS, ...Object.keys(FUNCOES_COM_TEXTO_DE_QUEM_CHAMA)].sort();
+    const declaradas = [...new Set([...FUNCOES_TRADUZIDAS, ...RECEBEM_O_TEXTO])].sort();
     expect(gravam).toEqual(declaradas);
   });
 
   it("as funções que gravam o texto recebido recebem mesmo título e corpo por parâmetro", () => {
     for (const [funcao, parametros] of Object.entries(FUNCOES_COM_TEXTO_DE_QUEM_CHAMA)) {
-      const insercoes = insercoesNaCentral(DEFINICOES.get(funcao) ?? "").join("\n");
+      const insercoes = instrucoes(DEFINICOES.get(funcao) ?? "", /insert\s+into\s+(?:public\.)?agent_inbox_items\b/gi).join("\n");
+      expect(insercoes, funcao).not.toBe("");
       for (const p of parametros) expect(insercoes, `${funcao}.${p}`).toContain(p);
     }
   });
@@ -162,10 +191,22 @@ describe("avisos do banco: o gatilho e a tabela", () => {
     }
   });
 
+  it("o erro técnico do job passa cru, mesmo quando contém a frase do motivo padrão", () => {
+    for (const [idioma, passos] of Object.entries(padroesDoGatilho()) as [Idioma, PassoDoGatilho[]][]) {
+      const motivo = "handler de envio indisponível";
+      let corpo = preencher(textoOriginalDoAvisoDoBanco("acompanhamentoCorpo"), { motivo });
+      for (const [padrao, substituicao, flags] of passos) {
+        const js = substituicao.replace(/\$/g, "$$$$").replace(/\\(\d)/g, "$$$1").replace(/\\\\/g, "\\");
+        corpo = corpo.replace(new RegExp(padrao, flags), js);
+      }
+      expect(corpo, idioma).toBe(preencher(textoDoAvisoDoBanco("acompanhamentoCorpo", idioma), { motivo }));
+    }
+  });
+
   it("idioma escondido e o padrão ficam fora do gatilho (português, como normalizarIdioma)", () => {
     const idiomas = Object.keys(padroesDoGatilho()).sort();
     expect(idiomas).toEqual(IDIOMAS.filter((i) => i !== IDIOMA_PADRAO).sort());
-    expect(idiomas).not.toContain("nl");
+    for (const { codigo } of IDIOMAS_EM_CONSTRUCAO) expect(idiomas).not.toContain(codigo);
   });
 
   it("⭐ o jsonb da última definição do gatilho no baseline é o que a tabela gera", () => {

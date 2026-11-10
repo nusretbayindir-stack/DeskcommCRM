@@ -4,23 +4,27 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ORIGEM_DOS_AVISOS, textoDoAvisoDoBanco, textoOriginalDoAvisoDoBanco } from "@/lib/ai/avisos-do-banco";
-import type { Idioma } from "@/lib/i18n/idiomas";
+import { IDIOMA_PADRAO, IDIOMAS, type Idioma } from "@/lib/i18n/idiomas";
 import { preencher } from "@/lib/i18n/preencher";
+import { IDIOMAS_EM_CONSTRUCAO } from "@/lib/i18n/registro";
 
 /**
  * OS AVISOS QUE O BANCO GRAVA NA CENTRAL SAEM NO IDIOMA DA EMPRESA (S2a, U14).
  *
  * O gatilho `trg_central_no_idioma_da_empresa` (migration 7002) troca o texto
- * em português que seis funções do upstream escrevem pelo do idioma da
+ * em português que funções do upstream escrevem pelo do idioma da
  * organização. Regex no Postgres não se prova com dublê: este arquivo roda o
  * gatilho de verdade.
  *
  *   1. cada texto, gravado como as funções o gravam, sai em turco e espanhol;
- *      português, idioma escondido (`nl`) e aviso sem organização ficam como
- *      estão; o pedaço que vem do banco passa cru;
+ *      português, um idioma ainda escondido e aviso sem organização ficam
+ *      como estão; o pedaço que vem do banco passa cru;
  *   2. o corpo da reativação, que junta até três frases, troca cada uma;
- *   3. `update` do título também passa pelo gatilho;
- *   4. uma função do upstream de verdade (`fn_routing_unassigned_notice`),
+ *   3. `update` do título também passa pelo gatilho, e o da anonimização
+ *      (`body = 'Contato anonimizado.'`) também;
+ *   4. o `on conflict do update set title = excluded.title` da varredura de
+ *      presença;
+ *   5. uma função do upstream de verdade (`fn_routing_unassigned_notice`),
  *      inclusive o `on conflict do update set body = excluded.body`.
  */
 
@@ -35,15 +39,17 @@ const pool = new pg.Pool({
   max: 2,
 });
 
-const ORGS = {
-  tr: randomUUID(),
-  es: randomUUID(),
-  "pt-BR": randomUUID(),
-  nl: randomUUID(),
-} as const;
-type Locale = keyof typeof ORGS;
-/** O idioma em que o aviso deve sair: `nl` ainda está escondido, então português. */
-const SAI_EM: Record<Locale, Idioma | null> = { tr: "tr", es: "es", "pt-BR": null, nl: null };
+/** Um idioma do registro ainda escondido (hoje `nl`): sai em português, como em `normalizarIdioma`. */
+const ESCONDIDO = IDIOMAS_EM_CONSTRUCAO[0]?.codigo ?? null;
+const ORGS: Record<string, string> = Object.fromEntries(
+  ["tr", "es", IDIOMA_PADRAO, ...(ESCONDIDO ? [ESCONDIDO] : [])].map((locale) => [locale, randomUUID()]),
+);
+const ORG_TR = ORGS.tr!;
+const ORG_ES = ORGS.es!;
+/** O idioma em que o aviso deve sair: visível e não padrão, senão português. */
+function saiEm(locale: string): Idioma | null {
+  return (IDIOMAS as readonly string[]).includes(locale) && locale !== IDIOMA_PADRAO ? (locale as Idioma) : null;
+}
 
 /** Valores com o que costuma quebrar regex e substituição: ponto, `$1`, barra, colchete. */
 const VALORES = { n: 3, motivo: "timeout (provedor) $1 \\x", titulo: "Revisão. 10h? [sala]" };
@@ -78,16 +84,16 @@ beforeAll(async () => {
   }
   await pool.query("insert into contacts (id, organization_id, display_name) values ($1, $2, 'Cliente')", [
     CONTATO,
-    ORGS.tr,
+    ORG_TR,
   ]);
   await pool.query(
     `insert into public.channel_sessions (id, organization_id, waha_session_name, webhook_secret_encrypted)
      values ($1, $2, $3, '\\x00'::bytea)`,
-    [SESSAO, ORGS.tr, `avisos-do-banco-${SESSAO.slice(0, 8)}`],
+    [SESSAO, ORG_TR, `avisos-do-banco-${SESSAO.slice(0, 8)}`],
   );
   await pool.query(
     "insert into conversations (id, organization_id, contact_id, channel_session_id, status) values ($1, $2, $3, $4, 'open')",
-    [CONVERSA, ORGS.tr, CONTATO, SESSAO],
+    [CONVERSA, ORG_TR, CONTATO, SESSAO],
   );
 });
 
@@ -106,12 +112,13 @@ afterAll(async () => {
 });
 
 describe("avisos do banco no idioma da empresa (gatilho de verdade)", () => {
-  it("⭐ cada texto sai no idioma da empresa; português, nl escondido e sem organização ficam como estão", async () => {
+  it("⭐ cada texto sai no idioma da empresa; português, idioma escondido e sem organização ficam como estão", async () => {
+    expect(Object.keys(ORGS).length, "controle: tr, es, o padrão e um escondido").toBe(ESCONDIDO ? 4 : 3);
     const errados: string[] = [];
-    for (const [locale, org] of Object.entries(ORGS) as [Locale, string][]) {
+    for (const [locale, org] of Object.entries(ORGS)) {
       for (const { chave } of ORIGEM_DOS_AVISOS) {
         const escrito = preencher(textoOriginalDoAvisoDoBanco(chave), VALORES);
-        const idioma = SAI_EM[locale];
+        const idioma = saiEm(locale);
         const esperado = idioma ? preencher(textoDoAvisoDoBanco(chave, idioma), VALORES) : escrito;
         const gravado = await gravar(org, escrito, escrito);
         if (gravado.title !== esperado || gravado.body !== esperado) {
@@ -133,7 +140,7 @@ describe("avisos do banco no idioma da empresa (gatilho de verdade)", () => {
       tr: preencher(textoDoAvisoDoBanco(c, "tr"), { n: 12 }),
     }));
     const gravado = await gravar(
-      ORGS.tr,
+      ORG_TR,
       textoOriginalDoAvisoDoBanco("reativadaAgendamentosTitulo"),
       frases.map((f) => f.pt).join(" "),
     );
@@ -144,7 +151,7 @@ describe("avisos do banco no idioma da empresa (gatilho de verdade)", () => {
   it("update do título também passa pelo gatilho", async () => {
     const { rows } = await pool.query<{ id: string }>(
       `insert into agent_inbox_items (organization_id, kind, severity, title, ref_kind) values ($1, 'other', 'warn', 'Rascunho', $2) returning id`,
-      [ORGS.es, REF_DE_TESTE],
+      [ORG_ES, REF_DE_TESTE],
     );
     const { rows: depois } = await pool.query<{ title: string }>(
       "update agent_inbox_items set title = $2 where id = $1 returning title",
@@ -153,16 +160,55 @@ describe("avisos do banco no idioma da empresa (gatilho de verdade)", () => {
     expect(depois[0]!.title).toBe(textoDoAvisoDoBanco("recuperacaoTitulo", "es"));
   });
 
+  it("a anonimização (update do corpo para 'Contato anonimizado.') sai no idioma da empresa", async () => {
+    const { rows } = await pool.query<{ id: string }>(
+      `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind)
+       values ($1, 'other', 'warn', 'Aviso com dado pessoal', 'Fulano de Tal, 11 99999-0000', $2) returning id`,
+      [ORG_TR, REF_DE_TESTE],
+    );
+    // A forma das funções de anonimização (fn_meet_redact_contact, fn_lgpd_cascade_redact_contact…).
+    const { rows: depois } = await pool.query<{ body: string; status: string }>(
+      "update agent_inbox_items set status = 'resolved', resolved_at = now(), body = 'Contato anonimizado.', ref_id = null where id = $1 returning body, status",
+      [rows[0]!.id],
+    );
+    expect(depois[0]).toEqual({ body: textoDoAvisoDoBanco("contatoAnonimizado", "tr"), status: "resolved" });
+  });
+
+  it("o on conflict da varredura de presença troca o título também no update (title = excluded.title)", async () => {
+    const compromisso = randomUUID();
+    // A forma de fn_appointment_confirmation_sweep: o mesmo compromisso e revisão, o título muda com a gravidade.
+    const varrer = (titulo: string) =>
+      pool.query<{ title: string }>(
+        `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id, appointment_revision)
+         values ($1, 'appointment_outcome_required', 'warn', $2, 'Compromisso: Consulta. corpo', 'appointment', $3, 1)
+         on conflict (organization_id, ref_id, appointment_revision, kind) where ref_kind = 'appointment' and appointment_revision is not null
+         do update set status = 'open', resolved_at = null, severity = excluded.severity, title = excluded.title
+         returning title`,
+        [ORG_TR, titulo, compromisso],
+      );
+    expect((await varrer(textoOriginalDoAvisoDoBanco("presencaTitulo"))).rows[0]!.title).toBe(
+      textoDoAvisoDoBanco("presencaTitulo", "tr"),
+    );
+    expect((await varrer(textoOriginalDoAvisoDoBanco("presencaVencidaTitulo"))).rows[0]!.title).toBe(
+      textoDoAvisoDoBanco("presencaVencidaTitulo", "tr"),
+    );
+    const { rows } = await pool.query<{ n: number }>(
+      "select count(*)::int n from agent_inbox_items where organization_id = $1 and ref_id = $2",
+      [ORG_TR, compromisso],
+    );
+    expect(rows[0]!.n).toBe(1);
+  });
+
   it("⭐ fn_routing_unassigned_notice de verdade: turco, e o on conflict troca o corpo em turco", async () => {
     const aviso = async () =>
       (
         await pool.query<{ title: string; body: string }>(
           "select title, body from agent_inbox_items where organization_id = $1 and ref_id = $2 and kind = 'routing_unassigned'",
-          [ORGS.tr, CONVERSA],
+          [ORG_TR, CONVERSA],
         )
       ).rows;
 
-    await pool.query("select fn_routing_unassigned_notice($1, $2, 'no_eligible')", [ORGS.tr, CONVERSA]);
+    await pool.query("select fn_routing_unassigned_notice($1, $2, 'no_eligible')", [ORG_TR, CONVERSA]);
     expect(await aviso()).toEqual([
       {
         title: textoDoAvisoDoBanco("semResponsavelTitulo", "tr"),
@@ -170,7 +216,7 @@ describe("avisos do banco no idioma da empresa (gatilho de verdade)", () => {
       },
     ]);
 
-    await pool.query("select fn_routing_unassigned_notice($1, $2, 'invalid_channel')", [ORGS.tr, CONVERSA]);
+    await pool.query("select fn_routing_unassigned_notice($1, $2, 'invalid_channel')", [ORG_TR, CONVERSA]);
     expect(await aviso()).toEqual([
       {
         title: textoDoAvisoDoBanco("semResponsavelTitulo", "tr"),

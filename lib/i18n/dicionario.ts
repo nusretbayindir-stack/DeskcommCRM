@@ -14672,10 +14672,12 @@ export const DICIONARIO: Traducoes = {
     es: "El agente todavía no sabe lo que hay en este material. Motivo: {motivo}",
   },
   // avisos que funções do banco gravam na Central (lib/ai/avisos-do-banco.ts; gatilho da migration 7002)
-  "O acompanhamento não conseguiu enviar a mensagem": { es: "El follow-up no pudo enviar el mensaje" },
-  "envio indisponível": { es: "envío no disponible" },
+  "O acompanhamento não conseguiu enviar a mensagem": { es: "El seguimiento no pudo enviar el mensaje" },
+  "Abra o acompanhamento e confira o canal. Motivo: envio indisponível": {
+    es: "Abre el seguimiento y revisa el canal. Motivo: envío no disponible",
+  },
   "Abra o acompanhamento e confira o canal. Motivo: {motivo}": {
-    es: "Abre el follow-up y revisa el canal. Motivo: {motivo}",
+    es: "Abre el seguimiento y revisa el canal. Motivo: {motivo}",
   },
   "Uma conversa aguarda um responsável": { es: "Una conversación espera un responsable" },
   "Confira o canal de origem desta conversa nas Conexões.": {
@@ -14694,7 +14696,7 @@ export const DICIONARIO: Traducoes = {
     es: "Cita: {titulo}. Ábrela y registra si la persona asistió, faltó o canceló. La hora por sí sola no confirma la ausencia.",
   },
   "A conta foi reativada — há agendamentos e follow-ups para revisar": {
-    es: "La cuenta fue reactivada — hay envíos programados y follow-ups para revisar",
+    es: "La cuenta fue reactivada — hay envíos programados y seguimientos para revisar",
   },
   "1 conversa recebeu mensagem enquanto a conta estava suspensa.": {
     es: "1 conversación recibió mensajes mientras la cuenta estaba suspendida.",
@@ -14709,14 +14711,14 @@ export const DICIONARIO: Traducoes = {
     es: "{n} envíos programados únicos vencieron durante la suspensión y no se enviaron.",
   },
   "1 passo de follow-up foi descartado durante a suspensão; confira o follow-up do contato.": {
-    es: "1 paso de follow-up se descartó durante la suspensión; revisa el follow-up del contacto.",
+    es: "1 paso de seguimiento se descartó durante la suspensión; revisa el seguimiento del contacto.",
   },
   "{n} passos de follow-up foram descartados durante a suspensão; confira o follow-up dos contatos.": {
-    es: "{n} pasos de follow-up se descartaron durante la suspensión; revisa el follow-up de los contactos.",
+    es: "{n} pasos de seguimiento se descartaron durante la suspensión; revisa el seguimiento de los contactos.",
   },
   "A recuperação não foi iniciada": { es: "La recuperación no se inició" },
   "Este contato já tem outro acompanhamento. Revise o próximo passo; nenhuma recuperação ficou aguardando vaga.": {
-    es: "Este contacto ya tiene otro follow-up. Revisa el siguiente paso; ninguna recuperación quedó esperando turno.",
+    es: "Este contacto ya tiene otro seguimiento. Revisa el siguiente paso; ninguna recuperación quedó esperando turno.",
   },
   "Mais de um fluxo atende a esta falta. Deixe apenas um configurado ou escolha manualmente o próximo passo.": {
     es: "Más de un flujo atiende esta ausencia. Deja solo uno configurado o elige manualmente el siguiente paso.",
@@ -14727,7 +14729,10 @@ export const DICIONARIO: Traducoes = {
   "O contexto mudou ou não há contato vinculado. Abra o compromisso e escolha o próximo passo.": {
     es: "El contexto cambió o no hay un contacto vinculado. Abre la cita y elige el siguiente paso.",
   },
-  // aviso do agente legado (lib/ai/agents/legacy-notice.ts)
+  // aviso do agente legado (lib/ai/agents/legacy-notice.ts e fn_agent_legacy_published no banco)
+  "A configuração foi recuperada. As respostas usam a versão publicada.": {
+    es: "La configuración se recuperó. Las respuestas usan la versión publicada.",
+  },
   "Agente recuperado": { es: "Se recuperó el agente" },
   "Agente precisa concluir a configuração": { es: "El agente necesita terminar la configuración" },
   "{causa} Abra IA → Agentes → Recuperar agente legado.": {
