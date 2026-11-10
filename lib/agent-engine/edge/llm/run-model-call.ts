@@ -63,7 +63,9 @@ import {
   type ChaveDeOrcamento,
 } from './orcamento';
 import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
-import { IDIOMA_PADRAO, type Idioma } from '@/lib/i18n/idiomas';
+import { IDIOMA_PADRAO, IDIOMAS, type Idioma } from '@/lib/i18n/idiomas';
+import { traduzir } from '@/lib/i18n/dicionario';
+import { preencher } from '@/lib/i18n/preencher';
 import { corpoComoObjeto, custoInformadoPeloOpenRouter, custoTerraPorPassos, costCents, gravacaoDeUmaHora } from './pricing';
 import { custoDoModeloForaDoMotor } from './pricing-do-catalogo';
 import { chaveDeOrcamentoDaInstalacao } from '../../../instalacao/comportamento';
@@ -165,41 +167,68 @@ export const TITULO_ENDERECO_SEM_CHAVE_DA_EMPRESA =
  * separa a dedup: o aviso do prazo e a recusa de depois são dois itens, e é
  * assim que a Central conta a história em vez de sobrescrevê-la.
  */
-export const TITULO_ENDERECO_SEM_CHAVE_PRAZO =
-  `A IA vai deixar de usar o endereço próprio desta empresa sem a chave dela em ${prazoLegivel()}`;
+const MODELO_DO_TITULO_DO_PRAZO =
+  'A IA vai deixar de usar o endereço próprio desta empresa sem a chave dela em {prazo}';
 
-/** O corpo do aviso — só o HOST do endereço, nunca a URL inteira. */
-export function corpoDoAvisoDeEnderecoSemChave(d: {
-  purpose: string;
-  provider: string;
-  baseUrl: string;
-  /** `avisa` antes do prazo (a chamada seguiu), `recusa` depois dele. */
-  degrau: 'avisa' | 'recusa';
-}): string {
-  const ponto = PONTO_POR_ID.get(d.purpose)?.rotulo ?? d.purpose;
+export const TITULO_ENDERECO_SEM_CHAVE_PRAZO = preencher(MODELO_DO_TITULO_DO_PRAZO, { prazo: prazoLegivel() });
+
+/**
+ * O título no idioma da empresa (S2a Task 5, revisão final I1). Como o título
+ * é a chave de dedup, quem grava procura o aviso aberto pelo título em TODO
+ * idioma (`registrarRecusaDeEnderecoSemChave`).
+ */
+function tituloDoEnderecoSemChave(degrau: 'avisa' | 'recusa', idioma: Idioma): string {
+  return degrau === 'recusa'
+    ? traduzir(TITULO_ENDERECO_SEM_CHAVE_DA_EMPRESA, idioma)
+    : preencher(traduzir(MODELO_DO_TITULO_DO_PRAZO, idioma), { prazo: prazoLegivel() });
+}
+
+/**
+ * O corpo do aviso — só o HOST do endereço, nunca a URL inteira. No idioma
+ * pedido (padrão = o português de sempre), frase a frase; os valores (ponto,
+ * host, provedor, prazo) entram crus, o rótulo do ponto passa pelo dicionário.
+ */
+export function corpoDoAvisoDeEnderecoSemChave(
+  d: {
+    purpose: string;
+    provider: string;
+    baseUrl: string;
+    /** `avisa` antes do prazo (a chamada seguiu), `recusa` depois dele. */
+    degrau: 'avisa' | 'recusa';
+  },
+  idioma: Idioma = IDIOMA_PADRAO,
+): string {
+  const t = (texto: string) => traduzir(texto, idioma);
+  const ponto = t(PONTO_POR_ID.get(d.purpose)?.rotulo ?? d.purpose);
   // Só o host: uma URL pode carregar usuário e senha (`https://u:s@host`) ou um
   // token na query, e este corpo é lido por qualquer pessoa da equipe.
-  let destino = 'um endereço próprio';
+  let destino = t('um endereço próprio');
   try {
-    destino = `um endereço próprio (${new URL(d.baseUrl).host})`;
+    destino = preencher(t('um endereço próprio ({host})'), { host: new URL(d.baseUrl).host });
   } catch {
     // Endereço que nem é URL: o aviso segue sem o host, que é detalhe.
   }
-  return (
-    `O ponto "${ponto}" está configurado em Agente de IA › Provedores para ${destino}, ` +
-    `mas esta empresa não tem chave de ${d.provider} cadastrada e validada. ` +
-    `A chave de IA da instalação — a que paga a conta de todas as empresas deste servidor — ` +
-    `não é enviada a um endereço escolhido por uma empresa. ` +
-    (d.degrau === 'recusa'
-      ? `A chamada foi recusada antes de sair. Enquanto isso não for corrigido, as chamadas desse ponto ` +
-        `continuam recusadas; quando o ponto faz parte do atendimento, o agente deixa de responder aos ` +
-        `clientes desta empresa. `
-      : `A chamada SEGUIU desta vez, mas isso tem prazo: a partir de ${prazoLegivel()} ela passa a ser ` +
-        `recusada, e quando o ponto faz parte do atendimento o agente deixa de responder aos clientes ` +
-        `desta empresa. Corrija antes dessa data. `) +
-    `Para resolver: cadastre a chave da empresa em Agente de IA › Provedores, ` +
-    `ou tire o endereço próprio para voltar ao provedor padrão da instalação.`
-  );
+  return [
+    preencher(
+      t(
+        'O ponto "{ponto}" está configurado em Agente de IA › Provedores para {destino}, mas esta empresa não tem chave de {provedor} cadastrada e validada. A chave de IA da instalação — a que paga a conta de todas as empresas deste servidor — não é enviada a um endereço escolhido por uma empresa.',
+      ),
+      { ponto, destino, provedor: d.provider },
+    ),
+    d.degrau === 'recusa'
+      ? t(
+          'A chamada foi recusada antes de sair. Enquanto isso não for corrigido, as chamadas desse ponto continuam recusadas; quando o ponto faz parte do atendimento, o agente deixa de responder aos clientes desta empresa.',
+        )
+      : preencher(
+          t(
+            'A chamada SEGUIU desta vez, mas isso tem prazo: a partir de {prazo} ela passa a ser recusada, e quando o ponto faz parte do atendimento o agente deixa de responder aos clientes desta empresa. Corrija antes dessa data.',
+          ),
+          { prazo: prazoLegivel() },
+        ),
+    t(
+      'Para resolver: cadastre a chave da empresa em Agente de IA › Provedores, ou tire o endereço próprio para voltar ao provedor padrão da instalação.',
+    ),
+  ].join(' ');
 }
 
 // Whitelist de params da org (jsonb livre no DB → só o que o seam entende passa).
@@ -719,22 +748,31 @@ async function registrarRecusaDeEnderecoSemChave(d: {
   };
 
   try {
+    // No idioma da empresa (S2a Task 5; a leitura que falha vira o padrão). O
+    // título é a chave de dedup (índice 0539), então o aviso aberto é procurado
+    // pelo título em TODO idioma ($4): a empresa que trocou de idioma com o
+    // aviso aberto não ganha um segundo.
+    const idioma = await idiomaDaOrgPeloPg(d.db, d.input.tenantId);
     await d.db.query(
       `insert into agent_inbox_items (organization_id, kind, severity, title, body)
        select $1, 'other', 'critical', $2, $3
        where not exists (
          select 1 from agent_inbox_items
-         where organization_id = $1 and kind = 'other' and title = $2 and status = 'open'
+         where organization_id = $1 and kind = 'other' and title = any($4::text[]) and status = 'open'
        )`,
       [
         d.input.tenantId,
-        d.degrau === 'recusa' ? TITULO_ENDERECO_SEM_CHAVE_DA_EMPRESA : TITULO_ENDERECO_SEM_CHAVE_PRAZO,
-        corpoDoAvisoDeEnderecoSemChave({
-          purpose: d.purpose,
-          provider: d.provider,
-          baseUrl: d.baseUrl,
-          degrau: d.degrau,
-        }),
+        tituloDoEnderecoSemChave(d.degrau, idioma),
+        corpoDoAvisoDeEnderecoSemChave(
+          {
+            purpose: d.purpose,
+            provider: d.provider,
+            baseUrl: d.baseUrl,
+            degrau: d.degrau,
+          },
+          idioma,
+        ),
+        [...new Set(IDIOMAS.map((cada) => tituloDoEnderecoSemChave(d.degrau, cada)))],
       ],
     );
   } catch (err) {

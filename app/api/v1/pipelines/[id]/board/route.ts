@@ -17,7 +17,9 @@ import { type NextRequest } from "next/server";
 
 import { fail, ok } from "@/lib/api/wrappers";
 import { loadAuthUser } from "@/lib/auth/server";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { preencher } from "@/lib/i18n/preencher";
 import {
   roteiaProximasAcoes,
   type EstadoDoContato,
@@ -164,19 +166,31 @@ async function avisaAmbiguas(
     ((jaAbertos ?? []) as Array<{ ref_id: string }>).map((r) => r.ref_id),
   );
 
-  const novos = ambiguas
-    .filter((a) => !abertos.has(a.contact_id))
-    .map((a) => ({
-      organization_id: organizationId,
-      kind: "next_action_ambiguous",
-      severity: "warn",
-      title: `A IA propôs uma próxima ação, mas o contato tem ${a.candidateIds.length} negócios abertos`,
-      body: `Proposta: "${a.texto}". Escolha a qual negócio ela pertence — o sistema não adivinha para não executar no negócio errado.`,
-      ref_kind: "contact",
-      ref_id: a.contact_id,
-      status: "open",
-    }));
-  if (novos.length === 0) return;
+  const semAviso = ambiguas.filter((a) => !abertos.has(a.contact_id));
+  if (semAviso.length === 0) return;
+
+  // No idioma da empresa (S2a Task 5): lido só quando há aviso a abrir; a
+  // leitura que falha vira o padrão. A proposta da IA entra crua.
+  const idioma = await idiomaDaOrgPeloSupabase(supabase, organizationId);
+  const novos = semAviso.map((a) => ({
+    organization_id: organizationId,
+    kind: "next_action_ambiguous",
+    severity: "warn",
+    title: preencher(
+      traduzir("A IA propôs uma próxima ação, mas o contato tem {n} negócios abertos", idioma),
+      { n: a.candidateIds.length },
+    ),
+    body: preencher(
+      traduzir(
+        'Proposta: "{proposta}". Escolha a qual negócio ela pertence — o sistema não adivinha para não executar no negócio errado.',
+        idioma,
+      ),
+      { proposta: a.texto },
+    ),
+    ref_kind: "contact",
+    ref_id: a.contact_id,
+    status: "open",
+  }));
 
   await supabase.from("agent_inbox_items").insert(novos);
 }

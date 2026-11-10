@@ -14581,6 +14581,96 @@ export const DICIONARIO: Traducoes = {
     es: "El correo de inicio de sesión de {nome} fue cambiado por el administrador de la plataforma el {data}.",
   },
   "uma pessoa da equipe": { es: "una persona del equipo" },
+  // revisão final I1: case-stale, board, avisos-do-turno, run-model-call, central-de-pausa, avisos da queda, rag-indexer
+  "Um atendimento espera decisão {espera}": { es: "Una atención espera una decisión {espera}" },
+  "\"{caso}\" está aguardando alguém da equipe desde que foi aberto, e o cliente continua do outro lado. Abra o caso e diga o que fazer — concluir, pedir informação ao cliente ou passar para uma pessoa.": {
+    es: "\"{caso}\" está esperando a alguien del equipo desde que se abrió, y el cliente sigue del otro lado. Abre el caso y di qué hacer — concluir, pedir información al cliente o pasarlo a una persona.",
+  },
+  "Este é o último aviso automático sobre ele.": { es: "Este es el último aviso automático sobre él." },
+  "há um dia": { es: "hace un día" },
+  "A IA propôs uma próxima ação, mas o contato tem {n} negócios abertos": {
+    es: "La IA propuso una próxima acción, pero el contacto tiene {n} negocios abiertos",
+  },
+  "Proposta: \"{proposta}\". Escolha a qual negócio ela pertence — o sistema não adivinha para não executar no negócio errado.": {
+    es: "Propuesta: \"{proposta}\". Elige a qué negocio pertenece — el sistema no adivina para no ejecutarla en el negocio equivocado.",
+  },
+  "O agente atendeu sem as capacidades que você ligou": { es: "El agente atendió sin las capacidades que activaste" },
+  "As ferramentas configuradas na tela do agente não puderam ser carregadas neste atendimento, e ele respondeu ao cliente sem elas. A conversa não foi interrompida. Motivo técnico: {detalhe}": {
+    es: "Las herramientas configuradas en la pantalla del agente no se pudieron cargar en esta atención, y respondió al cliente sin ellas. La conversación no se interrumpió. Motivo técnico: {detalhe}",
+  },
+  "Um retorno prometido a um cliente ficou sem dono": {
+    es: "Un seguimiento prometido a un cliente quedó sin responsable",
+  },
+  "O assistente prometeu algo a esta pessoa nesta conversa e o passo que registra o cumprimento não chegou a ser agendado. Abra a conversa, veja o que foi combinado e cumpra você mesmo.": {
+    es: "El asistente le prometió algo a esta persona en esta conversación y el paso que registra el cumplimiento no llegó a programarse. Abre la conversación, revisa lo acordado y cúmplelo tú mismo.",
+  },
+  "Lead com sinal de urgência represado pelo cap de envio do número": {
+    es: "Lead con señal de urgencia retenido por el límite de envío del número",
+  },
+  "Mensagem do lead parece relatar risco/urgência, mas o número está em warm-up/bateu o cap diário ({codigo}) — a resposta automática só sai em {quando}. Considere responder manualmente pelo WhatsApp enquanto o número aquece.": {
+    es: "El mensaje del lead parece relatar un riesgo/urgencia, pero el número está en warm-up/alcanzó el límite diario ({codigo}) — la respuesta automática solo sale el {quando}. Considera responder manualmente por WhatsApp mientras el número se calienta.",
+  },
+  "Lead com risco percebido pelo modelo de decisão represado pelo cap de envio": {
+    es: "Lead con riesgo percibido por el modelo de decisión retenido por el límite de envío",
+  },
+  "A regra de urgência de hoje não reconheceu o risco, mas o modelo de decisão percebeu, numa mensagem represada, risco à segurança ou à saúde (origem: percebido pelo modelo de decisão, visível só para a equipe). O número está em warm-up/bateu o cap diário ({codigo}) — a resposta automática só sai em {quando}. Considere responder manualmente pelo WhatsApp enquanto o número aquece.": {
+    es: "La regla de urgencia de hoy no reconoció el riesgo, pero el modelo de decisión percibió, en un mensaje retenido, un riesgo para la seguridad o la salud (origen: percibido por el modelo de decisión, visible solo para el equipo). El número está en warm-up/alcanzó el límite diario ({codigo}) — la respuesta automática solo sale el {quando}. Considera responder manualmente por WhatsApp mientras el número se calienta.",
+  },
+  "A IA recusou usar o endereço próprio desta empresa sem a chave dela": {
+    es: "La IA se negó a usar la dirección propia de esta empresa sin su clave",
+  },
+  "A IA vai deixar de usar o endereço próprio desta empresa sem a chave dela em {prazo}": {
+    es: "La IA dejará de usar la dirección propia de esta empresa sin su clave el {prazo}",
+  },
+  "um endereço próprio": { es: "una dirección propia" },
+  "um endereço próprio ({host})": { es: "una dirección propia ({host})" },
+  "O ponto \"{ponto}\" está configurado em Agente de IA › Provedores para {destino}, mas esta empresa não tem chave de {provedor} cadastrada e validada. A chave de IA da instalação — a que paga a conta de todas as empresas deste servidor — não é enviada a um endereço escolhido por uma empresa.": {
+    es: "El punto \"{ponto}\" está configurado en Agente de IA › Proveedores para {destino}, pero esta empresa no tiene una clave de {provedor} registrada y validada. La clave de IA de la instalación — la que paga la cuenta de todas las empresas de este servidor — no se envía a una dirección elegida por una empresa.",
+  },
+  "A chamada foi recusada antes de sair. Enquanto isso não for corrigido, as chamadas desse ponto continuam recusadas; quando o ponto faz parte do atendimento, o agente deixa de responder aos clientes desta empresa.": {
+    es: "La llamada se rechazó antes de salir. Mientras esto no se corrija, las llamadas de este punto siguen rechazadas; cuando el punto forma parte de la atención, el agente deja de responder a los clientes de esta empresa.",
+  },
+  "A chamada SEGUIU desta vez, mas isso tem prazo: a partir de {prazo} ela passa a ser recusada, e quando o ponto faz parte do atendimento o agente deixa de responder aos clientes desta empresa. Corrija antes dessa data.": {
+    es: "La llamada SIGUIÓ esta vez, pero esto tiene plazo: a partir del {prazo} pasa a rechazarse, y cuando el punto forma parte de la atención el agente deja de responder a los clientes de esta empresa. Corrígelo antes de esa fecha.",
+  },
+  "Para resolver: cadastre a chave da empresa em Agente de IA › Provedores, ou tire o endereço próprio para voltar ao provedor padrão da instalação.": {
+    es: "Para resolverlo: registra la clave de la empresa en Agente de IA › Proveedores, o quita la dirección propia para volver al proveedor predeterminado de la instalación.",
+  },
+  "Conversas da queda recuperadas": { es: "Conversaciones de la caída recuperadas" },
+  "A recuperação das conversas da queda parou": { es: "La recuperación de las conversaciones de la caída se detuvo" },
+  "As conversas da queda não foram recuperadas": { es: "Las conversaciones de la caída no se recuperaron" },
+  "Recuperamos {mensagens} mensagens de {conversas} conversas do período em que o número ficou fora ({desde} a {ate}).": {
+    es: "Recuperamos {mensagens} mensajes de {conversas} conversaciones del período en que el número estuvo fuera ({desde} a {ate}).",
+  },
+  "A recuperação das conversas da queda parou: {erro}. Veja em Conexões.": {
+    es: "La recuperación de las conversaciones de la caída se detuvo: {erro}. Revisa en Conexiones.",
+  },
+  "motivo não registrado": { es: "motivo no registrado" },
+  "O número da conexão mudou na reconexão. As conversas do período fora do ar não foram recuperadas, para não trazer mensagens de outro aparelho.": {
+    es: "El número de la conexión cambió al reconectar. Las conversaciones del período fuera de línea no se recuperaron, para no traer mensajes de otro dispositivo.",
+  },
+  "Não conseguimos confirmar o número da conexão depois da volta. As conversas do período fora do ar não foram recuperadas.": {
+    es: "No pudimos confirmar el número de la conexión después de que volvió. Las conversaciones del período fuera de línea no se recuperaron.",
+  },
+  "A conexão voltou, mas \"Guardar o histórico\" está desligado nela: não há como recuperar as conversas do período fora do ar.": {
+    es: "La conexión volvió, pero \"Guardar el historial\" está desactivado en ella: no hay forma de recuperar las conversaciones del período fuera de línea.",
+  },
+  "Cliente escreveu na queda e ainda não teve resposta": {
+    es: "El cliente escribió durante la caída y todavía no tuvo respuesta",
+  },
+  "Este cliente escreveu enquanto o número estava fora do ar e ainda não teve resposta.": {
+    es: "Este cliente escribió mientras el número estaba fuera de línea y todavía no tuvo respuesta.",
+  },
+  "\"{fonte}\" ainda não entrou na base de conhecimento": {
+    es: "\"{fonte}\" todavía no entró en la base de conocimiento",
+  },
+  "Falta uma chave de embedding para preparar o material. Cadastre uma em IA › Credenciais e a indexação recomeça sozinha — nada do que você enviou foi perdido.": {
+    es: "Falta una clave de embedding para preparar el material. Registra una en IA › Credenciales y la indexación se reanuda sola — no se perdió nada de lo que enviaste.",
+  },
+  "\"{fonte}\" não entrou na base de conhecimento": { es: "\"{fonte}\" no entró en la base de conocimiento" },
+  "O agente ainda não sabe o que está neste material. Motivo: {motivo}": {
+    es: "El agente todavía no sabe lo que hay en este material. Motivo: {motivo}",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

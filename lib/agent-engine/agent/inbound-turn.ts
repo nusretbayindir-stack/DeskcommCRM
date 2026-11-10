@@ -133,6 +133,12 @@ import {
   type LeadCheckpointRow,
 } from "./abertura/checkpoint";
 import { idiomaDaOrgPeloPg } from "@/lib/ai/agents/idioma-da-org";
+import {
+  avisoDeCapacidadesAusentes,
+  avisoDePromessaSemDono,
+  avisoDeRiscoPercebidoRepresado,
+  avisoDeUrgenciaRepresada,
+} from "./avisos-do-turno";
 import { buildOpeningMessage, ritualBlocks, type FormatoDoHistorico } from "./abertura/ritual";
 import { snapshotDoCaso } from "./conversa-do-caso/contexto";
 import { lerRemetenteDeGrupo, type RemetenteDeGrupo } from "@/lib/messaging/remetente-de-grupo";
@@ -1918,6 +1924,8 @@ export async function avisarCapacidadesAusentes(
   log: Logger,
 ): Promise<void> {
   try {
+    // No idioma da empresa (S2a Task 5); a leitura que falha vira o padrão.
+    const aviso = avisoDeCapacidadesAusentes(detalhe, await idiomaDaOrgPeloPg(db, tenantId));
     await db.query(
       `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
        select $1, 'capabilities_missing', 'critical', $2, $3, 'conversation', $4
@@ -1925,14 +1933,7 @@ export async function avisarCapacidadesAusentes(
           select 1 from agent_inbox_items
            where organization_id = $1 and kind = 'capabilities_missing' and status = 'open'
         )`,
-      [
-        tenantId,
-        'O agente atendeu sem as capacidades que você ligou',
-        'As ferramentas configuradas na tela do agente não puderam ser carregadas neste ' +
-          'atendimento, e ele respondeu ao cliente sem elas. A conversa não foi interrompida. ' +
-          `Motivo técnico: ${detalhe}`,
-        conversationId,
-      ],
+      [tenantId, aviso.title, aviso.body, conversationId],
     );
   } catch (err) {
     log.warn('aviso de capacidades ausentes não foi gravado', {
@@ -6871,11 +6872,7 @@ async function executarTurnoDoAgente(
               {
                 kind: 'promise_unfulfilled',
                 severity: 'warn',
-                title: 'Um retorno prometido a um cliente ficou sem dono',
-                body:
-                  'O assistente prometeu algo a esta pessoa nesta conversa e o passo que registra ' +
-                  'o cumprimento não chegou a ser agendado. Abra a conversa, veja o que foi ' +
-                  'combinado e cumpra você mesmo.',
+                ...avisoDePromessaSemDono(await idiomaDaOrgPeloPg(pool, tenantId)),
                 refKind: 'conversation',
                 refId: input.conversationId,
               },
@@ -7070,12 +7067,10 @@ async function executarTurnoDoAgente(
           {
             kind: 'handoff',
             severity: 'critical',
-            title: 'Lead com sinal de urgência represado pelo cap de envio do número',
-            body:
-              `Mensagem do lead parece relatar risco/urgência, mas o número está em ` +
-              `warm-up/bateu o cap diário (${veto.code}) — a resposta automática só sai em ` +
-              `${veto.nextAllowedAt.toISOString()}. Considere responder manualmente pelo ` +
-              `WhatsApp enquanto o número aquece.`,
+            ...avisoDeUrgenciaRepresada(
+              { codigo: veto.code, quando: veto.nextAllowedAt.toISOString() },
+              await idiomaDaOrgPeloPg(pool, tenantId),
+            ),
             refKind: 'conversation',
             refId: input.conversationId,
           },
@@ -7115,14 +7110,10 @@ async function executarTurnoDoAgente(
               {
                 kind: 'handoff',
                 severity: 'critical',
-                title: 'Lead com risco percebido pelo modelo de decisão represado pelo cap de envio',
-                body:
-                  `A regra de urgência de hoje não reconheceu o risco, mas o modelo de decisão ` +
-                  `percebeu, numa mensagem represada, risco à segurança ou à saúde ` +
-                  `(origem: percebido pelo modelo de decisão, visível só para a equipe). O ` +
-                  `número está em warm-up/bateu o cap diário (${veto.code}) — a resposta ` +
-                  `automática só sai em ${veto.nextAllowedAt.toISOString()}. Considere ` +
-                  `responder manualmente pelo WhatsApp enquanto o número aquece.`,
+                ...avisoDeRiscoPercebidoRepresado(
+                  { codigo: veto.code, quando: veto.nextAllowedAt.toISOString() },
+                  await idiomaDaOrgPeloPg(pool, tenantId),
+                ),
                 refKind: 'conversation',
                 refId: input.conversationId,
               },

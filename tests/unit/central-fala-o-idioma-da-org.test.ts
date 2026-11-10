@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { arquivosDeCodigo, caminhoRelativo } from "./helpers/varrer-codigo";
@@ -29,7 +30,18 @@ const GRAVA_NA_CENTRAL = [
   // `registrarAviso` (lib/channels/zernio/avisos.ts) NÃO entra aqui: ela mesma lê
   // o idioma e só aceita `montar(idioma)`, então o tipo já cobra quem a chama.
 ];
-const LE_O_IDIOMA = /traduzir|idiomaDa|\bIdioma\b/;
+/**
+ * Uma CHAMADA que lê o idioma ou traduz — não a palavra solta: comentário e
+ * tipo não contam (revisão final, I2). O que cada gravação grava é medido em
+ * `central-sem-portugues-fixo.test.ts`.
+ */
+const LE_O_IDIOMA = /\btraduzir\s*\(|\bidiomaDaOrg\w*\s*(\?\.)?\s*\(|\bnormalizarIdioma\s*\(/;
+
+/** O código sem comentários: "sem traduzir" num comentário não é tradução. */
+function semComentarios(caminho: string, fonte: string): string {
+  const arq = ts.createSourceFile(caminho, fonte, ts.ScriptTarget.Latest, false);
+  return ts.createPrinter({ removeComments: true }).printFile(arq);
+}
 
 /** Arquivos que gravam na Central sem texto de tela para traduzir, com o motivo. Só encolhe. */
 const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {
@@ -41,7 +53,8 @@ const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {
 
 const gravadores = arquivosDeCodigo(["app", "lib", "workers"])
   .map((absoluto) => ({ caminho: caminhoRelativo(absoluto), fonte: readFileSync(absoluto, "utf8") }))
-  .filter(({ fonte }) => GRAVA_NA_CENTRAL.some((padrao) => padrao.test(fonte)));
+  .filter(({ fonte }) => GRAVA_NA_CENTRAL.some((padrao) => padrao.test(fonte)))
+  .map(({ caminho, fonte }) => ({ caminho, fonte: semComentarios(caminho, fonte) }));
 
 describe("a Central de avisos fala o idioma da empresa", () => {
   it("a varredura acha quem grava na Central (controle positivo)", () => {

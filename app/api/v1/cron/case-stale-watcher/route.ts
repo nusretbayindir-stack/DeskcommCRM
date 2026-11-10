@@ -72,6 +72,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { autorizaCron } from "@/lib/auth/cron-auth";
@@ -102,26 +103,29 @@ const TETO_DE_COBRANCAS = 3;
 /** Teto por rodada. Roda de hora em hora; sobra volta na seguinte. */
 const LIMITE_DA_VARREDURA = 200;
 
-function comoFaz(horas: number): string {
+/**
+ * O "há N dias/horas" do aviso de CASO, por pedaços traduzíveis (S2a Task 5,
+ * revisão final I1). Guarda o português de sempre — "há um dia" e "há N horas"
+ * (sempre no plural) —, que `esperaEmPalavras` abaixo não guarda.
+ */
+function esperaDoCaso(horas: number, t: (texto: string) => string): string {
   const dias = Math.floor(horas / 24);
-  if (dias >= 1) return dias === 1 ? "há um dia" : `há ${dias} dias`;
-  return `há ${Math.max(1, Math.round(horas))} horas`;
+  if (dias >= 1) return dias === 1 ? t("há um dia") : preencher(t("há {tempo}"), { tempo: `${dias} ${t("dias")}` });
+  return preencher(t("há {tempo}"), { tempo: `${Math.max(1, Math.round(horas))} ${t("horas")}` });
 }
 
 /**
  * O MESMO "há N dias", mas montado a partir de PEDAÇOS TRADUZÍVEIS.
  *
- * `comoFaz` devolve a frase inteira já interpolada — `t("há 2 dias")` não casa
- * chave nenhuma no dicionário e devolveria o português para quem escolheu
- * espanhol, em silêncio, que é o modo de falha de i18n que esta casa já pagou.
- * Aqui o número fica fora da tradução e só as palavras passam por `t()`.
- * O "há" é uma chave com lacuna (`há {tempo}`), e não um pedaço solto, porque
- * a ordem é da língua: o inglês põe o marcador depois ("3 days ago").
+ * A frase inteira já interpolada — `t("há 2 dias")` — não casa chave nenhuma
+ * no dicionário e devolveria o português para quem escolheu espanhol, em
+ * silêncio, que é o modo de falha de i18n que esta casa já pagou. Aqui o
+ * número fica fora da tradução e só as palavras passam por `t()`. O "há" é uma
+ * chave com lacuna (`há {tempo}`), e não um pedaço solto, porque a ordem é da
+ * língua: o inglês põe o marcador depois ("3 days ago").
  *
- * ⚠️ O braço dos CASOS continua usando `comoFaz` e continua saindo em português
- * para toda organização. É dívida ANTERIOR a esta onda e está declarada, não
- * consertada de carona: mudar o título daquele aviso mexeria num texto que
- * `central-avisos-*` já observa, e o lugar de decidir isso é o PR daquele braço.
+ * O braço dos CASOS usa `esperaDoCaso` (acima), que guarda o português de
+ * sempre daquele aviso.
  */
 function esperaEmPalavras(horas: number, t: (texto: string) => string): string {
   const dias = Math.floor(horas / 24);
@@ -156,6 +160,7 @@ async function handle(req: NextRequest): Promise<Response> {
   const casos = (data ?? []) as CasoVencido[];
   let avisados = 0;
   let jaAvisados = 0;
+  const idiomas = new Map<string, Idioma>();
 
   for (const caso of casos) {
     const horas = (agora - Date.parse(caso.opened_at)) / 3_600_000;
@@ -178,20 +183,24 @@ async function handle(req: NextRequest): Promise<Response> {
       continue;
     }
 
+    // No idioma da empresa (S2a Task 5): lido só quando o aviso vai nascer.
+    const idioma = await idiomaDaOrganizacao(admin, caso.organization_id, idiomas);
+    const t = (texto: string) => traduzir(texto, idioma);
+
     const { error: erroAviso } = await admin.from("agent_inbox_items").insert({
       organization_id: caso.organization_id,
       kind: "case_stale",
       // `warn` e não `critical`: há um cliente esperando, mas nada quebrou. O
       // vermelho é para o que está fora do ar — usá-lo aqui o desvaloriza.
       severity: "warn",
-      title: `Um atendimento espera decisão ${comoFaz(horas)}`,
+      title: preencher(t("Um atendimento espera decisão {espera}"), { espera: esperaDoCaso(horas, t) }),
       body:
-        `"${caso.title}" está aguardando alguém da equipe desde que foi aberto, ` +
-        `e o cliente continua do outro lado. Abra o caso e diga o que fazer — concluir, ` +
-        `pedir informação ao cliente ou passar para uma pessoa.` +
-        (tentativa >= caso.teto
-          ? " Este é o último aviso automático sobre ele."
-          : ""),
+        preencher(
+          t(
+            '"{caso}" está aguardando alguém da equipe desde que foi aberto, e o cliente continua do outro lado. Abra o caso e diga o que fazer — concluir, pedir informação ao cliente ou passar para uma pessoa.',
+          ),
+          { caso: caso.title },
+        ) + (tentativa >= caso.teto ? ` ${t("Este é o último aviso automático sobre ele.")}` : ""),
       ref_kind: "agent_case",
       ref_id: caso.id,
     });
