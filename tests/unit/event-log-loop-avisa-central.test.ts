@@ -5,6 +5,11 @@ import {
   sincronizarAvisoDoLacoDeEventLog,
   TITULO_LACO_EVENT_LOG_DEGRADADO,
 } from "@/lib/event-log/aviso-do-laco";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { IDIOMAS } from "@/lib/i18n/idiomas";
+
+/** O título em todo idioma: o aviso aberto pode ter nascido antes de a empresa trocar de idioma (S2a Task 5). */
+const TITULOS = [...new Set(IDIOMAS.map((idioma) => traduzir(TITULO_LACO_EVENT_LOG_DEGRADADO, idioma)))];
 
 type Filtro = [string, unknown];
 type Row = Record<string, unknown>;
@@ -13,6 +18,10 @@ function cadeia<T>(valor: T, filtros: Filtro[]) {
   const q = {
     eq(coluna: string, valorDoFiltro: unknown) {
       filtros.push([coluna, valorDoFiltro]);
+      return q;
+    },
+    in(coluna: string, valores: unknown) {
+      filtros.push([coluna, valores]);
       return q;
     },
     then(resolve: (valor: T) => unknown) {
@@ -90,7 +99,7 @@ describe("laço rápido do event_log — feedback visível", () => {
     expect(f.filtrosDeSelect).toEqual(
       expect.arrayContaining([
         ["kind", "other"],
-        ["title", TITULO_LACO_EVENT_LOG_DEGRADADO],
+        ["title", TITULOS],
         ["status", "open"],
       ]),
     );
@@ -105,7 +114,7 @@ describe("laço rápido do event_log — feedback visível", () => {
     expect(f.updates[0]).toMatchObject({ status: "resolved", resolved_at: expect.any(String) });
     expect(f.filtrosDeUpdate).toEqual([
       ["kind", "other"],
-      ["title", TITULO_LACO_EVENT_LOG_DEGRADADO],
+      ["title", TITULOS],
       ["status", "open"],
     ]);
   });

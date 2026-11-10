@@ -14412,6 +14412,23 @@ export const DICIONARIO: Traducoes = {
   "Esta conexão passou para outra conta, mas os modelos da anterior não puderam sair: eles seguem na lista e a plataforma os recusa no envio. Se houver serviço da Agenda ativo sem horários ou sem profissional válido, corrija-o primeiro: enquanto ele estiver assim, o banco recusa a limpeza. Depois clique em Sincronizar. O aviso se fecha quando a limpeza passar.": {
     es: "Esta conexión pasó a otra cuenta, pero las plantillas de la anterior no pudieron salir: siguen en la lista y la plataforma las rechaza al enviar. Si hay un servicio de la Agenda activo sin horarios o sin un profesional válido, corrígelo primero: mientras siga así, la base de datos rechaza la limpieza. Después haz clic en Sincronizar. El aviso se cierra cuando la limpieza se complete.",
   },
+  // avisos da instalação, uma linha por organização: lib/event-log/aviso-do-laco.ts, lib/channels/aviso-do-agendador.ts, lib/agent-engine/edge/crm/vigilancia-do-drain.ts (TEXTOS)
+  "Processamento rápido de eventos está em modo degradado": {
+    es: "El procesamiento rápido de eventos está en modo degradado",
+  },
+  "O processamento rápido do event_log não carregou neste worker. O cron de segurança continua processando a fila, mas automações e efeitos derivados podem levar até cerca de 1 minuto a mais. Quem administra a instalação deve revisar o worker.": {
+    es: "El procesamiento rápido del event_log no se cargó en este worker. El cron de seguridad sigue procesando la cola, pero las automatizaciones y los efectos derivados pueden tardar hasta cerca de 1 minuto más. Quien administra la instalación debe revisar el worker.",
+  },
+  "A pausa agendada de conexões não está sendo aplicada": {
+    es: "La pausa programada de las conexiones no se está aplicando",
+  },
+  "O agendador das janelas de manutenção não conseguiu aplicar uma batida: uma janela pode ter deixado de pausar ou de retomar no horário marcado. A próxima tentativa é automática; se este aviso continuar aberto, verifique o log do agendador.": {
+    es: "El programador de las ventanas de mantenimiento no pudo aplicar una ejecución: es posible que una ventana no se haya pausado o reanudado a la hora prevista. El próximo intento es automático; si este aviso sigue abierto, revisa el log del programador.",
+  },
+  "As respostas automáticas da IA estão paradas": { es: "Las respuestas automáticas de la IA están detenidas" },
+  "O processamento que transforma as mensagens recebidas em respostas da IA parou de avançar. As mensagens continuam chegando e ficando registradas, mas a IA não responde até o processamento voltar. Quem administra a instalação deve revisar o serviço do worker (log e /healthz) e reiniciá-lo se ele não voltar sozinho.": {
+    es: "El procesamiento que convierte los mensajes recibidos en respuestas de la IA dejó de avanzar. Los mensajes siguen llegando y quedando registrados, pero la IA no responde hasta que el procesamiento se reanude. Quien administra la instalación debe revisar el servicio del worker (log y /healthz) y reiniciarlo si no se recupera solo.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

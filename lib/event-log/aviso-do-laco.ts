@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Logger } from "@/lib/agent-engine/obs/logger";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { emCadaIdioma } from "@/lib/i18n/em-cada-idioma";
+import { IDIOMA_PADRAO, normalizarIdioma } from "@/lib/i18n/idiomas";
 
 /**
  * Título estável para deduplicar e depois resolver o incidente.
@@ -9,13 +12,23 @@ import type { Logger } from "@/lib/agent-engine/obs/logger";
  * morto. O cron de segurança continua drenando a fila uma vez por minuto; o
  * estado é degradação operacional, não perda de evento.
  */
-export const TITULO_LACO_EVENT_LOG_DEGRADADO =
-  "Processamento rápido de eventos está em modo degradado";
+/**
+ * Os textos do aviso, numa tabela de literais para a guarda do dicionário cobrar
+ * cada tradução. Cada organização recebe a linha no SEU idioma (S2a Task 5,
+ * U14); quem procura ou fecha o aviso procura o título em todo idioma, porque o
+ * aberto pode ter nascido antes de a empresa trocar de idioma.
+ */
+const TEXTOS = {
+  titulo: "Processamento rápido de eventos está em modo degradado",
+  corpo:
+    "O processamento rápido do event_log não carregou neste worker. O cron de segurança continua processando a fila, mas automações e efeitos derivados podem levar até cerca de 1 minuto a mais. Quem administra a instalação deve revisar o worker.",
+} as const;
 
-const CORPO_LACO_EVENT_LOG_DEGRADADO =
-  "O processamento rápido do event_log não carregou neste worker. " +
-  "O cron de segurança continua processando a fila, mas automações e efeitos derivados podem levar até cerca de 1 minuto a mais. " +
-  "Quem administra a instalação deve revisar o worker.";
+export const TITULO_LACO_EVENT_LOG_DEGRADADO = TEXTOS.titulo;
+
+const tituloEmTodoIdioma = (): string[] => [
+  ...new Set(Object.values(emCadaIdioma((idioma) => traduzir(TEXTOS.titulo, idioma)))),
+];
 
 type EstadoDoAviso = "degradado" | "saudavel";
 
@@ -41,7 +54,7 @@ export async function sincronizarAvisoDoLacoDeEventLog(
         .from("agent_inbox_items")
         .update({ status: "resolved", resolved_at: new Date().toISOString() })
         .eq("kind", "other")
-        .eq("title", TITULO_LACO_EVENT_LOG_DEGRADADO)
+        .in("title", tituloEmTodoIdioma())
         .eq("status", "open");
       if (error) throw new Error(`resolver aviso: ${error.message}`);
       return;
@@ -49,17 +62,22 @@ export async function sincronizarAvisoDoLacoDeEventLog(
 
     const { data: organizacoes, error: erroOrganizacoes } = await admin
       .from("organizations")
-      .select("id");
+      .select("id, locale");
     if (erroOrganizacoes) throw new Error(`listar organizações: ${erroOrganizacoes.message}`);
 
-    const ids = (organizacoes ?? []).map((o) => o.id as string).filter(Boolean);
+    const idiomaDe = new Map(
+      (organizacoes ?? [])
+        .filter((o) => Boolean(o.id))
+        .map((o) => [o.id as string, normalizarIdioma((o.locale as string | null) ?? null)] as const),
+    );
+    const ids = [...idiomaDe.keys()];
     if (ids.length === 0) return;
 
     const { data: existentes, error: erroExistentes } = await admin
       .from("agent_inbox_items")
       .select("organization_id")
       .eq("kind", "other")
-      .eq("title", TITULO_LACO_EVENT_LOG_DEGRADADO)
+      .in("title", tituloEmTodoIdioma())
       .eq("status", "open");
     if (erroExistentes) throw new Error(`listar avisos existentes: ${erroExistentes.message}`);
 
@@ -76,8 +94,8 @@ export async function sincronizarAvisoDoLacoDeEventLog(
         organization_id,
         kind: "other",
         severity: "warn",
-        title: TITULO_LACO_EVENT_LOG_DEGRADADO,
-        body: CORPO_LACO_EVENT_LOG_DEGRADADO,
+        title: traduzir(TEXTOS.titulo, idiomaDe.get(organization_id) ?? IDIOMA_PADRAO),
+        body: traduzir(TEXTOS.corpo, idiomaDe.get(organization_id) ?? IDIOMA_PADRAO),
         ref_kind: null,
         ref_id: null,
       })),

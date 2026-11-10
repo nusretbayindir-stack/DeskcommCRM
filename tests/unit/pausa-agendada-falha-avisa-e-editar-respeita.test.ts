@@ -217,7 +217,12 @@ describe("a falha do agendador vira aviso na Central (critério 6 da #2388)", ()
     expect(update?.valor).toMatchObject({ status: "resolved" });
     // Fecha só o incidente do agendador: o filtro leva o título estável e "open".
     const filtros = update?.filtros ?? [];
-    expect(filtros.some(([m, args]) => m === "eq" && args[1] === TITULO_DO_AVISO_DO_AGENDADOR)).toBe(true);
+    // Em todo idioma: o aviso aberto pode ter nascido antes de a empresa trocar de idioma (S2a Task 5).
+    expect(
+      filtros.some(
+        ([m, args]) => m === "in" && Array.isArray(args[1]) && args[1].includes(TITULO_DO_AVISO_DO_AGENDADOR),
+      ),
+    ).toBe(true);
     expect(filtros.some(([m, args]) => m === "eq" && args[1] === "open")).toBe(true);
   });
 
