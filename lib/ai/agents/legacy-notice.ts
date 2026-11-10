@@ -1,5 +1,8 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {traduzir} from '@/lib/i18n/dicionario';
+import {preencher} from '@/lib/i18n/preencher';
 import {logger} from '@/lib/logger';
+import {idiomaDaOrgPeloSupabase} from './idioma-da-org';
 import type {PublishOutcome} from './first-publication';
 const causes={
  sem_canal:'Conecte ou escolha um canal de WhatsApp para este agente.',
@@ -21,7 +24,11 @@ export function legacyRecoveryCause(result:PublishOutcome):LegacyRecoveryCause{
 export function legacyRecoveryMessage(code:LegacyRecoveryCause){return causes[code];}
 export async function recordLegacyNotice(db:SupabaseClient,org:string,agent:string,code:LegacyRecoveryCause){
  try{
-  const {error}=await db.rpc('fn_agent_legacy_notice',{p_org:org,p_agent:agent,p_code:code,p_title:code==='pronto'?'Agente recuperado':'Agente precisa concluir a configuração',p_body:`${causes[code]} Abra IA → Agentes → Recuperar agente legado.`});
+  // A Central é lida pela equipe: no idioma da empresa (S2a, U14). Leitura falha = português.
+  const idioma=await idiomaDaOrgPeloSupabase(db,org);
+  const title=code==='pronto'?traduzir('Agente recuperado',idioma):traduzir('Agente precisa concluir a configuração',idioma);
+  const body=preencher(traduzir('{causa} Abra IA → Agentes → Recuperar agente legado.',idioma),{causa:traduzir(causes[code],idioma)});
+  const {error}=await db.rpc('fn_agent_legacy_notice',{p_org:org,p_agent:agent,p_code:code,p_title:title,p_body:body});
   if(error)throw error;
  }catch(error){logger.warn('Falha ao registrar estado do agente legado',{organization_id:org,agent_id:agent,code,error:error instanceof Error?error.message:String(error)});}
 }

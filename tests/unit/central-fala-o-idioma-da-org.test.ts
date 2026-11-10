@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { FUNCOES_COM_TEXTO_DE_QUEM_CHAMA } from "@/lib/ai/avisos-do-banco";
+
 import { arquivosDeCodigo, caminhoRelativo } from "./helpers/varrer-codigo";
 
 /**
@@ -29,6 +31,9 @@ const GRAVA_NA_CENTRAL = [
   /\binsertInboxItem\s*\(/,
   // `registrarAviso` (lib/channels/zernio/avisos.ts) NÃO entra aqui: ela mesma lê
   // o idioma e só aceita `montar(idioma)`, então o tipo já cobra quem a chama.
+  // Funções do banco que gravam na Central o texto recebido (`fn_agent_legacy_notice`…):
+  // quem as chama por `rpc` escreve o título e o corpo (lib/ai/avisos-do-banco.ts).
+  new RegExp(`\\.rpc\\(\\s*["'\`](${Object.keys(FUNCOES_COM_TEXTO_DE_QUEM_CHAMA).join("|")})["'\`]`),
 ];
 /**
  * Uma CHAMADA que lê o idioma ou traduz — não a palavra solta: comentário e
