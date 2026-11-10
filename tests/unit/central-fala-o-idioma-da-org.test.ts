@@ -35,10 +35,6 @@ const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {};
  */
 const PENDENTES_DESTA_PR = new Set<string>([
   "app/api/v1/admin/tenants/[id]/members/[userId]/email/route.ts",
-  "app/api/v1/cron/proposal-acceptance-rate/route.ts",
-  "app/api/v1/cron/proposal-expiry/route.ts",
-  "app/api/v1/cron/proposal-promised-not-created/route.ts",
-  "app/api/v1/cron/proposta-travada/route.ts",
   "app/api/v1/cron/task-reminder/route.ts",
   "lib/agent-engine/db/repository.ts",
   "lib/agent-engine/edge/crm/vigilancia-do-drain.ts",
@@ -55,7 +51,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/followup/turn-bridge.ts",
   "lib/leads/aviso-de-etapa.handler.ts",
   "lib/leads/risk-seed.ts",
-  "lib/propostas/aviso-de-revisao.ts",
   "workers/media-derive-worker.ts",
 ]);
 

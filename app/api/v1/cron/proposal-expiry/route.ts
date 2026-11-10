@@ -9,6 +9,8 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { avisoDePropostaVencida } from "@/lib/propostas/avisos-da-central";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import { autorizaCron } from "@/lib/auth/cron-auth";
 import { logger } from "@/lib/logger";
@@ -89,12 +91,13 @@ async function rodarVencimento(
       .eq("status", "open")
       .maybeSingle();
     if (!existente) {
+      // No idioma da empresa (U14), lido só agora que o aviso vai ser gravado.
+      const idioma = await idiomaDaOrgPeloSupabase(admin, p.organization_id);
       const { error: inboxErr } = await admin.from("agent_inbox_items").insert({
         organization_id: p.organization_id,
         kind: "proposal_expired_notice",
         severity: "warn",
-        title: "Uma proposta venceu sem decisão do cliente",
-        body: "O prazo de validade passou e ninguém marcou aceite ou recusa. Reveja a proposta e decida os próximos passos com o cliente.",
+        ...avisoDePropostaVencida(idioma),
         ref_kind: "proposal",
         ref_id: p.id,
       });

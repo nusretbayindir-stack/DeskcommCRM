@@ -14323,6 +14323,30 @@ export const DICIONARIO: Traducoes = {
   // (tests/unit/central-fala-o-idioma-da-org.test.ts). Bloco do fork.
   "Job descartado após esgotar tentativas": { es: "Tarea en segundo plano descartada tras agotar los intentos" },
   "Cron desabilitado após falha de disparo": { es: "Cron desactivado tras un fallo de disparo" },
+  // lib/propostas/avisos-da-central.ts e lib/propostas/aviso-de-revisao.ts
+  "A taxa de aceite de propostas caiu": { es: "Bajó la tasa de aceptación de propuestas" },
+  "{taxa}% das propostas decididas nos últimos 30 dias foram aceitas — abaixo do piso de {piso}%.": {
+    es: "El {taxa}% de las propuestas decididas en los últimos 30 días fueron aceptadas, por debajo del mínimo de {piso}%.",
+  },
+  "Uma proposta venceu sem decisão do cliente": { es: "Una propuesta venció sin decisión del cliente" },
+  "O prazo de validade passou e ninguém marcou aceite ou recusa. Reveja a proposta e decida os próximos passos com o cliente.": {
+    es: "Pasó el plazo de validez y nadie marcó la aceptación o el rechazo. Revisa la propuesta y decide los próximos pasos con el cliente.",
+  },
+  "Uma proposta prometida não foi criada": { es: "No se creó una propuesta prometida" },
+  "Um compromisso de enviar proposta venceu e nenhuma proposta foi criada para este negócio.": {
+    es: "Venció un compromiso de enviar una propuesta y no se creó ninguna propuesta para este negocio.",
+  },
+  "Uma proposta não confirmou o envio": { es: "Una propuesta no confirmó el envío" },
+  "{n} propostas não confirmaram o envio": { es: "{n} propuestas no confirmaron el envío" },
+  "Ficaram mais de {minutos} minutos em envio e voltaram a rascunho, com o número mantido. Verifique a conexão do WhatsApp e reenvie manualmente — nada foi reenviado sozinho.": {
+    es: "Estuvieron más de {minutos} minutos en envío y volvieron a borrador, con el número conservado. Revisa la conexión de WhatsApp y reenvíalas manualmente: no se reenvió nada automáticamente.",
+  },
+  "sem título": { es: "sin título" },
+  "Proposta «{nome}» de {cliente} está pronta para revisão": { es: "La propuesta «{nome}» de {cliente} está lista para revisión" },
+  "Proposta «{nome}» está pronta para revisão": { es: "La propuesta «{nome}» está lista para revisión" },
+  "A IA rascunhou esta proposta. Confirme o modelo, preencha o que falta no documento e confira os preços antes de enviar.": {
+    es: "La IA redactó un borrador de esta propuesta. Confirma la plantilla, completa lo que falta en el documento y revisa los precios antes de enviarla.",
+  },
   // lib/agent-engine/edge/llm/orcamento.ts (TEXTOS_DA_CENTRAL)
   "A IA continua respondendo normalmente — isto é o aviso, não a parada. Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.": {
     es: "La IA sigue respondiendo con normalidad: esto es el aviso, no la parada. Mira cuánto se ha gastado y ajusta el límite en Uso de IA › Presupuesto.",
