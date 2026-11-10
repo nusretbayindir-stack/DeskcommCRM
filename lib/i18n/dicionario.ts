@@ -14573,6 +14573,14 @@ export const DICIONARIO: Traducoes = {
   "média de cache_read/input nos últimos {runs} runs da janela = {media}% (alvo ≥ {alvo}%). Prefixo do prompt possivelmente abaixo do mínimo cacheável do modelo ou com conteúdo volátil antes do último breakpoint — ver CLAUDE.md regra 15 e o smoke de caching.": {
     es: "promedio de cache_read/input en los últimos {runs} runs de la ventana = {media}% (objetivo ≥ {alvo}%). Prefijo del prompt posiblemente por debajo del mínimo cacheable del modelo o con contenido volátil antes del último breakpoint — ver CLAUDE.md regla 15 y el smoke de caching.",
   },
+  // aviso de e-mail de login trocado (lib/admin/aviso-de-email-trocado.ts)
+  "E-mail de login trocado pelo administrador da plataforma": {
+    es: "Correo de inicio de sesión cambiado por el administrador de la plataforma",
+  },
+  "O e-mail de login de {nome} foi trocado pelo administrador da plataforma em {data}.": {
+    es: "El correo de inicio de sesión de {nome} fue cambiado por el administrador de la plataforma el {data}.",
+  },
+  "uma pessoa da equipe": { es: "una persona del equipo" },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

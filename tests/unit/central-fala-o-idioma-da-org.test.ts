@@ -35,16 +35,9 @@ const LE_O_IDIOMA = /traduzir|idiomaDa|\bIdioma\b/;
 const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {
   "lib/agent-engine/db/repository.ts":
     "`insertInboxItem` é genérico: título e corpo chegam prontos de quem chama, e quem chama é cobrado por esta guarda",
+  "app/api/v1/cron/task-reminder/route.ts":
+    "o título do item é o NOME DA TAREFA (dado de gente) e não há corpo; o que aconteceu é o rótulo do kind, que a tela já traduz (doc de decisão 162)",
 };
-
-/**
- * Os que ESTA PR ainda vai corrigir, grupo a grupo (S2a Task 5). Andaime: só
- * encolhe, e a PR não sai de rascunho com ele cheio.
- */
-const PENDENTES_DESTA_PR = new Set<string>([
-  "app/api/v1/admin/tenants/[id]/members/[userId]/email/route.ts",
-  "app/api/v1/cron/task-reminder/route.ts",
-]);
 
 const gravadores = arquivosDeCodigo(["app", "lib", "workers"])
   .map((absoluto) => ({ caminho: caminhoRelativo(absoluto), fonte: readFileSync(absoluto, "utf8") }))
@@ -61,18 +54,11 @@ describe("a Central de avisos fala o idioma da empresa", () => {
     const semIdioma = gravadores
       .filter(
         ({ caminho, fonte }) =>
-          !(caminho in SEM_TEXTO_PARA_TRADUZIR) && !PENDENTES_DESTA_PR.has(caminho) && !LE_O_IDIOMA.test(fonte),
+          !(caminho in SEM_TEXTO_PARA_TRADUZIR) && !LE_O_IDIOMA.test(fonte),
       )
       .map(({ caminho }) => caminho)
       .sort();
     expect(semIdioma, `${semIdioma.length} arquivo(s) gravam aviso em português fixo`).toEqual([]);
-  });
-
-  it("o andaime desta PR só lista o que ainda grava sem idioma", () => {
-    const corrigidos = [...PENDENTES_DESTA_PR].filter(
-      (caminho) => !gravadores.some((g) => g.caminho === caminho && !LE_O_IDIOMA.test(g.fonte)),
-    );
-    expect(corrigidos, "tire da lista o que já lê o idioma").toEqual([]);
   });
 
   it("a exceção só lista arquivo que ainda grava na Central sem idioma", () => {
