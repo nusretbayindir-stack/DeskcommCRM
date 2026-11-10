@@ -14448,6 +14448,41 @@ export const DICIONARIO: Traducoes = {
   "As mensagens de reengajamento pós-falta foram enviadas e o cliente não respondeu. Decida o próximo passo e mova o card no funil.": {
     es: "Se enviaron los mensajes de reenganche tras la ausencia y el cliente no respondió. Decide el siguiente paso y mueve la tarjeta en el embudo.",
   },
+  // aviso da assinatura desconectada (lib/ai/credenciais/assinatura-desconectada.ts) e do acervo em risco (lib/leads/risk-seed.ts)
+  "a OpenAI revogou o acesso da conta — alguém desconectou, ou o token foi trocado fora daqui": {
+    es: "OpenAI revocó el acceso de la cuenta — alguien la desconectó o el token se cambió fuera de aquí",
+  },
+  "a OpenAI recusou o pedido de renovação do login": {
+    es: "OpenAI rechazó la solicitud de renovación del inicio de sesión",
+  },
+  "o login venceu e a renovação não foi aceita": { es: "el inicio de sesión venció y la renovación no fue aceptada" },
+  "não foi possível falar com a OpenAI para renovar o login": {
+    es: "no fue posible comunicarse con OpenAI para renovar el inicio de sesión",
+  },
+  "a OpenAI não respondeu a tempo de renovar o login": {
+    es: "OpenAI no respondió a tiempo para renovar el inicio de sesión",
+  },
+  "a OpenAI recusou a renovação do login": { es: "OpenAI rechazó la renovación del inicio de sesión" },
+  "a renovação do login falhou sem motivo identificado": {
+    es: "la renovación del inicio de sesión falló sin un motivo identificado",
+  },
+  "A conta do ChatGPT que atende esta empresa foi recusada: {motivo}.": {
+    es: "La cuenta de ChatGPT que atiende a esta empresa fue rechazada: {motivo}.",
+  },
+  "Enquanto isso, a IA não responde aos clientes que escrevem — as mensagens chegam e ficam sem resposta. A cota da assinatura NÃO é o problema.": {
+    es: "Mientras tanto, la IA no responde a los clientes que escriben — los mensajes llegan y se quedan sin respuesta. La cuota de la suscripción NO es el problema.",
+  },
+  "Para voltar: reconecte a conta em IA › Credenciais. Este aviso se fecha sozinho quando o login voltar.": {
+    es: "Para volver: reconecta la cuenta en IA › Credenciales. Este aviso se cierra solo cuando vuelva el inicio de sesión.",
+  },
+  "Resolvido pelo sistema: o login da conta foi renovado e a IA voltou a responder.": {
+    es: "Resuelto por el sistema: el inicio de sesión de la cuenta se renovó y la IA volvió a responder.",
+  },
+  "Revise {n} negócio parado e decida quais encerrar": { es: "Revisa {n} negocio parado y decide si cerrarlo" },
+  "Revise {n} negócios parados e decida quais encerrar": { es: "Revisa {n} negocios parados y decide cuáles cerrar" },
+  "{critico} sem resposta há muito tempo e {esfriando} esfriando. Eles já estavam assim antes de o sistema passar a acompanhar — por isso aparecem juntos agora, e não porque algo aconteceu hoje. Encerrar o que morreu é o que faz o radar voltar a significar alguma coisa.": {
+    es: "{critico} sin respuesta desde hace mucho tiempo y {esfriando} enfriándose. Ya estaban así antes de que el sistema empezara a hacer el seguimiento — por eso aparecen juntos ahora, y no porque algo haya pasado hoy. Cerrar lo que murió es lo que hace que el radar vuelva a significar algo.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

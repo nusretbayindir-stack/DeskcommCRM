@@ -26,6 +26,7 @@ import {
   type ItemDaAssinaturaAberto,
   type SituacaoDaAssinatura,
 } from "./assinatura-desconectada";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { logger } from "@/lib/logger";
 
 export type DesfechoDoAvisoDaAssinatura =
@@ -63,10 +64,12 @@ export async function sincronizarAvisoDaAssinatura(
     }
     const item = (itemBruto ?? null) as ItemDaAssinaturaAberto | null;
 
-    const decisao = avaliarAvisoDaAssinatura(
-      { conectada: situacao.conectada, recusa: situacao.recusa },
-      item,
-    );
+    const daConta = { conectada: situacao.conectada, recusa: situacao.recusa };
+    if (avaliarAvisoDaAssinatura(daConta, item).acao === "nada") return "sem_mudanca";
+    // O idioma da empresa escolhe o TEXTO, nunca a ação (S2a Task 5): só é lido
+    // quando há o que gravar, e a leitura que falha vira o padrão.
+    const idioma = await idiomaDaOrgPeloSupabase(db, situacao.organizationId);
+    const decisao = avaliarAvisoDaAssinatura(daConta, item, idioma);
     if (decisao.acao === "nada") return "sem_mudanca";
 
     if (decisao.acao === "resolver") {
