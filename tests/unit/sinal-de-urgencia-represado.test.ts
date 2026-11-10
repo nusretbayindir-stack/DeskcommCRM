@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 import type pg from "pg";
 import { describe, expect, it, vi } from "vitest";
 
+import { avisoDeRiscoPercebidoRepresado } from "@/lib/agent-engine/agent/avisos-do-turno";
 import { detectUrgencySignal } from "@/lib/agent-engine/guardrails/sinal-de-urgencia";
 import {
   LIMIAR_HIPOTETICO,
@@ -303,16 +304,30 @@ describe("inbound-turn: só no ramo represado, e só depois da regex dizer não"
   });
 
   it("o alerta é o MESMO da regex: kind handoff, crítico, e com a origem para a equipe", () => {
-    const iTitulo = bloco.indexOf("Lead com risco percebido pelo modelo");
-    const iAbre = bloco.lastIndexOf("insertInboxItem(", iTitulo);
-    const iFecha = bloco.indexOf("'kind_e_ref'", iTitulo);
+    // Desde a S2a (Central no idioma da empresa) o título e o corpo saem de
+    // `avisoDeRiscoPercebidoRepresado` (avisos-do-turno.ts), no idioma da org.
+    const iMontador = bloco.indexOf("avisoDeRiscoPercebidoRepresado(");
+    expect(iMontador, "o alerta do modelo usa o montador do aviso").toBeGreaterThan(-1);
+    const iAbre = bloco.lastIndexOf("insertInboxItem(", iMontador);
+    const iFecha = bloco.indexOf("'kind_e_ref'", iMontador);
     const alerta = bloco.slice(iAbre, iFecha);
-    const corpo = alerta.slice(alerta.indexOf("body:"), alerta.indexOf("refKind:"));
     expect(alerta).toContain("kind: 'handoff'");
     expect(alerta).toContain("severity: 'critical'");
-    expect(corpo).toContain("percebido pelo modelo de decisão");
-    // Decisão 3 do #1747: a frase do cliente não entra na Central.
-    expect(corpo).not.toMatch(/mensagemRepresada|inboundsPendentes|urgencia\./);
+    // Decisão 3 do #1747: a frase do cliente não entra na Central — o montador
+    // só recebe o código do veto e a hora em que a resposta pode sair.
+    const argumentos = alerta.slice(iMontador - iAbre, alerta.indexOf("refKind:"));
+    expect(argumentos).toContain("{ codigo: veto.code, quando: veto.nextAllowedAt.toISOString() }");
+    expect(argumentos).not.toMatch(/mensagemRepresada|inboundsPendentes|urgencia\./);
+    // A origem para a equipe continua no texto; nos outros idiomas, traduzido e com os valores.
+    const valores = { codigo: "warmup_cap", quando: "2026-11-11T08:00:00.000Z" };
+    const pt = avisoDeRiscoPercebidoRepresado(valores, "pt-BR").body;
+    expect(pt).toContain("percebido pelo modelo de decisão");
+    for (const idioma of ["es", "tr"] as const) {
+      const { body } = avisoDeRiscoPercebidoRepresado(valores, idioma);
+      expect(body, idioma).not.toBe(pt);
+      expect(body, idioma).toContain(valores.codigo);
+      expect(body, idioma).toContain(valores.quando);
+    }
   });
 
   it("R3: o chamador não responde, não cala, não passa a conversa e não fura o teto", () => {
