@@ -14671,6 +14671,89 @@ export const DICIONARIO: Traducoes = {
   "O agente ainda não sabe o que está neste material. Motivo: {motivo}": {
     es: "El agente todavía no sabe lo que hay en este material. Motivo: {motivo}",
   },
+  // avisos que funções do banco gravam na Central (lib/ai/avisos-do-banco.ts; gatilho da migration 7002)
+  "O acompanhamento não conseguiu enviar a mensagem": { es: "El follow-up no pudo enviar el mensaje" },
+  "envio indisponível": { es: "envío no disponible" },
+  "Abra o acompanhamento e confira o canal. Motivo: {motivo}": {
+    es: "Abre el follow-up y revisa el canal. Motivo: {motivo}",
+  },
+  "Uma conversa aguarda um responsável": { es: "Una conversación espera un responsable" },
+  "Confira o canal de origem desta conversa nas Conexões.": {
+    es: "Revisa el canal de origen de esta conversación en Conexiones.",
+  },
+  "Confira os responsáveis do canal em Configurações → Atendimento e a disponibilidade da equipe. A distribuição continuará tentando.": {
+    es: "Revisa los responsables del canal en Configuración → Atención y la disponibilidad del equipo. La distribución seguirá intentándolo.",
+  },
+  "Link da reunião precisa de atenção": { es: "El enlace de la reunión necesita atención" },
+  "Abra o compromisso na Agenda para verificar o link ou autorizar uma nova entrega.": {
+    es: "Abre la cita en la Agenda para verificar el enlace o autorizar un nuevo envío.",
+  },
+  "Presença sem confirmação há mais tempo": { es: "Asistencia sin confirmar desde hace tiempo" },
+  "Confirme a presença no compromisso": { es: "Confirma la asistencia a la cita" },
+  "Compromisso: {titulo}. Abra e registre se a pessoa compareceu, faltou ou cancelou. O horário sozinho não confirma falta.": {
+    es: "Cita: {titulo}. Ábrela y registra si la persona asistió, faltó o canceló. La hora por sí sola no confirma la ausencia.",
+  },
+  "A conta foi reativada — há agendamentos e follow-ups para revisar": {
+    es: "La cuenta fue reactivada — hay envíos programados y follow-ups para revisar",
+  },
+  "1 conversa recebeu mensagem enquanto a conta estava suspensa.": {
+    es: "1 conversación recibió mensajes mientras la cuenta estaba suspendida.",
+  },
+  "{n} conversas receberam mensagem enquanto a conta estava suspensa.": {
+    es: "{n} conversaciones recibieron mensajes mientras la cuenta estaba suspendida.",
+  },
+  "1 agendamento de disparo único venceu durante a suspensão e não foi disparado.": {
+    es: "1 envío programado único venció durante la suspensión y no se envió.",
+  },
+  "{n} agendamentos de disparo único venceram durante a suspensão e não foram disparados.": {
+    es: "{n} envíos programados únicos vencieron durante la suspensión y no se enviaron.",
+  },
+  "1 passo de follow-up foi descartado durante a suspensão; confira o follow-up do contato.": {
+    es: "1 paso de follow-up se descartó durante la suspensión; revisa el follow-up del contacto.",
+  },
+  "{n} passos de follow-up foram descartados durante a suspensão; confira o follow-up dos contatos.": {
+    es: "{n} pasos de follow-up se descartaron durante la suspensión; revisa el follow-up de los contactos.",
+  },
+  "A recuperação não foi iniciada": { es: "La recuperación no se inició" },
+  "Este contato já tem outro acompanhamento. Revise o próximo passo; nenhuma recuperação ficou aguardando vaga.": {
+    es: "Este contacto ya tiene otro follow-up. Revisa el siguiente paso; ninguna recuperación quedó esperando turno.",
+  },
+  "Mais de um fluxo atende a esta falta. Deixe apenas um configurado ou escolha manualmente o próximo passo.": {
+    es: "Más de un flujo atiende esta ausencia. Deja solo uno configurado o elige manualmente el siguiente paso.",
+  },
+  "Configure um fluxo de recuperação e habilite-o em um assistente publicado. Esta falta não será iniciada retroativamente.": {
+    es: "Configura un flujo de recuperación y habilítalo en un asistente publicado. Esta ausencia no se iniciará de forma retroactiva.",
+  },
+  "O contexto mudou ou não há contato vinculado. Abra o compromisso e escolha o próximo passo.": {
+    es: "El contexto cambió o no hay un contacto vinculado. Abre la cita y elige el siguiente paso.",
+  },
+  // aviso do agente legado (lib/ai/agents/legacy-notice.ts)
+  "Agente recuperado": { es: "Se recuperó el agente" },
+  "Agente precisa concluir a configuração": { es: "El agente necesita terminar la configuración" },
+  "{causa} Abra IA → Agentes → Recuperar agente legado.": {
+    es: "{causa} Abre IA → Agentes → Recuperar agente anterior.",
+  },
+  "Conecte ou escolha um canal de WhatsApp para este agente.": {
+    es: "Conecta o elige un canal de WhatsApp para este agente.",
+  },
+  "Cadastre e valide a chave do provedor de inteligência artificial.": {
+    es: "Registra y valida la clave del proveedor de inteligencia artificial.",
+  },
+  "Sincronize o catálogo e escolha um modelo compatível com ferramentas.": {
+    es: "Sincroniza el catálogo y elige un modelo compatible con herramientas.",
+  },
+  "Escolha explicitamente o provedor e o modelo para este agente.": {
+    es: "Elige explícitamente el proveedor y el modelo para este agente.",
+  },
+  "Este agente ainda não tem uma versão publicada. Retome a configuração preservada.": {
+    es: "Este agente todavía no tiene una versión publicada. Retoma la configuración guardada.",
+  },
+  "A recuperação não terminou. Retome a configuração preservada e revise canal, modelo e credencial.": {
+    es: "La recuperación no terminó. Retoma la configuración guardada y revisa el canal, el modelo y la credencial.",
+  },
+  "A configuração foi recuperada. As respostas usam a versão publicada do agente.": {
+    es: "La configuración se recuperó. Las respuestas usan la versión publicada del agente.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

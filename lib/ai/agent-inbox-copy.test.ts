@@ -63,7 +63,6 @@ describe("agent-inbox-copy — rótulos leigos dos avisos do runtime", () => {
    */
   it("todo rótulo tem tradução em espanhol", () => {
     const AINDA_SEM_ES = new Set([
-      "appointment_outcome_required",
       "appointment_recovery_review",
       "proposal_expired_notice",
     ]);

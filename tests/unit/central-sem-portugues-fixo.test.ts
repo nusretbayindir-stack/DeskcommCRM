@@ -4,6 +4,8 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { FUNCOES_COM_TEXTO_DE_QUEM_CHAMA } from "@/lib/ai/avisos-do-banco";
+
 /**
  * NENHUM TEXTO FIXO EM PORTUGUÊS VAI PARA A CENTRAL (S2a Task 5, U14 — revisão
  * final, I1/I2).
@@ -33,7 +35,17 @@ function arquivos(dir: string): string[] {
   return saida;
 }
 
-const GRAVA_NA_CENTRAL = /agent_inbox_items|\binsertInboxItem\s*\(/;
+/**
+ * Funções do banco que gravam na Central o texto que recebem
+ * (`fn_agent_legacy_notice`…): a gravação é a `rpc(...)`, e o título e o corpo
+ * são os parâmetros dela. Fonte: `lib/ai/avisos-do-banco.ts`, que
+ * `avisos-do-banco-no-idioma.test.ts` confere contra o baseline.
+ */
+const PARAMETROS_DE_TEXTO: Record<string, readonly string[]> = FUNCOES_COM_TEXTO_DE_QUEM_CHAMA;
+
+const GRAVA_NA_CENTRAL = new RegExp(
+  `agent_inbox_items|\\binsertInboxItem\\s*\\(|\\b(${Object.keys(PARAMETROS_DE_TEXTO).join("|")})\\b`,
+);
 
 /** Prosa portuguesa: tem espaço e acento português ou palavra de ligação. */
 function ehProsa(texto: string): boolean {
@@ -118,13 +130,13 @@ function analisar(caminho: string, fonte: string): Achado[] {
     }
   };
 
-  /** title/body em objetos dentro dos argumentos de uma gravação. */
-  const varrerObjetos = (raiz: ts.Node) => {
+  /** title/body (ou os parâmetros de texto de uma `rpc`) em objetos dentro dos argumentos de uma gravação. */
+  const varrerObjetos = (raiz: ts.Node, nomes: readonly string[] = ["title", "body"]) => {
     const visitar = (no: ts.Node) => {
-      if (ts.isPropertyAssignment(no) && ["title", "body"].includes(no.name.getText(arq))) {
+      if (ts.isPropertyAssignment(no) && nomes.includes(no.name.getText(arq).replace(/["']/g, ""))) {
         registrar(no, textos(no.initializer));
       }
-      if (ts.isShorthandPropertyAssignment(no) && ["title", "body"].includes(no.name.text)) {
+      if (ts.isShorthandPropertyAssignment(no) && nomes.includes(no.name.text)) {
         registrar(no, textos(no.name));
       }
       ts.forEachChild(no, visitar);
@@ -145,8 +157,21 @@ function analisar(caminho: string, fonte: string): Achado[] {
           varrerObjetos(arg);
           // `insert(novos)`: a lista montada antes, numa variável do arquivo.
           const x = desembrulhar(arg);
-          if (ts.isIdentifier(x)) (declaracoes.get(x.text) ?? []).forEach(varrerObjetos);
+          if (ts.isIdentifier(x)) (declaracoes.get(x.text) ?? []).forEach((d) => varrerObjetos(d));
         }
+      }
+
+      // `db.rpc("fn_agent_legacy_notice", { p_title, p_body })`: a função grava o que recebe.
+      const [funcao, argumentos] = no.arguments;
+      if (
+        ts.isPropertyAccessExpression(no.expression) &&
+        no.expression.name.text === "rpc" &&
+        funcao &&
+        ts.isStringLiteralLike(funcao) &&
+        funcao.text in PARAMETROS_DE_TEXTO &&
+        argumentos
+      ) {
+        varrerObjetos(argumentos, PARAMETROS_DE_TEXTO[funcao.text]);
       }
 
       const [sql, params] = no.arguments;
@@ -189,9 +214,11 @@ describe("nenhum texto fixo em português vai para a Central", () => {
       await insertInboxItem(db, { title: \`Lead \${a} ficou sem dono\`, body: traduzir("x", idioma) }, "k");
       await db.query("insert into agent_inbox_items (title) values ($1)", [TITULO]);
       await db.query(\`insert into agent_inbox_items (title) select 'Cliente faltou e não respondeu'\`, []);
+      await db.rpc("fn_agent_legacy_notice", { p_org: o, p_title: "Agente precisa concluir a configuração", p_body: traduzir("x", idioma) });
+      await db.rpc("fn_que_nao_grava_na_central", { p_title: "Um título que não vai para a Central" });
     `;
     const r = analisar(join(RAIZ, "exemplo.ts"), exemplo);
-    expect(r.map((a) => a.linha)).toEqual([3, 3, 4, 5, 6]);
+    expect(r.map((a) => a.linha)).toEqual([3, 3, 4, 5, 6, 7]);
   });
 
   it("nenhuma gravação na Central leva prosa portuguesa fixa", () => {
