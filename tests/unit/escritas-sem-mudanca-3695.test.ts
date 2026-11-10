@@ -156,6 +156,7 @@ function centralFalsa(abertos: number) {
       return b;
     };
     b.eq = () => b;
+    b.in = () => b;
     b.limit = () => b;
     b.insert = (v: unknown) => {
       tipo = "insert";
@@ -209,6 +210,7 @@ describe("agent_inbox_items: batida saudável com a Central vazia não escreve",
         const b: Record<string, unknown> = {};
         b.select = () => b;
         b.eq = () => b;
+        b.in = () => b;
         b.limit = () => b;
         b.then = (ok?: (v: unknown) => unknown, erro?: (e: unknown) => unknown) =>
           Promise.resolve({ data: null, error: { message: "Central fora" } }).then(ok, erro);

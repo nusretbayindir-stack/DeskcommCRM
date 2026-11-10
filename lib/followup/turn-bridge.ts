@@ -24,6 +24,8 @@ import { EVENTO_ACAO_ADIADA, EVENTO_CLASSIFICACAO_ESPERANDO, classEdgeMatch, sel
 import { coletarEsperasAdaptativas, montarTimingPlan, type PropostaDeEspera } from "./timing-plan";
 import { persistirRespostaFollowupPg } from "./persistir-resposta";
 import { contextoDoContato } from "@/lib/automation/texto-do-followup";
+import { idiomaDaOrgPeloPg } from "@/lib/ai/agents/idioma-da-org";
+import { textoDaRecuperacaoEsgotada } from "./avisos-da-central";
 
 /** Superset de AdminClient: a ponte precisa do snapshot COMPLETO do enrollment
  *  (current_node_id/version_id/steps_taken) pra montar o passo de conclusão —
@@ -463,6 +465,9 @@ export function createPgAdminClient(pool: pg.Pool): TurnBridgeAdminClient {
         [item.organization_id, item.title, item.body, item.ref_id],
       );
     },
+    async idiomaDaOrg(orgId) {
+      return idiomaDaOrgPeloPg(pool, orgId);
+    },
     async abrirAvisoRecuperacaoEsgotada(item) {
       // ⚠️ `insert ... select`, e NÃO `insert ... values`. A diferença é a
       // guarda de LGPD, e ela precisa estar DENTRO da escrita.
@@ -489,12 +494,15 @@ export function createPgAdminClient(pool: pg.Pool): TurnBridgeAdminClient {
       //
       // `on conflict do nothing` casa o índice parcial da 0224
       // (inbox_appointment_revision_unique): repetir num reprocesso é no-op.
+      //
+      // Título e corpo no idioma da empresa (S2a Task 5), como parâmetros: o
+      // texto mora em `avisos-da-central.ts`, não no SQL.
+      const aviso = textoDaRecuperacaoEsgotada(await idiomaDaOrgPeloPg(pool, item.organization_id));
       await pool.query(
         `insert into agent_inbox_items
            (organization_id, kind, severity, title, body, ref_kind, ref_id, appointment_revision)
          select $1, 'appointment_recovery_review', 'warn',
-                'Cliente faltou e não respondeu à recuperação',
-                'As mensagens de reengajamento pós-falta foram enviadas e o cliente não respondeu. Decida o próximo passo e mova o card no funil.',
+                $4, $5,
                 'appointment', a.id, $3
            from calendar_appointments a
            join contacts c
@@ -506,7 +514,7 @@ export function createPgAdminClient(pool: pg.Pool): TurnBridgeAdminClient {
          on conflict (organization_id, ref_id, appointment_revision, kind)
            where ref_kind = 'appointment' and appointment_revision is not null
            do nothing`,
-        [item.organization_id, item.appointment_id, item.appointment_revision],
+        [item.organization_id, item.appointment_id, item.appointment_revision, aviso.title, aviso.body],
       );
     },
     async persistirRespostaFollowup(input) {

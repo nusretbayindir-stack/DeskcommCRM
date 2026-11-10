@@ -8,6 +8,8 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { avisoDePropostaPrometida } from "@/lib/propostas/avisos-da-central";
 import { autorizaCron } from "@/lib/auth/cron-auth";
 import { logger } from "@/lib/logger";
 import { modulosLigados } from "@/lib/instalacao/modulos";
@@ -82,10 +84,11 @@ async function rodar(admin: ReturnType<typeof createAdminClient>, requestId: str
       .eq("status", "open")
       .maybeSingle();
     if (!existente) {
+      // No idioma da empresa (U14), lido só agora que o aviso vai ser gravado.
+      const idioma = await idiomaDaOrgPeloSupabase(admin, t.organization_id);
       const { error: inboxErr } = await admin.from("agent_inbox_items").insert({
         organization_id: t.organization_id, kind: "proposal_promised_not_created", severity: "warn",
-        title: "Uma proposta prometida não foi criada",
-        body: "Um compromisso de enviar proposta venceu e nenhuma proposta foi criada para este negócio.",
+        ...avisoDePropostaPrometida(idioma),
         ref_kind: "lead", ref_id: t.lead_id,
       });
       if (inboxErr) {

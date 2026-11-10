@@ -55,6 +55,10 @@ import {
 } from "@/lib/ai/rag/version";
 import type { EventRow, HandlerResult } from "@/lib/event-log/dispatcher";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 import { NuvemshopApiClient } from "@/lib/nuvemshop/api-client";
 
 const DEBOUNCE_TTL_SEC = 30;
@@ -147,8 +151,8 @@ async function marcarFonte(
 async function avisarNaCentral(
   organizationId: string,
   fonte: FonteRow,
-  titulo: string,
-  corpo: string,
+  /** O texto no idioma da empresa (S2a Task 5): quem grava lê o idioma, quem chama só monta. */
+  montar: (idioma: Idioma) => { titulo: string; corpo: string },
 ): Promise<void> {
   try {
     const admin = createAdminClient();
@@ -162,6 +166,8 @@ async function avisarNaCentral(
       .maybeSingle();
     if (jaAberto) return;
 
+    // Lido só quando o aviso vai nascer; a leitura que falha vira o padrão.
+    const { titulo, corpo } = montar(await idiomaDaOrgPeloSupabase(admin, organizationId));
     await admin.from("agent_inbox_items").insert({
       organization_id: organizationId,
       kind: "conhecimento_nao_indexado",
@@ -724,13 +730,15 @@ export async function processRagIndexer(row: EventRow): Promise<HandlerResult> {
           "Falta uma chave de embedding para indexar. Cadastre uma chave OpenAI ou OpenRouter " +
           "em IA › Credenciais e este material entra sozinho.",
       });
-      await avisarNaCentral(
-        row.organization_id,
-        fonte,
-        `"${fonte.name}" ainda não entrou na base de conhecimento`,
-        "Falta uma chave de embedding para preparar o material. Cadastre uma em IA › Credenciais " +
-          "e a indexação recomeça sozinha — nada do que você enviou foi perdido.",
-      );
+      await avisarNaCentral(row.organization_id, fonte, (idioma) => ({
+        titulo: preencher(traduzir('"{fonte}" ainda não entrou na base de conhecimento', idioma), {
+          fonte: fonte.name,
+        }),
+        corpo: traduzir(
+          "Falta uma chave de embedding para preparar o material. Cadastre uma em IA › Credenciais e a indexação recomeça sozinha — nada do que você enviou foi perdido.",
+          idioma,
+        ),
+      }));
       // `retry` e não `skipped`: o drain conta `skipped` como sucesso e marca o
       // evento consumido para sempre. Quem cadastrasse a chave amanhã não teria
       // mais nada esperando.
@@ -779,12 +787,13 @@ export async function processRagIndexer(row: EventRow): Promise<HandlerResult> {
       last_index_status: "failed",
       last_index_error: resultado.detalhe,
     });
-    await avisarNaCentral(
-      row.organization_id,
-      fonte,
-      `"${fonte.name}" não entrou na base de conhecimento`,
-      `O agente ainda não sabe o que está neste material. Motivo: ${resultado.detalhe}`,
-    );
+    await avisarNaCentral(row.organization_id, fonte, (idioma) => ({
+      titulo: preencher(traduzir('"{fonte}" não entrou na base de conhecimento', idioma), { fonte: fonte.name }),
+      // O motivo é o detalhe técnico da extração: entra cru.
+      corpo: preencher(traduzir("O agente ainda não sabe o que está neste material. Motivo: {motivo}", idioma), {
+        motivo: resultado.detalhe,
+      }),
+    }));
     return { consumer_key: consumerKey, status: "error", detail: resultado.detalhe };
   } catch (err) {
     // O worker NUNCA lança: quem chama é o drain, e uma exceção aqui derrubaria

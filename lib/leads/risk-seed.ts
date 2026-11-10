@@ -1,4 +1,7 @@
 import { protecaoAgendaSupabase } from "@/lib/agenda/protecao-followup";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { preencher } from "@/lib/i18n/preencher";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { buscaEmLotes } from "@/lib/supabase/em-lotes";
@@ -188,6 +191,18 @@ async function coletaEClassifica(
   return { estados, semRelogio };
 }
 
+/**
+ * O texto do item de caixa do acervo, no idioma da empresa (S2a Task 5, U14).
+ * Tabela de literais para a guarda de espanhol cobrar es e tr de cada um; o
+ * português é o de sempre.
+ */
+const TEXTOS_DO_AVISO_DO_ACERVO = {
+  tituloUm: "Revise {n} negócio parado e decida quais encerrar",
+  tituloVarios: "Revise {n} negócios parados e decida quais encerrar",
+  corpo:
+    "{critico} sem resposta há muito tempo e {esfriando} esfriando. Eles já estavam assim antes de o sistema passar a acompanhar — por isso aparecem juntos agora, e não porque algo aconteceu hoje. Encerrar o que morreu é o que faz o radar voltar a significar alguma coisa.",
+} as const;
+
 export async function semeiaEstadosDeRisco(
   admin: SupabaseClient,
   organizationId: string,
@@ -249,6 +264,12 @@ export async function semeiaEstadosDeRisco(
   if (jaAberto) {
     itemDeCaixaId = (jaAberto as { id: string }).id;
   } else if (emRisco > 0) {
+    // No idioma da empresa: lido só quando o item vai mesmo nascer.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, organizationId);
+    const titulo =
+      emRisco === 1
+        ? traduzir(TEXTOS_DO_AVISO_DO_ACERVO.tituloUm, idioma)
+        : traduzir(TEXTOS_DO_AVISO_DO_ACERVO.tituloVarios, idioma);
     const { data: item } = await admin
       .from("agent_inbox_items")
       .insert({
@@ -257,12 +278,11 @@ export async function semeiaEstadosDeRisco(
         severity: emRisco > 10 ? "warn" : "info",
         // A AÇÃO VAI NO TÍTULO. "48 negócios em risco" é um número e não move
         // ninguém; o item precisa dizer o que fazer com ele.
-        title: `Revise ${emRisco} ${emRisco === 1 ? "negócio parado" : "negócios parados"} e decida quais encerrar`,
-        body:
-          `${porBucket.critico} sem resposta há muito tempo e ${porBucket.em_risco} esfriando. ` +
-          `Eles já estavam assim antes de o sistema passar a acompanhar — por isso ` +
-          `aparecem juntos agora, e não porque algo aconteceu hoje. ` +
-          `Encerrar o que morreu é o que faz o radar voltar a significar alguma coisa.`,
+        title: preencher(titulo, { n: emRisco }),
+        body: preencher(traduzir(TEXTOS_DO_AVISO_DO_ACERVO.corpo, idioma), {
+          critico: porBucket.critico,
+          esfriando: porBucket.em_risco,
+        }),
         ref_kind: "organization",
         ref_id: organizationId,
       })

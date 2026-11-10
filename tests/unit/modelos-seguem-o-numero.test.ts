@@ -22,6 +22,8 @@ vi.mock("@/lib/logger", () => ({ logger: { warn: log.warn, info: vi.fn(), error:
 
 import { savePartnerSession } from "@/lib/channels/connect";
 import { AVISO_MODELOS_FICARAM, AVISO_MODELOS_SAIRAM } from "@/lib/channels/modelos-de-outra-conta";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { IDIOMAS } from "@/lib/i18n/idiomas";
 
 interface Chamada {
   tabela: string;
@@ -57,7 +59,7 @@ function adminDuble() {
         // `insert(...).select("id").single()`: a conexão nova devolve o id.
         cadeia.select = () => cadeia;
         cadeia.single = async () => ({ data: { id: "sessao-nova" }, error: null });
-        for (const m of ["eq", "neq"]) {
+        for (const m of ["eq", "neq", "in"]) {
           cadeia[m] = (coluna: string, valor: unknown) => {
             c.filtros.push([m, coluna, valor]);
             return cadeia;
@@ -226,7 +228,8 @@ describe("conectar: os modelos seguem a conta, não a linha da conexão", () => 
     expect(fechamento?.filtros).toEqual([
       ["eq", "organization_id", "org-1"],
       ["eq", "kind", "channel_template_review"],
-      ["eq", "title", AVISO_MODELOS_FICARAM],
+      // Em todo idioma: o aviso aberto pode ter nascido antes de a empresa trocar de idioma (S2a Task 5).
+      ["in", "title", [...new Set(IDIOMAS.map((idioma) => traduzir(AVISO_MODELOS_FICARAM, idioma)))]],
       ["eq", "status", "open"],
     ]);
   });

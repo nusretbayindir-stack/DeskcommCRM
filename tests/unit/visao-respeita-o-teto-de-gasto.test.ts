@@ -36,6 +36,9 @@ const BINDING = {
 };
 let bindingDaVez: typeof BINDING | null = BINDING;
 
+/** O idioma da empresa (S2a Task 5): `null` = português, como sempre. */
+let localeDaEmpresa: string | null = null;
+
 let linhaDaMensagem = {
   id: "msg1",
   organization_id: "org1",
@@ -49,7 +52,13 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: (tabela: string) => {
       const linha =
-        tabela === "ai_purpose_bindings" ? bindingDaVez : tabela === "agent_inbox_items" ? null : linhaDaMensagem;
+        tabela === "ai_purpose_bindings"
+          ? bindingDaVez
+          : tabela === "agent_inbox_items"
+            ? null
+            : tabela === "organizations"
+              ? { locale: localeDaEmpresa }
+              : linhaDaMensagem;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const terminais: any = {
         maybeSingle: async () => ({ data: linha, error: null }),
@@ -169,6 +178,7 @@ vi.mock("@/lib/env", async (importOriginal) => {
 });
 
 import { deriveMessageMedia, MARCADOR_NAO_LIDA } from "@/workers/media-derive-worker";
+import { traduzir } from "@/lib/i18n/dicionario";
 import { esquecerDestinosInternos } from "@/lib/automation/destinos-internos-autorizados";
 import { PONTO_TRANSCRICAO_DE_AUDIO, PONTO_VISAO_DE_IMAGEM } from "@/lib/ai/pontos/registro";
 import { deriveMediaText, type DeriveDeps } from "@/lib/messaging/media/derive";
@@ -304,6 +314,34 @@ describe("a visão de imagem respeita o teto de gasto", () => {
     expect(aviso.title).toContain("áudio");
     expect(aviso.body).toContain("o áudio não foi enviado ao provedor");
     expect(aviso.body).toContain("Uso de IA › Orçamento");
+  });
+
+  it("o aviso do teto sai no idioma da empresa (S2a Task 5)", async () => {
+    armarTeto();
+    credencial.conversaGoogle = "gemini-2.5-flash";
+    bindingDaVez = null;
+    linhaDaMensagem = { ...linhaDaMensagem, type: "audio", media_mime: "audio/ogg", media_storage_path: "org1/conv1/msg1.ogg" };
+    localeDaEmpresa = "tr";
+    try {
+      await deriveMessageMedia(eventRow());
+      await depsDaChamada().transcriber.transcribe(Buffer.from("ogg"), "audio/ogg");
+    } finally {
+      localeDaEmpresa = null;
+    }
+
+    expect(avisoInsertMock).toHaveBeenCalledTimes(1);
+    const aviso = avisoInsertMock.mock.calls[0]![0] as Record<string, string>;
+    expect(aviso.title).toBe(traduzir("O agente não conseguiu ler áudio que o cliente enviou", "tr"));
+    expect(aviso.body).toContain(
+      traduzir(
+        "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então o áudio não foi enviado ao provedor",
+        "tr",
+      ),
+    );
+    expect(aviso.body).toContain(
+      traduzir("Para resolver, suba o limite ou desligue a parada em Uso de IA › Orçamento.", "tr"),
+    );
+    expect(aviso.body).not.toContain("Orçamento");
   });
 
   it("o degrau 4 sem teto segue igual: o áudio vai ao modelo", async () => {

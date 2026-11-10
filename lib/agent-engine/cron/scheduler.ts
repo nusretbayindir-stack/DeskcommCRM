@@ -19,6 +19,9 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import type pg from 'pg';
 
+import { traduzir } from '@/lib/i18n/dicionario';
+import { emCadaIdioma, noIdiomaDaOrgSql } from '@/lib/i18n/em-cada-idioma';
+
 import type { Logger } from '../obs/logger';
 import { enqueueJob, type JobKind, type Queryable } from '../queue/queue';
 import {
@@ -177,10 +180,19 @@ async function applyFailure(
       `update cron_jobs set enabled = false, attempts = $2, last_error = $3, updated_at = now() where id = $1`,
       [cron.id, attempts, reason],
     );
+    // O título no idioma da empresa (U14), escolhido pelo próprio insert: dentro
+    // desta transação, uma leitura a mais que falhasse abortaria tudo.
     await client.query(
       `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
-       values ($1, 'job_dead', 'critical', 'Cron desabilitado após falha de disparo', $2, 'cron_jobs', $3)`,
-      [cron.organization_id, `kind=${cron.kind}; job_kind=${cron.job_kind}; motivo=${classification}; attempts=${attempts}`, cron.id],
+       values ($1, 'job_dead', 'critical',
+               ${noIdiomaDaOrgSql('$4', '(select o.locale from organizations o where o.id = $1)')},
+               $2, 'cron_jobs', $3)`,
+      [
+        cron.organization_id,
+        `kind=${cron.kind}; job_kind=${cron.job_kind}; motivo=${classification}; attempts=${attempts}`,
+        cron.id,
+        JSON.stringify(emCadaIdioma((idioma) => traduzir('Cron desabilitado após falha de disparo', idioma))),
+      ],
     );
     return { outcome: 'disabled', classification, attempts };
   }

@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { avisoDeAceiteEmQueda } from "@/lib/propostas/avisos-da-central";
 import { autorizaCron } from "@/lib/auth/cron-auth";
 import { logger } from "@/lib/logger";
 import { modulosLigados, type ModuloOpcional } from "@/lib/instalacao/modulos";
@@ -60,10 +62,11 @@ async function rodar(admin: ReturnType<typeof createAdminClient>, requestId: str
       .eq("status", "open")
       .maybeSingle();
     if (!existente) {
+      // No idioma da empresa (U14), lido só agora que o aviso vai ser gravado.
+      const idioma = await idiomaDaOrgPeloSupabase(admin, org.id);
       const { error: inboxErr } = await admin.from("agent_inbox_items").insert({
         organization_id: org.id, kind: "proposal_acceptance_rate_drop", severity: "warn",
-        title: "A taxa de aceite de propostas caiu",
-        body: `${Math.round(taxa * 100)}% das propostas decididas nos últimos 30 dias foram aceitas — abaixo do piso de ${Math.round(PISO_DE_ACEITE * 100)}%.`,
+        ...avisoDeAceiteEmQueda(Math.round(taxa * 100), Math.round(PISO_DE_ACEITE * 100), idioma),
       });
       if (inboxErr) {
         logger.error("[proposal-acceptance-rate] aviso na Central falhou", { error: inboxErr.message, organization_id: org.id, requestId });

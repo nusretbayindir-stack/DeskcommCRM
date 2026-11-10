@@ -44,10 +44,10 @@ describe("aviso do laço do drain — feedback visível (#2505)", () => {
     expect(sql).toContain("'other'");
     expect(sql).toContain("'warn'");
     expect(sql, "o título tem de ser parâmetro, não literal colado").toContain("$1");
-    expect(params).toEqual([
-      TITULO_DRAIN_PARADO,
-      expect.stringContaining("parou de avançar"),
-    ]);
+    // Título e corpo em todo idioma (jsonb); o SQL escolhe pelo idioma da organização (S2a Task 5).
+    expect(params).toHaveLength(2);
+    expect(JSON.parse(String(params[0]))["pt-BR"]).toBe(TITULO_DRAIN_PARADO);
+    expect(JSON.parse(String(params[1]))["pt-BR"]).toContain("parou de avançar");
   });
 
   it("saudável: resolve o episódio (status resolved + resolved_at)", async () => {
@@ -57,8 +57,9 @@ describe("aviso do laço do drain — feedback visível (#2505)", () => {
 
     expect(consultas).toHaveLength(1);
     expect(consultas[0]!.sql).toContain("set status = 'resolved', resolved_at = now()");
-    expect(consultas[0]!.sql).toContain("kind = 'other' and title = $1 and status = 'open'");
-    expect(consultas[0]!.params).toEqual([TITULO_DRAIN_PARADO]);
+    expect(consultas[0]!.sql).toContain("kind = 'other' and status = 'open'");
+    expect(consultas[0]!.sql, "fecha o título em todo idioma").toContain("title in (select value from jsonb_each_text($1::jsonb))");
+    expect(JSON.parse(String(consultas[0]!.params[0]))["pt-BR"]).toBe(TITULO_DRAIN_PARADO);
   });
 
   it("Central fora do ar vira `warn`, nunca `error`, e nunca lança", async () => {

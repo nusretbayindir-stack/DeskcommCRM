@@ -35,8 +35,10 @@ import {
   copyDoResumoDaRecuperacao,
   type MotivoDoResumoDaRecuperacao,
 } from "@/lib/ai/agent-inbox-copy";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { logger } from "@/lib/logger";
 import { tagDeIdioma } from "@/lib/i18n/datas";
+import { traduzir } from "@/lib/i18n/dicionario";
 import type { Idioma } from "@/lib/i18n/idiomas";
 import { FUSO_PADRAO } from "@/lib/tempo/fusos";
 
@@ -50,21 +52,18 @@ const KIND_CLIENTE = "cliente_sem_resposta_na_queda" as const;
  * requisição do operador: lote limitado mantém a consulta pequena e o tempo
  * previsível, e o resto fica para a próxima passada.
  */
-/** O título e o corpo do aviso são gravados em português (como os vizinhos). */
-const IDIOMA_DO_AVISO: Idioma = "pt-BR";
-
 const LOTE_MAXIMO = 100;
 const PAGINAS_MAXIMAS = 5;
 
 /**
  * A data no formato que a Central mostra: fuso de instalação, dia e hora. O
- * aviso é linha gravada, então o horário é escrito já formatado.
+ * aviso é linha gravada, então o horário é escrito já formatado — no idioma da
+ * empresa, como o texto (S2a Task 5).
  */
-function formatarMomento(iso: string): string {
+function formatarMomento(iso: string, idioma: Idioma): string {
   // Pela camada de datas (`tagDeIdioma`), como `momentoDaPausa` em canal-pausado.ts:
-  // o texto do aviso nasce em português, e a cerca i18n-a-data-segue-o-idioma
-  // proíbe "pt-BR" fixo fora dela.
-  return new Intl.DateTimeFormat(tagDeIdioma(IDIOMA_DO_AVISO), {
+  // a cerca i18n-a-data-segue-o-idioma proíbe "pt-BR" fixo fora dela.
+  return new Intl.DateTimeFormat(tagDeIdioma(idioma), {
     dateStyle: "short",
     timeStyle: "short",
     timeZone: FUSO_PADRAO,
@@ -93,13 +92,15 @@ export async function avisarResumoDaRecuperacao(
   try {
     if (args.motivo === "concluida" && !((args.mensagens ?? 0) > 0)) return;
 
+    // No idioma da empresa (S2a Task 5): lido só quando o aviso vai ser gravado.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, args.organizationId);
     const { title, body } = copyDoResumoDaRecuperacao(args.motivo, {
       mensagens: args.mensagens,
       conversas: args.conversas,
-      desde: args.desde ? formatarMomento(args.desde) : undefined,
-      ate: args.ate ? formatarMomento(args.ate) : undefined,
+      desde: args.desde ? formatarMomento(args.desde, idioma) : undefined,
+      ate: args.ate ? formatarMomento(args.ate, idioma) : undefined,
       erro: args.erro,
-    });
+    }, idioma);
 
     const { error } = await admin.from("agent_inbox_items").insert({
       organization_id: args.organizationId,
@@ -184,12 +185,14 @@ export async function avisarClienteSemResposta(
   args: { organizationId: string; conversationId: string; contactId: string },
 ): Promise<void> {
   try {
+    // No idioma da empresa (S2a Task 5); a leitura que falha vira o padrão.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, args.organizationId);
     const { error } = await admin.from("agent_inbox_items").insert({
       organization_id: args.organizationId,
       kind: KIND_CLIENTE,
       severity: "warn",
-      title: TITULO_DO_CLIENTE_SEM_RESPOSTA_NA_QUEDA,
-      body: CORPO_DO_CLIENTE_SEM_RESPOSTA_NA_QUEDA,
+      title: traduzir(TITULO_DO_CLIENTE_SEM_RESPOSTA_NA_QUEDA, idioma),
+      body: traduzir(CORPO_DO_CLIENTE_SEM_RESPOSTA_NA_QUEDA, idioma),
       ref_kind: "conversation",
       ref_id: args.conversationId,
       status: "open",

@@ -31,6 +31,8 @@
 import type pg from 'pg';
 
 import type { RecursoDoPlano } from '@/lib/cobranca/vocabulario';
+import { traduzir } from '@/lib/i18n/dicionario';
+import { IDIOMA_PADRAO, type Idioma } from '@/lib/i18n/idiomas';
 
 import type { OrigemDaChaveLlm } from './credentials';
 
@@ -71,12 +73,34 @@ export type ModoDeOrcamento = 'off' | 'avisar' | 'bloquear';
  *
  * `warn` vs `critical` é deliberado: o aviso diz que o gasto passou do ponto que
  * a pessoa escolheu e a IA CONTINUA respondendo; a parada diz que algo parou.
+ *
+ * Numa tabela, e traduzidos AQUI (`textoDaCentral`): a Central fala o idioma da
+ * empresa (S2a Task 5, U14), e `i18n-espanhol-cobre-a-tela` só enxerga a frase
+ * dentro de `traduzir(<literal ou tabela do módulo>)`. As constantes abaixo seguem
+ * em português — é o que o SQL recebe e o que as invariantes executam.
  */
-export const AVISO_TITULO = 'O gasto de IA passou do aviso que você definiu';
-export const AVISO_CORPO =
-  'A IA continua respondendo normalmente — isto é o aviso, não a parada. ' +
-  'Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.';
-export const BLOQUEIO_TITULO = 'O limite de gasto com IA foi atingido';
+const TEXTOS_DA_CENTRAL = {
+  avisoTitulo: 'O gasto de IA passou do aviso que você definiu',
+  avisoCorpo:
+    'A IA continua respondendo normalmente — isto é o aviso, não a parada. Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.',
+  bloqueioTitulo: 'O limite de gasto com IA foi atingido',
+  bloqueioCorpo:
+    'O gasto de IA deste mês chegou a {gasto} de um limite de {teto} ({pct}%), e você escolheu que a IA parasse ao chegar nele. As conversas que estavam sendo atendidas foram para a FILA DE ATENDIMENTO HUMANO — ninguém ficou sem próximo passo, mas alguém precisa responder. Aumentar o limite ou desligar a parada em Uso de IA › Orçamento evita paradas NOVAS; cada conversa já parada volta ao automático pelo botão "Devolver ao automático" no cabeçalho dela.',
+  tetoDoPlanoTitulo: 'O uso de IA do plano acabou',
+  tetoDoPlanoCorpo:
+    'O uso de IA incluído no plano acabou neste mês. As conversas foram para a equipe. Troque de plano em Configurações › Plano e cobrança, cadastre uma chave de IA própria ou aguarde o próximo mês.',
+} as const;
+
+export type TextoDaCentral = keyof typeof TEXTOS_DA_CENTRAL;
+
+/** O texto da Central no idioma da empresa. Português sem idioma (é o que o SQL recebe). */
+export function textoDaCentral(chave: TextoDaCentral, idioma: Idioma = IDIOMA_PADRAO): string {
+  return traduzir(TEXTOS_DA_CENTRAL[chave], idioma);
+}
+
+export const AVISO_TITULO = TEXTOS_DA_CENTRAL.avisoTitulo;
+export const AVISO_CORPO = TEXTOS_DA_CENTRAL.avisoCorpo;
+export const BLOQUEIO_TITULO = TEXTOS_DA_CENTRAL.bloqueioTitulo;
 
 /**
  * Razão gravada em `conversations.last_handoff_reason` quando o teto de gasto
@@ -108,17 +132,14 @@ function emDolares(cents: number): string {
  * é `lib/escalacao/retomada.ts`, acionado por um botão POR CONVERSA. Subir o
  * teto evita paradas NOVAS; ele não devolve a IA a nenhuma conversa já parada.
  */
-export function corpoDoBloqueio(gastoCents: number, tetoCents: number): string {
+export function corpoDoBloqueio(gastoCents: number, tetoCents: number, idioma: Idioma = IDIOMA_PADRAO): string {
   const pct = tetoCents > 0 ? Math.round((gastoCents / tetoCents) * 100) : 0;
-  return (
-    `O gasto de IA deste mês chegou a ${emDolares(gastoCents)} de um limite de ${emDolares(tetoCents)} (${pct}%), ` +
-    'e você escolheu que a IA parasse ao chegar nele. ' +
-    'As conversas que estavam sendo atendidas foram para a FILA DE ATENDIMENTO HUMANO — ' +
-    'ninguém ficou sem próximo passo, mas alguém precisa responder. ' +
-    'Aumentar o limite ou desligar a parada em Uso de IA › Orçamento evita paradas NOVAS; ' +
-    'cada conversa já parada volta ao automático pelo botão "Devolver ao automático" ' +
-    'no cabeçalho dela.'
-  );
+  // Substituição por função: o valor tem "$" ("US$ 15,00"), que num texto de
+  // substituição do `replace` tem sentido especial.
+  return textoDaCentral('bloqueioCorpo', idioma)
+    .replace('{gasto}', () => emDolares(gastoCents))
+    .replace('{teto}', () => emDolares(tetoCents))
+    .replace('{pct}', () => String(pct));
 }
 
 /**
@@ -417,14 +438,17 @@ avisa as (
   -- inteiro; para estas linhas (kind de orçamento) o único conflito possível é
   -- o do índice da 0540. Quem chega segundo simplesmente não insere.
   on conflict do nothing
-  returning 1
+  returning id
 )
 select (select teto from orc)         as teto,
        (select modo from orc)         as modo,
        (select efetivo_em from orc)   as efetivo_em,
        (select limiar_pct from orc)   as limiar_pct,
        (select spent from gasto)      as gasto,
-       (select ja from avisado_antes) as avisado_antes;
+       (select ja from avisado_antes) as avisado_antes,
+       -- O aviso que ESTE statement abriu (ou nulo): quem chama o põe no idioma
+       -- da empresa, lido só agora que ele existe (S2a Task 5).
+       (select id from avisa limit 1) as aviso_id;
 `;
 
 // ═══ O TETO DE IA DO PLANO (spec da cobrança do revendedor §5) ═══
@@ -439,10 +463,8 @@ select (select teto from orc)         as teto,
 // caminho legado (`workers/ai-response-worker.ts`) importa a decisão e os
 // textos sem poder arrastar o engine.
 
-export const TITULO_TETO_DO_PLANO = 'O uso de IA do plano acabou';
-export const CORPO_TETO_DO_PLANO =
-  'O uso de IA incluído no plano acabou neste mês. As conversas foram para a equipe. ' +
-  'Troque de plano em Configurações › Plano e cobrança, cadastre uma chave de IA própria ou aguarde o próximo mês.';
+export const TITULO_TETO_DO_PLANO = TEXTOS_DA_CENTRAL.tetoDoPlanoTitulo;
+export const CORPO_TETO_DO_PLANO = TEXTOS_DA_CENTRAL.tetoDoPlanoCorpo;
 /** Vai para `llm_calls.error_message` e para o `last_error` da fila — a instrução numa linha. */
 export const MOTIVO_TETO_DO_PLANO =
   'uso de IA incluído no plano da empresa esgotado neste mês — chamada recusada antes de sair byte para o provedor; troque de plano em Configurações › Plano e cobrança, cadastre uma chave de IA própria ou aguarde a virada do mês (agent_inbox_items kind=budget_exceeded ref_kind=plano)';

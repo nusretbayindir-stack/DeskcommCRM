@@ -38,19 +38,33 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Logger } from "@/lib/agent-engine/obs/logger";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { emCadaIdioma } from "@/lib/i18n/em-cada-idioma";
+import { IDIOMA_PADRAO, normalizarIdioma } from "@/lib/i18n/idiomas";
+
+const TEXTOS = {
+  titulo: "A pausa agendada de conexões não está sendo aplicada",
+  corpo:
+    "O agendador das janelas de manutenção não conseguiu aplicar uma batida: uma janela pode ter deixado de pausar ou de retomar no horário marcado. A próxima tentativa é automática; se este aviso continuar aberto, verifique o log do agendador.",
+} as const;
 
 /**
  * Título estável: é ele que deduplica a abertura entre batidas e identifica o
- * incidente no dia em que a falha deixa de valer (o fechamento filtra por ele).
+ * incidente no dia em que a falha deixa de valer (o fechamento filtra por ele,
+ * em todo idioma).
  */
-export const TITULO_DO_AVISO_DO_AGENDADOR =
-  "A pausa agendada de conexões não está sendo aplicada";
+export const TITULO_DO_AVISO_DO_AGENDADOR = TEXTOS.titulo;
 
-export const CORPO_DO_AVISO_DO_AGENDADOR =
-  "O agendador das janelas de manutenção não conseguiu aplicar uma batida: " +
-  "uma janela pode ter deixado de pausar ou de retomar no horário marcado. " +
-  "A próxima tentativa é automática; se este aviso continuar aberto, verifique " +
-  "o log do agendador.";
+export const CORPO_DO_AVISO_DO_AGENDADOR = TEXTOS.corpo;
+
+/**
+ * Cada organização recebe o aviso no SEU idioma (S2a Task 5, U14); quem procura
+ * ou fecha o aviso procura o título em todo idioma, porque o aberto pode ter
+ * nascido antes de a empresa trocar de idioma.
+ */
+const tituloEmTodoIdioma = (): string[] => [
+  ...new Set(Object.values(emCadaIdioma((idioma) => traduzir(TEXTOS.titulo, idioma)))),
+];
 
 /**
  * O `kind` do aviso em `agent_inbox_items` (vocabulário fechado por CHECK).
@@ -95,7 +109,7 @@ export async function sincronizarAvisoDoAgendador(
         .from("agent_inbox_items")
         .select("id")
         .eq("kind", KIND_DO_AVISO)
-        .eq("title", TITULO_DO_AVISO_DO_AGENDADOR)
+        .in("title", tituloEmTodoIdioma())
         .eq("status", "open")
         .limit(1);
       if (erroLeitura) throw new Error(`ler avisos abertos: ${erroLeitura.message}`);
@@ -105,7 +119,7 @@ export async function sincronizarAvisoDoAgendador(
         .from("agent_inbox_items")
         .update({ status: "resolved", resolved_at: new Date().toISOString() })
         .eq("kind", KIND_DO_AVISO)
-        .eq("title", TITULO_DO_AVISO_DO_AGENDADOR)
+        .in("title", tituloEmTodoIdioma())
         .eq("status", "open");
       if (error) throw new Error(`resolver aviso: ${error.message}`);
       return;
@@ -115,17 +129,22 @@ export async function sincronizarAvisoDoAgendador(
     // e a Central é tenant-aware. Nunca um por canal (critério 6).
     const { data: organizacoes, error: erroOrganizacoes } = await admin
       .from("organizations")
-      .select("id");
+      .select("id, locale");
     if (erroOrganizacoes) throw new Error(`listar organizações: ${erroOrganizacoes.message}`);
 
-    const ids = (organizacoes ?? []).map((o) => o.id as string).filter(Boolean);
+    const idiomaDe = new Map(
+      (organizacoes ?? [])
+        .filter((o) => Boolean(o.id))
+        .map((o) => [o.id as string, normalizarIdioma((o.locale as string | null) ?? null)] as const),
+    );
+    const ids = [...idiomaDe.keys()];
     if (ids.length === 0) return;
 
     const { data: existentes, error: erroExistentes } = await admin
       .from("agent_inbox_items")
       .select("organization_id")
       .eq("kind", KIND_DO_AVISO)
-      .eq("title", TITULO_DO_AVISO_DO_AGENDADOR)
+      .in("title", tituloEmTodoIdioma())
       .eq("status", "open");
     if (erroExistentes) throw new Error(`listar avisos existentes: ${erroExistentes.message}`);
 
@@ -142,8 +161,8 @@ export async function sincronizarAvisoDoAgendador(
         organization_id,
         kind: KIND_DO_AVISO,
         severity: "warn" as const,
-        title: TITULO_DO_AVISO_DO_AGENDADOR,
-        body: CORPO_DO_AVISO_DO_AGENDADOR,
+        title: traduzir(TEXTOS.titulo, idiomaDe.get(organization_id) ?? IDIOMA_PADRAO),
+        body: traduzir(TEXTOS.corpo, idiomaDe.get(organization_id) ?? IDIOMA_PADRAO),
         ref_kind: null,
         ref_id: null,
       })),

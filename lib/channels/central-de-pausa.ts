@@ -37,8 +37,11 @@ import {
   type CanalAvaliado,
   type ItemDePausaAberto,
 } from "@/lib/channels/canal-pausado";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { logger } from "@/lib/logger";
+import { traduzir } from "@/lib/i18n/dicionario";
 import type { Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 
 /** O que a sincronização fez — para a rota poder registrar no audit. */
 export type DesfechoDaSincronizacaoDePausa =
@@ -103,18 +106,25 @@ export async function sincronizarAvisoDePausa(
 
     // Linha ausente = excluída (hard delete). O item não pode ficar apontando
     // para uma linha que a tela já não carrega.
+    // O idioma do texto (S2a Task 5): o de quem chama — as rotas passam o da
+    // organização ativa — ou, sem ele (o cron), o da empresa, lido só quando
+    // há texto a gravar. A leitura que falha vira o padrão.
+    const idiomaDoTexto = async (): Promise<Idioma> =>
+      contexto.idioma ?? (await idiomaDaOrgPeloSupabase(db, canal.organization_id));
+
     if (!linha) {
       if (!item) return "sem_mudanca";
-      return (await fechar(db, item, resolverCorpo(item, "o canal foi arquivado")))
+      return (await fechar(db, item, resolverCorpo(item, await idiomaDoTexto())))
         ? "resolvido"
         : "falhou";
     }
 
-    const decisao = avaliarAvisoDePausa(linha as CanalAvaliado, item, {
-      autor: contexto.autor,
-      agora,
-      idioma: contexto.idioma,
-    });
+    const comum = { autor: contexto.autor, agora };
+    if (avaliarAvisoDePausa(linha as CanalAvaliado, item, { ...comum, idioma: contexto.idioma }).acao === "nada") {
+      return "sem_mudanca";
+    }
+    // A ação não depende do idioma; o texto, sim.
+    const decisao = avaliarAvisoDePausa(linha as CanalAvaliado, item, { ...comum, idioma: await idiomaDoTexto() });
 
     if (decisao.acao === "nada") return "sem_mudanca";
 
@@ -178,9 +188,11 @@ export async function sincronizarAvisoDePausa(
 }
 
 /** O corpo de resolução do caminho em que a linha do canal já não existe. */
-function resolverCorpo(item: ItemDePausaAberto, motivoLivel: string): string {
+function resolverCorpo(item: ItemDePausaAberto, idioma: Idioma): string {
   const anterior = (item.body ?? "").trim();
-  const linha = `Resolvido pelo sistema: ${motivoLivel}.`;
+  const linha = preencher(traduzir("Resolvido pelo sistema: {motivo}.", idioma), {
+    motivo: traduzir("o canal foi arquivado", idioma),
+  });
   return anterior === "" ? linha : `${anterior}\n\n${linha}`;
 }
 

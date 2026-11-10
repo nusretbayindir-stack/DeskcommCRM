@@ -14318,6 +14318,360 @@ export const DICIONARIO: Traducoes = {
   "{tipo} — appointment_no_show": { es: "{tipo}" },
   // A aba da ficha do contato (app/app/contacts/[id]/_client.tsx); "LGPD" já existe acima.
   "Timeline": { es: "Cronología" },
+  // ─── A Central de avisos no idioma da empresa (S2a Task 5, U14) ───
+  // Avisos para a EQUIPE, gravados no idioma da organização
+  // (tests/unit/central-fala-o-idioma-da-org.test.ts). Bloco do fork.
+  "Job descartado após esgotar tentativas": { es: "Tarea en segundo plano descartada tras agotar los intentos" },
+  "Cron desabilitado após falha de disparo": { es: "Cron desactivado tras un fallo de disparo" },
+  // lib/propostas/avisos-da-central.ts e lib/propostas/aviso-de-revisao.ts
+  "A taxa de aceite de propostas caiu": { es: "Bajó la tasa de aceptación de propuestas" },
+  "{taxa}% das propostas decididas nos últimos 30 dias foram aceitas — abaixo do piso de {piso}%.": {
+    es: "El {taxa}% de las propuestas decididas en los últimos 30 días fueron aceptadas, por debajo del mínimo de {piso}%.",
+  },
+  "Uma proposta venceu sem decisão do cliente": { es: "Una propuesta venció sin decisión del cliente" },
+  "O prazo de validade passou e ninguém marcou aceite ou recusa. Reveja a proposta e decida os próximos passos com o cliente.": {
+    es: "Pasó el plazo de validez y nadie marcó la aceptación o el rechazo. Revisa la propuesta y decide los próximos pasos con el cliente.",
+  },
+  "Uma proposta prometida não foi criada": { es: "No se creó una propuesta prometida" },
+  "Um compromisso de enviar proposta venceu e nenhuma proposta foi criada para este negócio.": {
+    es: "Venció un compromiso de enviar una propuesta y no se creó ninguna propuesta para este negocio.",
+  },
+  "Uma proposta não confirmou o envio": { es: "Una propuesta no confirmó el envío" },
+  "{n} propostas não confirmaram o envio": { es: "{n} propuestas no confirmaron el envío" },
+  "Ficaram mais de {minutos} minutos em envio e voltaram a rascunho, com o número mantido. Verifique a conexão do WhatsApp e reenvie manualmente — nada foi reenviado sozinho.": {
+    es: "Estuvieron más de {minutos} minutos en envío y volvieron a borrador, con el número conservado. Revisa la conexión de WhatsApp y reenvíalas manualmente: no se reenvió nada automáticamente.",
+  },
+  "sem título": { es: "sin título" },
+  "Proposta «{nome}» de {cliente} está pronta para revisão": { es: "La propuesta «{nome}» de {cliente} está lista para revisión" },
+  "Proposta «{nome}» está pronta para revisão": { es: "La propuesta «{nome}» está lista para revisión" },
+  "A IA rascunhou esta proposta. Confirme o modelo, preencha o que falta no documento e confira os preços antes de enviar.": {
+    es: "La IA redactó un borrador de esta propuesta. Confirma la plantilla, completa lo que falta en el documento y revisa los precios antes de enviarla.",
+  },
+  // lib/agent-engine/edge/llm/orcamento.ts (TEXTOS_DA_CENTRAL)
+  "A IA continua respondendo normalmente — isto é o aviso, não a parada. Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.": {
+    es: "La IA sigue respondiendo con normalidad: esto es el aviso, no la parada. Mira cuánto se ha gastado y ajusta el límite en Uso de IA › Presupuesto.",
+  },
+  "O limite de gasto com IA foi atingido": { es: "Se alcanzó el límite de gasto con IA" },
+  "O gasto de IA deste mês chegou a {gasto} de um limite de {teto} ({pct}%), e você escolheu que a IA parasse ao chegar nele. As conversas que estavam sendo atendidas foram para a FILA DE ATENDIMENTO HUMANO — ninguém ficou sem próximo passo, mas alguém precisa responder. Aumentar o limite ou desligar a parada em Uso de IA › Orçamento evita paradas NOVAS; cada conversa já parada volta ao automático pelo botão \"Devolver ao automático\" no cabeçalho dela.": {
+    es: "El gasto de IA de este mes llegó a {gasto} de un límite de {teto} ({pct}%), y elegiste que la IA se detuviera al alcanzarlo. Las conversaciones que se estaban atendiendo pasaron a la COLA DE ATENCIÓN HUMANA: nadie se quedó sin un siguiente paso, pero alguien tiene que responder. Aumentar el límite o desactivar la parada en Uso de IA › Presupuesto evita paradas NUEVAS; cada conversación ya detenida vuelve al automático con el botón \"Devolver al automático\" de su encabezado.",
+  },
+  // lib/event-log/aviso-de-evento-morto.ts (TEXTOS_DO_AVISO), a família event_dead
+  "Detalhe técnico, para quem der suporte:": { es: "Detalle técnico, para quien dé soporte:" },
+  "evento {tipo}, {tentativas}; motivo: {motivo}": { es: "evento {tipo}, {tentativas}; causa: {motivo}" },
+  "nenhuma tentativa": { es: "ningún intento" },
+  "1 tentativa": { es: "1 intento" },
+  "{n} tentativas": { es: "{n} intentos" },
+  "A IA deixou de responder uma mensagem de cliente": { es: "La IA dejó de responder un mensaje de un cliente" },
+  "Um cliente escreveu e a IA não respondeu; se ele não escrever de novo, a conversa fica sem resposta. Abra o Inbox e responda as conversas que estão esperando.": {
+    es: "Un cliente escribió y la IA no respondió; si no vuelve a escribir, la conversación se queda sin respuesta. Abre el Inbox y responde las conversaciones que están esperando.",
+  },
+  "Enquanto este aviso estiver aberto, outras respostas da IA que pararem de tentar não abrem aviso novo: depois de corrigida a causa, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otras respuestas de la IA que dejen de intentarse no abren un aviso nuevo: una vez corregida la causa, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem de WhatsApp não entrou no CRM": { es: "Un mensaje de WhatsApp no entró al CRM" },
+  "Um cliente mandou mensagem, mas o banco de dados estava indisponível e ela não pôde ser gravada, mesmo depois de várias tentativas. Ela não aparece no Inbox e a IA não a respondeu: confira no celular do número as conversas recebidas nesse horário e responda por lá.": {
+    es: "Un cliente envió un mensaje, pero la base de datos no estaba disponible y no se pudo guardar, ni siquiera después de varios intentos. No aparece en el Inbox y la IA no lo respondió: revisa en el celular del número las conversaciones recibidas a esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens que também não entrarem não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes que tampoco entren no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem do número oficial não entrou no CRM": { es: "Un mensaje del número oficial no entró al CRM" },
+  "Um cliente escreveu para o número oficial, mas a mensagem não pôde ser gravada, mesmo depois de várias tentativas. Ela não aparece no Inbox e a IA não a respondeu: confira no painel do provedor do número as conversas desse horário e responda por lá.": {
+    es: "Un cliente escribió al número oficial, pero el mensaje no se pudo guardar, ni siquiera después de varios intentos. No aparece en el Inbox y la IA no lo respondió: revisa en el panel del proveedor del número las conversaciones de esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens do número oficial que também não entrarem não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes del número oficial que tampoco entren no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma mensagem do número oficial ficou sem atendimento": { es: "Un mensaje del número oficial se quedó sin atención" },
+  "Um cliente escreveu para o número oficial e a mensagem está no Inbox, mas o processamento dela parou no meio e o prazo para retomá-lo passou. A IA não vai responder essa mensagem e nenhum negócio nasce dela: confira as conversas desse horário e responda por lá.": {
+    es: "Un cliente escribió al número oficial y el mensaje está en el Inbox, pero su procesamiento se detuvo a mitad de camino y pasó el plazo para retomarlo. La IA no responderá ese mensaje y no nacerá ningún negocio de él: revisa las conversaciones de esa hora y responde desde ahí.",
+  },
+  "Enquanto este aviso estiver aberto, outras mensagens na mesma situação não abrem aviso novo: depois de conferir, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otros mensajes en la misma situación no abren un aviso nuevo: después de revisar, márcalo como resuelto para volver a recibir avisos.",
+  },
+  "Uma tarefa automática parou de tentar": { es: "Una tarea automática dejó de intentarlo" },
+  "Uma tarefa automática do sistema falhou e parou de tentar: o que ela ia fazer não aconteceu, e não será tentado de novo.": {
+    es: "Una tarea automática del sistema falló y dejó de intentarlo: lo que iba a hacer no ocurrió y no se volverá a intentar.",
+  },
+  "Enquanto este aviso estiver aberto, outras tarefas automáticas que pararem de tentar não abrem aviso novo (a IA que deixa de responder um cliente abre o seu próprio): depois de corrigida a causa, marque-o como resolvido para voltar a ser avisado.": {
+    es: "Mientras este aviso esté abierto, otras tareas automáticas que dejen de intentarlo no abren un aviso nuevo (la IA que deja de responder a un cliente abre el suyo propio): una vez corregida la causa, márcalo como resuelto para volver a recibir avisos.",
+  },
+  // lib/channels/zernio/avisos.ts e lib/channels/modelos-de-outra-conta.ts (TEXTOS)
+  "Modelo \"{nome}\": {estado}": { es: "Plantilla \"{nome}\": {estado}" },
+  "Os modelos da conta anterior saíram desta conexão": {
+    es: "Las plantillas de la cuenta anterior salieron de esta conexión",
+  },
+  "Os modelos da conta anterior seguem nesta conexão": {
+    es: "Las plantillas de la cuenta anterior siguen en esta conexión",
+  },
+  "1 modelo da conta anterior saiu": { es: "salió 1 plantilla de la cuenta anterior" },
+  "{n} modelos da conta anterior saíram": { es: "salieron {n} plantillas de la cuenta anterior" },
+  "Esta conexão passou para outra conta, e {oQueSaiu}: a plataforma os recusaria no envio. Quem usava um deles ficou sem modelo. Sincronize os modelos da conta atual e escolha de novo no aviso à equipe, no lembrete da Agenda e nos passos de follow-up.": {
+    es: "Esta conexión pasó a otra cuenta y {oQueSaiu}: la plataforma las rechazaría al enviar. Quien usaba alguna de ellas se quedó sin plantilla. Sincroniza las plantillas de la cuenta actual y vuelve a elegir en el aviso al equipo, en el recordatorio de la Agenda y en los pasos de seguimiento.",
+  },
+  "Esta conexão passou para outra conta, mas os modelos da anterior não puderam sair: eles seguem na lista e a plataforma os recusa no envio. Se houver serviço da Agenda ativo sem horários ou sem profissional válido, corrija-o primeiro: enquanto ele estiver assim, o banco recusa a limpeza. Depois clique em Sincronizar. O aviso se fecha quando a limpeza passar.": {
+    es: "Esta conexión pasó a otra cuenta, pero las plantillas de la anterior no pudieron salir: siguen en la lista y la plataforma las rechaza al enviar. Si hay un servicio de la Agenda activo sin horarios o sin un profesional válido, corrígelo primero: mientras siga así, la base de datos rechaza la limpieza. Después haz clic en Sincronizar. El aviso se cierra cuando la limpieza se complete.",
+  },
+  // avisos da instalação, uma linha por organização: lib/event-log/aviso-do-laco.ts, lib/channels/aviso-do-agendador.ts, lib/agent-engine/edge/crm/vigilancia-do-drain.ts (TEXTOS)
+  "Processamento rápido de eventos está em modo degradado": {
+    es: "El procesamiento rápido de eventos está en modo degradado",
+  },
+  "O processamento rápido do event_log não carregou neste worker. O cron de segurança continua processando a fila, mas automações e efeitos derivados podem levar até cerca de 1 minuto a mais. Quem administra a instalação deve revisar o worker.": {
+    es: "El procesamiento rápido del event_log no se cargó en este worker. El cron de seguridad sigue procesando la cola, pero las automatizaciones y los efectos derivados pueden tardar hasta cerca de 1 minuto más. Quien administra la instalación debe revisar el worker.",
+  },
+  "A pausa agendada de conexões não está sendo aplicada": {
+    es: "La pausa programada de las conexiones no se está aplicando",
+  },
+  "O agendador das janelas de manutenção não conseguiu aplicar uma batida: uma janela pode ter deixado de pausar ou de retomar no horário marcado. A próxima tentativa é automática; se este aviso continuar aberto, verifique o log do agendador.": {
+    es: "El programador de las ventanas de mantenimiento no pudo aplicar una ejecución: es posible que una ventana no se haya pausado o reanudado a la hora prevista. El próximo intento es automático; si este aviso sigue abierto, revisa el log del programador.",
+  },
+  "As respostas automáticas da IA estão paradas": { es: "Las respuestas automáticas de la IA están detenidas" },
+  "O processamento que transforma as mensagens recebidas em respostas da IA parou de avançar. As mensagens continuam chegando e ficando registradas, mas a IA não responde até o processamento voltar. Quem administra a instalação deve revisar o serviço do worker (log e /healthz) e reiniciá-lo se ele não voltar sozinho.": {
+    es: "El procesamiento que convierte los mensajes recibidos en respuestas de la IA dejó de avanzar. Los mensajes siguen llegando y quedando registrados, pero la IA no responde hasta que el procesamiento se reanude. Quien administra la instalación debe revisar el servicio del worker (log y /healthz) y reiniciarlo si no se recupera solo.",
+  },
+  // avisos do acompanhamento (lib/followup/avisos-da-central.ts)
+  "O fluxo \"{nome}\" (enrollment {id}) foi marcado como \"dead\": {motivo}": {
+    es: "El flujo \"{nome}\" (enrollment {id}) se marcó como \"dead\": {motivo}",
+  },
+  "Um retorno programado não pôde ser enviado": { es: "No se pudo enviar un seguimiento programado" },
+  "O fluxo \"{nome}\" esperou 7 dias o outro acompanhamento deste contato terminar, e o envio foi cancelado (enrollment {id}). Fale com o contato por outro caminho se ainda fizer sentido.": {
+    es: "El flujo \"{nome}\" esperó 7 días a que terminara el otro seguimiento de este contacto, y el envío se canceló (enrollment {id}). Habla con el contacto por otro medio si todavía tiene sentido.",
+  },
+  "O fluxo \"{nome}\" esperava a data do retorno, mas {causa} no meio da espera, e o envio foi cancelado (enrollment {id}). Fale com o contato por outro caminho se ainda fizer sentido.": {
+    es: "El flujo \"{nome}\" esperaba la fecha del seguimiento programado, pero {causa} durante la espera, y el envío se canceló (enrollment {id}). Habla con el contacto por otro medio si todavía tiene sentido.",
+  },
+  "o atendimento que o originou foi encerrado ou substituído": {
+    es: "la atención que lo originó se cerró o fue sustituida",
+  },
+  "a agenda do acompanhamento deixou de valer": { es: "la agenda del seguimiento dejó de ser válida" },
+  "Cliente faltou e não respondeu à recuperação": { es: "El cliente faltó y no respondió a la recuperación" },
+  "As mensagens de reengajamento pós-falta foram enviadas e o cliente não respondeu. Decida o próximo passo e mova o card no funil.": {
+    es: "Se enviaron los mensajes de reenganche tras la ausencia y el cliente no respondió. Decide el siguiente paso y mueve la tarjeta en el embudo.",
+  },
+  // aviso da assinatura desconectada (lib/ai/credenciais/assinatura-desconectada.ts) e do acervo em risco (lib/leads/risk-seed.ts)
+  "a OpenAI revogou o acesso da conta — alguém desconectou, ou o token foi trocado fora daqui": {
+    es: "OpenAI revocó el acceso de la cuenta — alguien la desconectó o el token se cambió fuera de aquí",
+  },
+  "a OpenAI recusou o pedido de renovação do login": {
+    es: "OpenAI rechazó la solicitud de renovación del inicio de sesión",
+  },
+  "o login venceu e a renovação não foi aceita": { es: "el inicio de sesión venció y la renovación no fue aceptada" },
+  "não foi possível falar com a OpenAI para renovar o login": {
+    es: "no fue posible comunicarse con OpenAI para renovar el inicio de sesión",
+  },
+  "a OpenAI não respondeu a tempo de renovar o login": {
+    es: "OpenAI no respondió a tiempo para renovar el inicio de sesión",
+  },
+  "a OpenAI recusou a renovação do login": { es: "OpenAI rechazó la renovación del inicio de sesión" },
+  "a renovação do login falhou sem motivo identificado": {
+    es: "la renovación del inicio de sesión falló sin un motivo identificado",
+  },
+  "A conta do ChatGPT que atende esta empresa foi recusada: {motivo}.": {
+    es: "La cuenta de ChatGPT que atiende a esta empresa fue rechazada: {motivo}.",
+  },
+  "Enquanto isso, a IA não responde aos clientes que escrevem — as mensagens chegam e ficam sem resposta. A cota da assinatura NÃO é o problema.": {
+    es: "Mientras tanto, la IA no responde a los clientes que escriben — los mensajes llegan y se quedan sin respuesta. La cuota de la suscripción NO es el problema.",
+  },
+  "Para voltar: reconecte a conta em IA › Credenciais. Este aviso se fecha sozinho quando o login voltar.": {
+    es: "Para volver: reconecta la cuenta en IA › Credenciales. Este aviso se cierra solo cuando vuelva el inicio de sesión.",
+  },
+  "Resolvido pelo sistema: o login da conta foi renovado e a IA voltou a responder.": {
+    es: "Resuelto por el sistema: el inicio de sesión de la cuenta se renovó y la IA volvió a responder.",
+  },
+  "Revise {n} negócio parado e decida quais encerrar": { es: "Revisa {n} negocio parado y decide si cerrarlo" },
+  "Revise {n} negócios parados e decida quais encerrar": { es: "Revisa {n} negocios parados y decide cuáles cerrar" },
+  "{critico} sem resposta há muito tempo e {esfriando} esfriando. Eles já estavam assim antes de o sistema passar a acompanhar — por isso aparecem juntos agora, e não porque algo aconteceu hoje. Encerrar o que morreu é o que faz o radar voltar a significar alguma coisa.": {
+    es: "{critico} sin respuesta desde hace mucho tiempo y {esfriando} enfriándose. Ya estaban así antes de que el sistema empezara a hacer el seguimiento — por eso aparecen juntos ahora, y no porque algo haya pasado hoy. Cerrar lo que murió es lo que hace que el radar vuelva a significar algo.",
+  },
+  // aviso de mídia não lida (workers/media-derive-worker.ts)
+  "O agente não conseguiu ler imagem que o cliente enviou": {
+    es: "El agente no pudo leer la imagen que envió el cliente",
+  },
+  "O agente não conseguiu ler áudio que o cliente enviou": {
+    es: "El agente no pudo leer el audio que envió el cliente",
+  },
+  "O agente não conseguiu ler documento que o cliente enviou": {
+    es: "El agente no pudo leer el documento que envió el cliente",
+  },
+  "O agente não conseguiu ler vídeo que o cliente enviou": {
+    es: "El agente no pudo leer el video que envió el cliente",
+  },
+  "O agente não conseguiu ler mídia que o cliente enviou": {
+    es: "El agente no pudo leer el archivo multimedia que envió el cliente",
+  },
+  "Motivo: {motivo}.": { es: "Motivo: {motivo}." },
+  "Enquanto isso, o agente responde avisando que não conseguiu abrir o arquivo.": {
+    es: "Mientras tanto, el agente responde avisando que no pudo abrir el archivo.",
+  },
+  "Para resolver, ajuste o modelo desse ponto em Agente de IA → Provedores, ou cadastre a chave necessária em Credenciais.": {
+    es: "Para resolverlo, ajusta el modelo de este punto en Agente de IA → Proveedores, o registra la clave necesaria en Credenciales.",
+  },
+  "Cadastre a chave do provedor de conversa da organização (Provedores de IA) ou a chave OpenAI que transcreve — depois disso a próxima nota de voz volta a virar texto.": {
+    es: "Registra la clave del proveedor de conversación de la organización (Proveedores de IA) o la clave de OpenAI que transcribe — después de eso, la próxima nota de voz vuelve a convertirse en texto.",
+  },
+  "O provedor respondeu sem texto. Confira o modelo em Provedores de IA: se ele aceita áudio mas devolve vazio, troque por outro modelo com capacidade audio.": {
+    es: "El proveedor respondió sin texto. Revisa el modelo en Proveedores de IA: si acepta audio pero devuelve vacío, cámbialo por otro modelo con capacidad audio.",
+  },
+  "Envie um áudio menor, de até 25 MB, para que o conteúdo possa ser transcrito.": {
+    es: "Envía un audio más pequeño, de hasta 25 MB, para que el contenido pueda transcribirse.",
+  },
+  "a leitura deu erro em todas as tentativas, ao abrir o arquivo ou ao chamar o provedor de IA": {
+    es: "la lectura falló en todos los intentos, al abrir el archivo o al llamar al proveedor de IA",
+  },
+  "O conteúdo do arquivo não chegou ao agente. Da próxima mensagem em diante ele sabe que houve um arquivo que não deu para ler, e responde avisando em vez de supor o que estava nele.": {
+    es: "El contenido del archivo no llegó al agente. A partir del próximo mensaje sabe que hubo un archivo que no pudo leer, y responde avisándolo en lugar de suponer lo que contenía.",
+  },
+  "Enquanto o limite valer, a IA também não responde: as conversas vão para a fila de atendimento humano.": {
+    es: "Mientras el límite esté vigente, la IA tampoco responde: las conversaciones van a la cola de atención humana.",
+  },
+  "Para resolver, suba o limite ou desligue a parada em Uso de IA › Orçamento.": {
+    es: "Para resolverlo, sube el límite o desactiva la parada en Uso de IA › Presupuesto.",
+  },
+  "o endereço de IA configurado para esta empresa só é usado com a credencial dela: cadastre a chave da empresa em Agente de IA e Provedores, ou tire o endereço próprio para voltar ao provedor padrão da instalação": {
+    es: "la dirección de IA configurada para esta empresa solo se usa con su propia credencial: registra la clave de la empresa en Agente de IA y Proveedores, o quita la dirección propia para volver al proveedor predeterminado de la instalación",
+  },
+  "o endereço configurado para a visão não foi aceito como destino, então não enviei a imagem nem a chave para lá — confira o endereço do provedor em Agente de IA e Provedores; endereço escolhido pela empresa não pode apontar para a rede interna do servidor": {
+    es: "la dirección configurada para la visión no fue aceptada como destino, así que no envié la imagen ni la clave allí — revisa la dirección del proveedor en Agente de IA y Proveedores; una dirección elegida por la empresa no puede apuntar a la red interna del servidor",
+  },
+  "falta uma chave da OpenAI para transcrever": { es: "falta una clave de OpenAI para transcribir" },
+  "o endereço configurado para a transcrição não foi aceito como destino, então não enviei o áudio nem a chave para lá — confira TRANSCRIPTION_BASE_URL; se o serviço roda na rede interna, quem administra a instalação libera o endereço em Administração › Destinos internos": {
+    es: "la dirección configurada para la transcripción no fue aceptada como destino, así que no envié el audio ni la clave allí — revisa TRANSCRIPTION_BASE_URL; si el servicio corre en la red interna, quien administra la instalación habilita la dirección en Administración › Destinos internos",
+  },
+  "o modelo devolveu a transcrição do áudio vazia ({origem}: {motivo})": {
+    es: "el modelo devolvió vacía la transcripción del audio ({origem}: {motivo})",
+  },
+  "o modelo {modelo} não enxerga imagens": { es: "el modelo {modelo} no ve imágenes" },
+  "não sei se o modelo {modelo} enxerga imagens, então não arrisquei enviar a foto — escolha um modelo do catálogo em Agente de IA → Provedores": {
+    es: "no sé si el modelo {modelo} ve imágenes, así que no me arriesgué a enviar la foto — elige un modelo del catálogo en Agente de IA → Proveedores",
+  },
+  "o provedor {provedor} não está disponível nesta instalação": {
+    es: "el proveedor {provedor} no está disponible en esta instalación",
+  },
+  "o áudio excede o limite de 25 MB da transcrição pela OpenRouter e não foi enviado ao serviço": {
+    es: "el audio supera el límite de 25 MB de la transcripción por OpenRouter y no se envió al servicio",
+  },
+  "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então a foto não foi enviada ao provedor": {
+    es: "se alcanzó el límite de gasto en IA de este mes y la IA está configurada para detenerse en él, así que la foto no se envió al proveedor",
+  },
+  "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então o áudio não foi enviado ao provedor": {
+    es: "se alcanzó el límite de gasto en IA de este mes y la IA está configurada para detenerse en él, así que el audio no se envió al proveedor",
+  },
+  // veto de LGPD (lib/agent-engine/guardrails/lgpd/legal-basis.ts) e alerta de cache (lib/agent-engine/obs/metrics.ts)
+  "Contato anonimizado — envio bloqueado por LGPD": { es: "Contacto anonimizado — envío bloqueado por la LGPD" },
+  "O contato deste lead está anonimizado no CRM (anonimização é irreversível): nenhum envio pode ir a ele. Confira o cadastro no CRM — se for engano, reverta a anonimização lá.": {
+    es: "El contacto de este lead está anonimizado en el CRM (la anonimización es irreversible): ningún envío puede llegarle. Revisa el registro en el CRM — si es un error, revierte la anonimización allí.",
+  },
+  "Base legal ausente/inválida — 1º toque bloqueado por LGPD": {
+    es: "Base legal ausente/inválida — primer contacto bloqueado por la LGPD",
+  },
+  "O 1º toque de prospecção a este lead foi bloqueado por falta de base legal válida (consent concedido, ou legitimate_interest com LIA; origem \"import\" exige prova). Registre a base legal no CRM antes de prospectar este contato.": {
+    es: "El primer contacto de prospección con este lead se bloqueó por falta de una base legal válida (consent concedido, o legitimate_interest con LIA; el origen \"import\" exige prueba). Registra la base legal en el CRM antes de prospectar este contacto.",
+  },
+  "Cache hit de prompt abaixo do alvo — custo por run acima do esperado": {
+    es: "Cache hit del prompt por debajo del objetivo — costo por run mayor de lo esperado",
+  },
+  "média de cache_read/input nos últimos {runs} runs da janela = {media}% (alvo ≥ {alvo}%). Prefixo do prompt possivelmente abaixo do mínimo cacheável do modelo ou com conteúdo volátil antes do último breakpoint — ver CLAUDE.md regra 15 e o smoke de caching.": {
+    es: "promedio de cache_read/input en los últimos {runs} runs de la ventana = {media}% (objetivo ≥ {alvo}%). Prefijo del prompt posiblemente por debajo del mínimo cacheable del modelo o con contenido volátil antes del último breakpoint — ver CLAUDE.md regla 15 y el smoke de caching.",
+  },
+  // aviso de e-mail de login trocado (lib/admin/aviso-de-email-trocado.ts)
+  "E-mail de login trocado pelo administrador da plataforma": {
+    es: "Correo de inicio de sesión cambiado por el administrador de la plataforma",
+  },
+  "O e-mail de login de {nome} foi trocado pelo administrador da plataforma em {data}.": {
+    es: "El correo de inicio de sesión de {nome} fue cambiado por el administrador de la plataforma el {data}.",
+  },
+  "uma pessoa da equipe": { es: "una persona del equipo" },
+  // revisão final I1: case-stale, board, avisos-do-turno, run-model-call, central-de-pausa, avisos da queda, rag-indexer
+  "Um atendimento espera decisão {espera}": { es: "Una atención espera una decisión {espera}" },
+  "\"{caso}\" está aguardando alguém da equipe desde que foi aberto, e o cliente continua do outro lado. Abra o caso e diga o que fazer — concluir, pedir informação ao cliente ou passar para uma pessoa.": {
+    es: "\"{caso}\" está esperando a alguien del equipo desde que se abrió, y el cliente sigue del otro lado. Abre el caso y di qué hacer — concluir, pedir información al cliente o pasarlo a una persona.",
+  },
+  "Este é o último aviso automático sobre ele.": { es: "Este es el último aviso automático sobre él." },
+  "há um dia": { es: "hace un día" },
+  "A IA propôs uma próxima ação, mas o contato tem {n} negócios abertos": {
+    es: "La IA propuso una próxima acción, pero el contacto tiene {n} negocios abiertos",
+  },
+  "Proposta: \"{proposta}\". Escolha a qual negócio ela pertence — o sistema não adivinha para não executar no negócio errado.": {
+    es: "Propuesta: \"{proposta}\". Elige a qué negocio pertenece — el sistema no adivina para no ejecutarla en el negocio equivocado.",
+  },
+  "O agente atendeu sem as capacidades que você ligou": { es: "El agente atendió sin las capacidades que activaste" },
+  "As ferramentas configuradas na tela do agente não puderam ser carregadas neste atendimento, e ele respondeu ao cliente sem elas. A conversa não foi interrompida. Motivo técnico: {detalhe}": {
+    es: "Las herramientas configuradas en la pantalla del agente no se pudieron cargar en esta atención, y respondió al cliente sin ellas. La conversación no se interrumpió. Motivo técnico: {detalhe}",
+  },
+  "Um retorno prometido a um cliente ficou sem dono": {
+    es: "Un seguimiento prometido a un cliente quedó sin responsable",
+  },
+  "O assistente prometeu algo a esta pessoa nesta conversa e o passo que registra o cumprimento não chegou a ser agendado. Abra a conversa, veja o que foi combinado e cumpra você mesmo.": {
+    es: "El asistente le prometió algo a esta persona en esta conversación y el paso que registra el cumplimiento no llegó a programarse. Abre la conversación, revisa lo acordado y cúmplelo tú mismo.",
+  },
+  "Lead com sinal de urgência represado pelo cap de envio do número": {
+    es: "Lead con señal de urgencia retenido por el límite de envío del número",
+  },
+  "Mensagem do lead parece relatar risco/urgência, mas o número está em warm-up/bateu o cap diário ({codigo}) — a resposta automática só sai em {quando}. Considere responder manualmente pelo WhatsApp enquanto o número aquece.": {
+    es: "El mensaje del lead parece relatar un riesgo/urgencia, pero el número está en warm-up/alcanzó el límite diario ({codigo}) — la respuesta automática solo sale el {quando}. Considera responder manualmente por WhatsApp mientras el número se calienta.",
+  },
+  "Lead com risco percebido pelo modelo de decisão represado pelo cap de envio": {
+    es: "Lead con riesgo percibido por el modelo de decisión retenido por el límite de envío",
+  },
+  "A regra de urgência de hoje não reconheceu o risco, mas o modelo de decisão percebeu, numa mensagem represada, risco à segurança ou à saúde (origem: percebido pelo modelo de decisão, visível só para a equipe). O número está em warm-up/bateu o cap diário ({codigo}) — a resposta automática só sai em {quando}. Considere responder manualmente pelo WhatsApp enquanto o número aquece.": {
+    es: "La regla de urgencia de hoy no reconoció el riesgo, pero el modelo de decisión percibió, en un mensaje retenido, un riesgo para la seguridad o la salud (origen: percibido por el modelo de decisión, visible solo para el equipo). El número está en warm-up/alcanzó el límite diario ({codigo}) — la respuesta automática solo sale el {quando}. Considera responder manualmente por WhatsApp mientras el número se calienta.",
+  },
+  "A IA recusou usar o endereço próprio desta empresa sem a chave dela": {
+    es: "La IA se negó a usar la dirección propia de esta empresa sin su clave",
+  },
+  "A IA vai deixar de usar o endereço próprio desta empresa sem a chave dela em {prazo}": {
+    es: "La IA dejará de usar la dirección propia de esta empresa sin su clave el {prazo}",
+  },
+  "um endereço próprio": { es: "una dirección propia" },
+  "um endereço próprio ({host})": { es: "una dirección propia ({host})" },
+  "O ponto \"{ponto}\" está configurado em Agente de IA › Provedores para {destino}, mas esta empresa não tem chave de {provedor} cadastrada e validada. A chave de IA da instalação — a que paga a conta de todas as empresas deste servidor — não é enviada a um endereço escolhido por uma empresa.": {
+    es: "El punto \"{ponto}\" está configurado en Agente de IA › Proveedores para {destino}, pero esta empresa no tiene una clave de {provedor} registrada y validada. La clave de IA de la instalación — la que paga la cuenta de todas las empresas de este servidor — no se envía a una dirección elegida por una empresa.",
+  },
+  "A chamada foi recusada antes de sair. Enquanto isso não for corrigido, as chamadas desse ponto continuam recusadas; quando o ponto faz parte do atendimento, o agente deixa de responder aos clientes desta empresa.": {
+    es: "La llamada se rechazó antes de salir. Mientras esto no se corrija, las llamadas de este punto siguen rechazadas; cuando el punto forma parte de la atención, el agente deja de responder a los clientes de esta empresa.",
+  },
+  "A chamada SEGUIU desta vez, mas isso tem prazo: a partir de {prazo} ela passa a ser recusada, e quando o ponto faz parte do atendimento o agente deixa de responder aos clientes desta empresa. Corrija antes dessa data.": {
+    es: "La llamada SIGUIÓ esta vez, pero esto tiene plazo: a partir del {prazo} pasa a rechazarse, y cuando el punto forma parte de la atención el agente deja de responder a los clientes de esta empresa. Corrígelo antes de esa fecha.",
+  },
+  "Para resolver: cadastre a chave da empresa em Agente de IA › Provedores, ou tire o endereço próprio para voltar ao provedor padrão da instalação.": {
+    es: "Para resolverlo: registra la clave de la empresa en Agente de IA › Proveedores, o quita la dirección propia para volver al proveedor predeterminado de la instalación.",
+  },
+  "Conversas da queda recuperadas": { es: "Conversaciones de la caída recuperadas" },
+  "A recuperação das conversas da queda parou": { es: "La recuperación de las conversaciones de la caída se detuvo" },
+  "As conversas da queda não foram recuperadas": { es: "Las conversaciones de la caída no se recuperaron" },
+  "Recuperamos {mensagens} mensagens de {conversas} conversas do período em que o número ficou fora ({desde} a {ate}).": {
+    es: "Recuperamos {mensagens} mensajes de {conversas} conversaciones del período en que el número estuvo fuera ({desde} a {ate}).",
+  },
+  "A recuperação das conversas da queda parou: {erro}. Veja em Conexões.": {
+    es: "La recuperación de las conversaciones de la caída se detuvo: {erro}. Revisa en Conexiones.",
+  },
+  "motivo não registrado": { es: "motivo no registrado" },
+  "O número da conexão mudou na reconexão. As conversas do período fora do ar não foram recuperadas, para não trazer mensagens de outro aparelho.": {
+    es: "El número de la conexión cambió al reconectar. Las conversaciones del período fuera de línea no se recuperaron, para no traer mensajes de otro dispositivo.",
+  },
+  "Não conseguimos confirmar o número da conexão depois da volta. As conversas do período fora do ar não foram recuperadas.": {
+    es: "No pudimos confirmar el número de la conexión después de que volvió. Las conversaciones del período fuera de línea no se recuperaron.",
+  },
+  "A conexão voltou, mas \"Guardar o histórico\" está desligado nela: não há como recuperar as conversas do período fora do ar.": {
+    es: "La conexión volvió, pero \"Guardar el historial\" está desactivado en ella: no hay forma de recuperar las conversaciones del período fuera de línea.",
+  },
+  "Cliente escreveu na queda e ainda não teve resposta": {
+    es: "El cliente escribió durante la caída y todavía no tuvo respuesta",
+  },
+  "Este cliente escreveu enquanto o número estava fora do ar e ainda não teve resposta.": {
+    es: "Este cliente escribió mientras el número estaba fuera de línea y todavía no tuvo respuesta.",
+  },
+  "\"{fonte}\" ainda não entrou na base de conhecimento": {
+    es: "\"{fonte}\" todavía no entró en la base de conocimiento",
+  },
+  "Falta uma chave de embedding para preparar o material. Cadastre uma em IA › Credenciais e a indexação recomeça sozinha — nada do que você enviou foi perdido.": {
+    es: "Falta una clave de embedding para preparar el material. Registra una en IA › Credenciales y la indexación se reanuda sola — no se perdió nada de lo que enviaste.",
+  },
+  "\"{fonte}\" não entrou na base de conhecimento": { es: "\"{fonte}\" no entró en la base de conocimiento" },
+  "O agente ainda não sabe o que está neste material. Motivo: {motivo}": {
+    es: "El agente todavía no sabe lo que hay en este material. Motivo: {motivo}",
+  },
+  // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {

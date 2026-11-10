@@ -24,6 +24,8 @@
  */
 import type pg from 'pg';
 import type { Logger } from '../../obs/logger';
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { traduzir } from '@/lib/i18n/dicionario';
 
 /** Base legal de um contato para prospecção (LGPD art. 7º). */
 export interface LegalBasis {
@@ -111,22 +113,35 @@ export function deriveLgpdFromContact(c: LgpdContactFields, isProspecting: boole
  * vira log.error, nunca derruba o veto (o gate já barrou o envio — a inbox é o alerta, não o
  * enforcement).
  */
+/**
+ * O texto do aviso do veto, no idioma da empresa (S2a Task 5, U14). Tabela de
+ * literais para a guarda de espanhol cobrar es e tr; no turco a lei citada é a
+ * GDPR, como no resto do catálogo turco.
+ */
+const TEXTOS_DO_VETO = {
+  anonimizadoTitulo: 'Contato anonimizado — envio bloqueado por LGPD',
+  anonimizadoCorpo:
+    'O contato deste lead está anonimizado no CRM (anonimização é irreversível): nenhum envio pode ir a ele. Confira o cadastro no CRM — se for engano, reverta a anonimização lá.',
+  semBaseTitulo: 'Base legal ausente/inválida — 1º toque bloqueado por LGPD',
+  semBaseCorpo:
+    'O 1º toque de prospecção a este lead foi bloqueado por falta de base legal válida (consent concedido, ou legitimate_interest com LIA; origem "import" exige prova). Registre a base legal no CRM antes de prospectar este contato.',
+} as const;
+
 export async function escalateLgpdVeto(
   db: pg.Pool,
   input: { tenantId: string; leadId: string; code: string },
   log: Logger,
 ): Promise<void> {
   const isAnon = input.code === 'lgpd_anonymized';
-  const title = isAnon
-    ? 'Contato anonimizado — envio bloqueado por LGPD'
-    : 'Base legal ausente/inválida — 1º toque bloqueado por LGPD';
-  const body = isAnon
-    ? 'O contato deste lead está anonimizado no CRM (anonimização é irreversível): nenhum envio ' +
-      'pode ir a ele. Confira o cadastro no CRM — se for engano, reverta a anonimização lá.'
-    : 'O 1º toque de prospecção a este lead foi bloqueado por falta de base legal válida ' +
-      '(consent concedido, ou legitimate_interest com LIA; origem "import" exige prova). ' +
-      'Registre a base legal no CRM antes de prospectar este contato.';
   try {
+    // No idioma da empresa (S2a Task 5); a leitura que falha vira o padrão.
+    const idioma = await idiomaDaOrgPeloPg(db, input.tenantId);
+    const title = isAnon
+      ? traduzir(TEXTOS_DO_VETO.anonimizadoTitulo, idioma)
+      : traduzir(TEXTOS_DO_VETO.semBaseTitulo, idioma);
+    const body = isAnon
+      ? traduzir(TEXTOS_DO_VETO.anonimizadoCorpo, idioma)
+      : traduzir(TEXTOS_DO_VETO.semBaseCorpo, idioma);
     await db.query(
       `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
        select $1, 'other', 'critical', $2, $3, 'lgpd_escalation', $4

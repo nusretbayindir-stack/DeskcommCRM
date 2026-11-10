@@ -24,8 +24,21 @@
  *
  * Marcar tudo como crítico é o mesmo que não marcar nada: o operador aprende a
  * ignorar a cor.
+ *
+ * ─── No idioma da empresa (S2a Task 5, U14) ────────────────────────────────
+ *
+ * A Central mostra o título e o corpo como foram gravados, então o aviso é
+ * gravado no idioma da empresa. Quem lê o idioma é `registrarAviso`, a porta da
+ * Central: quem chama entrega o aviso montado PARA um idioma, e não tem como
+ * esquecê-lo. O que vem da plataforma (nome do modelo, estado, motivo) entra
+ * como veio.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 
 import type { SaudeObservada } from "../health";
 
@@ -58,58 +71,65 @@ const GRAVIDADE_DO_TEMPLATE: Record<string, "info" | "warn" | "critical"> = {
  * `activated` e `reactivated` são boa notícia; o resto vai de "precisa fazer
  * algo" a "não dá mais para enviar".
  */
-const GRAVIDADE_DO_NUMERO: Record<string, { sev: "info" | "warn" | "critical"; texto: string }> = {
-  "whatsapp.number.activated": { sev: "info", texto: "Número ativado." },
-  "whatsapp.number.reactivated": { sev: "info", texto: "Número reativado." },
-  "whatsapp.number.kyc_submitted": { sev: "info", texto: "Documentação enviada para verificação." },
-  "whatsapp.number.verification_required": {
-    sev: "warn",
-    texto: "A plataforma pede verificação deste número.",
-  },
-  "whatsapp.number.action_required": {
-    sev: "warn",
-    texto: "A plataforma pede uma ação neste número.",
-  },
-  "whatsapp.number.declined": { sev: "critical", texto: "Número recusado pela plataforma." },
-  "whatsapp.number.suspended": { sev: "critical", texto: "Número SUSPENSO — não é possível enviar." },
-  "whatsapp.number.released": {
-    sev: "critical",
-    texto: "Número liberado e não utilizável (terminal).",
-  },
-  "account.disconnected": { sev: "critical", texto: "A conta do canal foi desconectada." },
-  "account.connected": { sev: "info", texto: "Conta do canal conectada." },
-  "verification.failed": { sev: "critical", texto: "Verificação recusada." },
-  "verification.approved": { sev: "info", texto: "Verificação aprovada." },
+const GRAVIDADE_DO_NUMERO: Record<string, "info" | "warn" | "critical"> = {
+  "whatsapp.number.activated": "info",
+  "whatsapp.number.reactivated": "info",
+  "whatsapp.number.kyc_submitted": "info",
+  "whatsapp.number.verification_required": "warn",
+  "whatsapp.number.action_required": "warn",
+  "whatsapp.number.declined": "critical",
+  "whatsapp.number.suspended": "critical",
+  "whatsapp.number.released": "critical",
+  "account.disconnected": "critical",
+  "account.connected": "info",
+  "verification.failed": "critical",
+  "verification.approved": "info",
 };
 
-/** O evento merece um aviso? `null` quando não é dos nossos. */
-export function avisoDoEvento(payload: unknown): AvisoDeCanal | null {
+/** O título de cada evento de número: uma tabela de literais, para a guarda do dicionário cobrar cada tradução. */
+const TITULO_DO_NUMERO: Record<string, string> = {
+  "whatsapp.number.activated": "Número ativado.",
+  "whatsapp.number.reactivated": "Número reativado.",
+  "whatsapp.number.kyc_submitted": "Documentação enviada para verificação.",
+  "whatsapp.number.verification_required": "A plataforma pede verificação deste número.",
+  "whatsapp.number.action_required": "A plataforma pede uma ação neste número.",
+  "whatsapp.number.declined": "Número recusado pela plataforma.",
+  "whatsapp.number.suspended": "Número SUSPENSO — não é possível enviar.",
+  "whatsapp.number.released": "Número liberado e não utilizável (terminal).",
+  "account.disconnected": "A conta do canal foi desconectada.",
+  "account.connected": "Conta do canal conectada.",
+  "verification.failed": "Verificação recusada.",
+  "verification.approved": "Verificação aprovada.",
+};
+
+/** O evento merece um aviso? `null` quando não é dos nossos. Português sem idioma. */
+export function avisoDoEvento(payload: unknown, idioma: Idioma = IDIOMA_PADRAO): AvisoDeCanal | null {
   const p = obj(payload);
   if (!p) return null;
   const evento = str(p.event) ?? "";
 
   if (evento === "whatsapp.template.status_updated") {
     const t = obj(p.template) ?? {};
-    const nome = str(t.name) ?? "(sem nome)";
+    const nome = str(t.name) ?? traduzir("(sem nome)", idioma);
     const estado = (str(t.status) ?? "UNKNOWN").toUpperCase();
     const motivo = str(t.reason);
     return {
       kind: "channel_template_review",
       severity: GRAVIDADE_DO_TEMPLATE[estado] ?? "warn",
-      title: `Modelo "${nome}": ${estado}`,
+      title: preencher(traduzir('Modelo "{nome}": {estado}', idioma), { nome, estado }),
       // "NONE" é como a plataforma diz "sem motivo" — repassá-lo seria mostrar
       // ruído no lugar onde o operador procura a explicação.
       body: motivo && motivo.toUpperCase() !== "NONE" ? motivo : null,
     };
   }
 
-  const numero = GRAVIDADE_DO_NUMERO[evento];
-  if (numero) {
+  const gravidade = GRAVIDADE_DO_NUMERO[evento];
+  if (gravidade) {
     const detalhe = str(p.reason) ?? str(obj(p.number)?.reason) ?? null;
     return {
       kind: "channel_number_alert",
-      severity: numero.sev,
-      title: numero.texto,
+      severity: gravidade,
+      title: traduzir(TITULO_DO_NUMERO[evento] ?? evento, idioma),
       body: detalhe,
     };
   }
@@ -183,12 +203,18 @@ export function saudeDoEvento(payload: unknown): SaudeObservada | null {
  * em rajada (uma revisão em lote mexe em vários templates). Sem a checagem, a
  * Central viraria uma lista do mesmo aviso — e uma Central ruidosa é uma
  * Central que ninguém lê.
+ *
+ * Lê o idioma da empresa (não lança: leitura que falha vira português) e pede
+ * o aviso nesse idioma a `montar`. O dedupe é pelo título nesse idioma: empresa
+ * que troca de idioma com um aviso aberto ganha um segundo, no idioma novo — um
+ * aviso a mais, nunca um a menos.
  */
 export async function registrarAviso(
   admin: SupabaseClient,
   organizationId: string,
-  aviso: AvisoDeCanal,
+  montar: (idioma: Idioma) => AvisoDeCanal,
 ): Promise<"criado" | "ja_aberto"> {
+  const aviso = montar(await idiomaDaOrgPeloSupabase(admin, organizationId));
   const { data: jaAberto } = await admin
     .from("agent_inbox_items")
     .select("id")

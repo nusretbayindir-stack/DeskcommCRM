@@ -1,0 +1,216 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+
+import ts from "typescript";
+import { describe, expect, it } from "vitest";
+
+/**
+ * NENHUM TEXTO FIXO EM PORTUGUÊS VAI PARA A CENTRAL (S2a Task 5, U14 — revisão
+ * final, I1/I2).
+ *
+ * A guarda `central-fala-o-idioma-da-org` é de vizinhança: um arquivo que
+ * traduz UM aviso passava com outro aviso em português ao lado. Esta lê o
+ * código: em toda gravação na Central — `.insert/.update/.upsert` sobre
+ * `agent_inbox_items`, `insertInboxItem(...)` e SQL `insert into
+ * agent_inbox_items` — o `title`/`body` não pode ser prosa portuguesa fixa.
+ * Resolve constantes do próprio arquivo (`TITULO`, `TEXTOS.x`), concatenação,
+ * template e ternário; o que passa por `traduzir(...)` está traduzido. E o
+ * idioma da Central não pode ser fixado em `"pt-BR"`.
+ *
+ * Exceção só com motivo, e só encolhe.
+ */
+
+const RAIZ = process.cwd();
+
+function arquivos(dir: string): string[] {
+  const saida: string[] = [];
+  for (const nome of readdirSync(dir)) {
+    if (nome === "node_modules" || nome.startsWith(".")) continue;
+    const caminho = join(dir, nome);
+    if (statSync(caminho).isDirectory()) saida.push(...arquivos(caminho));
+    else if (/\.tsx?$/.test(nome) && !/\.test\.tsx?$/.test(nome)) saida.push(caminho);
+  }
+  return saida;
+}
+
+const GRAVA_NA_CENTRAL = /agent_inbox_items|\binsertInboxItem\s*\(/;
+
+/** Prosa portuguesa: tem espaço e acento português ou palavra de ligação. */
+function ehProsa(texto: string): boolean {
+  const t = texto.trim();
+  if (!/\s/.test(t) || t.length < 12) return false;
+  return /[ãõçáéíóúâêô]/i.test(t) || /\b(não|de|do|da|dos|das|que|para|com|sem|uma|um|foi|está|ou|em|no|na|ao|e|o|a|os|as)\b/i.test(t);
+}
+
+interface Achado {
+  arquivo: string;
+  linha: number;
+  texto: string;
+}
+
+function analisar(caminho: string, fonte: string): Achado[] {
+  const arq = ts.createSourceFile(caminho, fonte, ts.ScriptTarget.Latest, true);
+  const declaracoes = new Map<string, ts.Expression[]>();
+  const coletar = (no: ts.Node) => {
+    if (ts.isVariableDeclaration(no) && ts.isIdentifier(no.name) && no.initializer) {
+      const lista = declaracoes.get(no.name.text) ?? [];
+      lista.push(no.initializer);
+      declaracoes.set(no.name.text, lista);
+    }
+    ts.forEachChild(no, coletar);
+  };
+  coletar(arq);
+
+  const desembrulhar = (e: ts.Expression): ts.Expression => {
+    let x = e;
+    while (ts.isParenthesizedExpression(x) || ts.isAsExpression(x) || ts.isNonNullExpression(x) || ts.isSatisfiesExpression(x)) {
+      x = x.expression;
+    }
+    return x;
+  };
+
+  /** Os textos fixos que uma expressão pode valer (vazio = desconhecido ou traduzido). */
+  const textos = (e: ts.Expression, visitados = new Set<string>()): string[] => {
+    const x = desembrulhar(e);
+    if (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x)) return [x.text];
+    if (ts.isTemplateExpression(x)) return [x.head.text + x.templateSpans.map((s) => ` ${s.literal.text}`).join("")];
+    if (ts.isBinaryExpression(x) && x.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+      const esq = textos(x.left, visitados);
+      const dir = textos(x.right, visitados);
+      return [`${esq.join(" ")} ${dir.join(" ")}`];
+    }
+    if (ts.isConditionalExpression(x)) return [...textos(x.whenTrue, visitados), ...textos(x.whenFalse, visitados)];
+    if (ts.isBinaryExpression(x) && (x.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken || x.operatorToken.kind === ts.SyntaxKind.BarBarToken)) {
+      return [...textos(x.left, visitados), ...textos(x.right, visitados)];
+    }
+    if (ts.isIdentifier(x)) {
+      if (visitados.has(x.text)) return [];
+      visitados.add(x.text);
+      return (declaracoes.get(x.text) ?? []).flatMap((d) => textos(d, visitados));
+    }
+    if (ts.isPropertyAccessExpression(x) && ts.isIdentifier(x.expression)) {
+      const chave = `${x.expression.text}.${x.name.text}`;
+      if (visitados.has(chave)) return [];
+      visitados.add(chave);
+      return (declaracoes.get(x.expression.text) ?? []).flatMap((d) => {
+        const obj = desembrulhar(d);
+        if (!ts.isObjectLiteralExpression(obj)) return [];
+        const prop = obj.properties.find(
+          (p) => ts.isPropertyAssignment(p) && p.name.getText(arq).replace(/["']/g, "") === x.name.text,
+        );
+        return prop && ts.isPropertyAssignment(prop) ? textos(prop.initializer, visitados) : [];
+      });
+    }
+    // Chamadas (traduzir, preencher, montadores) e o resto: não é texto fixo aqui.
+    return [];
+  };
+
+  const achados: Achado[] = [];
+  const registrar = (no: ts.Node, candidatos: string[]) => {
+    for (const t of candidatos) {
+      if (ehProsa(t)) {
+        achados.push({
+          arquivo: relative(RAIZ, caminho).split("\\").join("/"),
+          linha: arq.getLineAndCharacterOfPosition(no.getStart()).line + 1,
+          texto: t.slice(0, 80),
+        });
+      }
+    }
+  };
+
+  /** title/body em objetos dentro dos argumentos de uma gravação. */
+  const varrerObjetos = (raiz: ts.Node) => {
+    const visitar = (no: ts.Node) => {
+      if (ts.isPropertyAssignment(no) && ["title", "body"].includes(no.name.getText(arq))) {
+        registrar(no, textos(no.initializer));
+      }
+      if (ts.isShorthandPropertyAssignment(no) && ["title", "body"].includes(no.name.text)) {
+        registrar(no, textos(no.name));
+      }
+      ts.forEachChild(no, visitar);
+    };
+    visitar(raiz);
+  };
+
+  const visitar = (no: ts.Node) => {
+    if (ts.isCallExpression(no)) {
+      const alvo = no.expression.getText(arq);
+      const ehGravacaoSupabase =
+        ts.isPropertyAccessExpression(no.expression) &&
+        ["insert", "update", "upsert"].includes(no.expression.name.text) &&
+        alvo.includes("agent_inbox_items");
+      const ehInsertInboxItem = /(^|\.)insertInboxItem$/.test(alvo);
+      if (ehGravacaoSupabase || ehInsertInboxItem) {
+        for (const arg of no.arguments) {
+          varrerObjetos(arg);
+          // `insert(novos)`: a lista montada antes, numa variável do arquivo.
+          const x = desembrulhar(arg);
+          if (ts.isIdentifier(x)) (declaracoes.get(x.text) ?? []).forEach(varrerObjetos);
+        }
+      }
+
+      const [sql, params] = no.arguments;
+      if (ts.isPropertyAccessExpression(no.expression) && no.expression.name.text === "query" && sql) {
+        const textoDoSql = textos(sql).join(" ");
+        if (/(insert\s+into|update)\s+agent_inbox_items/i.test(textoDoSql)) {
+          // Literal português escrito dentro do próprio SQL: os literais um a
+          // um e na ordem, sem os comentários `--`.
+          const semComentario = textoDoSql.replace(/--[^\n]*/g, "");
+          for (const m of semComentario.matchAll(/'((?:[^']|'')*)'/g)) registrar(sql, [m[1]!]);
+          if (params && ts.isArrayLiteralExpression(desembrulhar(params))) {
+            for (const el of (desembrulhar(params) as ts.ArrayLiteralExpression).elements) {
+              registrar(el, textos(el as ts.Expression));
+            }
+          }
+        }
+      }
+    }
+    ts.forEachChild(no, visitar);
+  };
+  visitar(arq);
+  return achados;
+}
+
+/** Gravadores que, com motivo, mantêm texto fixo. Só encolhe. */
+const EXCECOES: Record<string, string> = {};
+
+const gravadores = ["app", "lib", "workers"]
+  .flatMap((d) => arquivos(join(RAIZ, d)))
+  .map((absoluto) => ({ absoluto, fonte: readFileSync(absoluto, "utf8") }))
+  .filter(({ fonte }) => GRAVA_NA_CENTRAL.test(fonte));
+
+const achados = gravadores.flatMap(({ absoluto, fonte }) => analisar(absoluto, fonte));
+
+describe("nenhum texto fixo em português vai para a Central", () => {
+  it("controle: o detector acha prosa fixa num gravador de exemplo", () => {
+    const exemplo = `
+      const TITULO = "Um aviso que ficou em português";
+      await admin.from("agent_inbox_items").insert({ title: TITULO, body: "Corpo com " + x + " e mais" });
+      await insertInboxItem(db, { title: \`Lead \${a} ficou sem dono\`, body: traduzir("x", idioma) }, "k");
+      await db.query("insert into agent_inbox_items (title) values ($1)", [TITULO]);
+      await db.query(\`insert into agent_inbox_items (title) select 'Cliente faltou e não respondeu'\`, []);
+    `;
+    const r = analisar(join(RAIZ, "exemplo.ts"), exemplo);
+    expect(r.map((a) => a.linha)).toEqual([3, 3, 4, 5, 6]);
+  });
+
+  it("nenhuma gravação na Central leva prosa portuguesa fixa", () => {
+    const fora = achados
+      .filter((a) => !(a.arquivo in EXCECOES))
+      .map((a) => `${a.arquivo}:${a.linha} → ${a.texto}`);
+    expect(fora, `${fora.length} texto(s) fixo(s) em português indo para a Central`).toEqual([]);
+  });
+
+  it("o idioma da Central não é fixado em português", () => {
+    const fixos = gravadores
+      // Constante de módulo; o padrão de parâmetro (`idioma: Idioma = "pt-BR"`) é legítimo.
+      .filter(({ fonte }) => /\bconst\s+\w+\s*:\s*Idioma\s*=\s*["']pt-BR["']|traduzir\([^)]*,\s*["']pt-BR["']\s*\)/.test(fonte))
+      .map(({ absoluto }) => relative(RAIZ, absoluto).split("\\").join("/"));
+    expect(fixos, "idioma da Central fixado em pt-BR").toEqual([]);
+  });
+
+  it("a exceção só lista quem ainda tem texto fixo", () => {
+    const mortas = Object.keys(EXCECOES).filter((arq) => !achados.some((a) => a.arquivo === arq));
+    expect(mortas).toEqual([]);
+  });
+});

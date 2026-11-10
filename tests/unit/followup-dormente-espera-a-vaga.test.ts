@@ -38,7 +38,9 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it, vi } from "vitest";
 
+import { avisoDeRetornoSemVaga } from "@/lib/followup/avisos-da-central";
 import { DICIONARIO } from "@/lib/i18n/dicionario";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import {
   INTERVALO_DA_VAGA_OCUPADA_MS,
   LIMITE_DA_VAGA_OCUPADA_MS,
@@ -119,6 +121,8 @@ function loja(opts: {
   quantas?: number;
   /** Quem ocupa a vaga do contato: `null` = livre, `"outro"` = outro fluxo. */
   vaga?: string | null;
+  /** O idioma da empresa, como o adaptador de produção o lê (S2a Task 5). */
+  idioma?: Idioma;
 } = {}) {
   let agora = AGORA;
   let vaga = opts.vaga === undefined ? "outro" : opts.vaga;
@@ -187,6 +191,7 @@ function loja(opts: {
     },
     loadFlowPointerName: async () => "Prospecção · abordagem por IA",
     insertDeadInboxItem: avisos,
+    ...(opts.idioma ? { idiomaDaOrg: async () => opts.idioma! } : {}),
     persistirRespostaFollowup: async () => undefined,
   };
   const tick = () => runFollowupTick({ db, clock: () => agora, enqueueJob: async () => undefined });
@@ -339,6 +344,18 @@ describe("a dormente acorda e encontra outro fluxo no contato", () => {
     expect(l.eventosDoTipo("gave_up_taken_slot")).toHaveLength(1);
     // A espera não foi repetida: a trilha tem UM registro do começo da espera.
     expect(l.eventosDoTipo("waiting_for_taken_slot")).toHaveLength(1);
+  });
+
+  it("o aviso da desistência sai no idioma da empresa (S2a Task 5)", async () => {
+    const l = loja({ status: "dormente", idioma: "tr" });
+    l.semearEspera(new Date(AGORA.getTime() - 8 * DIA_MS).toISOString());
+    await l.tick();
+
+    expect(l.avisos).toHaveBeenCalledTimes(1);
+    expect(l.avisos.mock.calls[0]![0]).toMatchObject(
+      avisoDeRetornoSemVaga({ nome: "Prospecção · abordagem por IA", id: "enr-1" }, "tr"),
+    );
+    expect(l.avisos.mock.calls[0]![0].title).not.toBe("Um retorno programado não pôde ser enviado");
   });
 
   it("a fronteira do limite é o limite: um minuto antes, ainda adia", async () => {
