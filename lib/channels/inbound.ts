@@ -426,7 +426,11 @@ async function zernioEventoConferido(
       return { ok: true, body: { status: "saude", kind: aviso.kind, desfecho, espelhado } };
     }
 
-    const desfecho = await registrarAviso(admin, input.session.organization_id, aviso);
+    const desfecho = await registrarAviso(
+      admin,
+      input.session.organization_id,
+      (idioma) => avisoDoEvento(payload, idioma) ?? aviso,
+    );
     return { ok: true, body: { status: "aviso", kind: aviso.kind, desfecho, espelhado } };
   }
 

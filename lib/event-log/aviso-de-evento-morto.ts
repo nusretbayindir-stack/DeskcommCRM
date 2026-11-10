@@ -76,6 +76,7 @@
 
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMA_PADRAO, IDIOMAS, type Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 
 const TEXTOS_DO_AVISO = {
   detalheTecnico: "Detalhe técnico, para quem der suporte:",
@@ -239,14 +240,6 @@ const GENERICO = {
   consequencia: TEXTOS_DO_AVISO.genericoConsequencia,
   rearme: TEXTOS_DO_AVISO.genericoRearme,
 } as const;
-
-/**
- * Troca `{nome}` pelo valor numa passada só: o valor que trouxer `{outro}` ou
- * `$&` (o motivo é texto de banco) entra como está.
- */
-function preencher(texto: string, valores: Record<string, string | number>): string {
-  return texto.replace(/\{(\w+)\}/g, (marca, nome: string) => (nome in valores ? String(valores[nome]) : marca));
-}
 
 function contagemDeTentativas(n: number, idioma: Idioma): string {
   if (n === 0) return textoDoAviso("nenhumaTentativa", idioma);

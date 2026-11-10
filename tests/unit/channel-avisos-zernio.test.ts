@@ -140,7 +140,7 @@ describe("gravação do aviso", () => {
   const aviso = { kind: "channel_number_alert" as const, severity: "critical" as const, title: "Número SUSPENSO", body: null };
 
   it("grava quando é novo", async () => {
-    expect(await registrarAviso(admin, "org", aviso)).toBe("criado");
+    expect(await registrarAviso(admin, "org", () => aviso)).toBe("criado");
     const ins = ops.find((o) => o.tabela === "agent_inbox_items" && o.op === "insert");
     expect(ins?.payload).toMatchObject({ kind: "channel_number_alert", severity: "critical" });
   });
@@ -149,7 +149,7 @@ describe("gravação do aviso", () => {
     // A plataforma reentrega quando não recebe 200, e alguns eventos chegam em
     // rajada (uma revisão em lote mexe em vários modelos de uma vez).
     jaAberto = { id: "existente" };
-    expect(await registrarAviso(admin, "org", aviso)).toBe("ja_aberto");
+    expect(await registrarAviso(admin, "org", () => aviso)).toBe("ja_aberto");
     expect(ops.some((o) => o.op === "insert")).toBe(false);
   });
 });

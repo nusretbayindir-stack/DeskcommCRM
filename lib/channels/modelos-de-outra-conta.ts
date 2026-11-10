@@ -27,39 +27,65 @@
  * Falha aqui nunca desfaz a conexão nem a sincronização: um modelo velho a mais
  * é ruim, uma conexão que não fecha é pior. Mas fica na Central, não só no log,
  * e o aviso se fecha sozinho na primeira limpeza que passar (DoD 13).
+ *
+ * ─── No idioma da empresa (S2a Task 5, U14) ─────────────────────────────────
+ *
+ * `registrarAviso` lê o idioma e pede o aviso nele. O aviso dos que ficaram é
+ * fechado pelo título em TODO idioma: o aberto pode ter nascido antes de a
+ * empresa trocar de idioma, e não fechá-lo deixaria um aviso falso para sempre.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { traduzir } from "@/lib/i18n/dicionario";
+import { emCadaIdioma } from "@/lib/i18n/em-cada-idioma";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 import { logger } from "@/lib/logger";
 
 import { registrarAviso } from "./zernio/avisos";
 
-export const AVISO_MODELOS_SAIRAM = "Os modelos da conta anterior saíram desta conexão";
-export const AVISO_MODELOS_FICARAM = "Os modelos da conta anterior seguem nesta conexão";
+/** Os textos do aviso: uma tabela de literais, para a guarda do dicionário cobrar cada tradução. */
+const TEXTOS = {
+  tituloSairam: "Os modelos da conta anterior saíram desta conexão",
+  tituloFicaram: "Os modelos da conta anterior seguem nesta conexão",
+  umSaiu: "1 modelo da conta anterior saiu",
+  nSairam: "{n} modelos da conta anterior saíram",
+  corpoDosQueSairam:
+    "Esta conexão passou para outra conta, e {oQueSaiu}: a plataforma os recusaria no envio. Quem usava um deles ficou sem modelo. Sincronize os modelos da conta atual e escolha de novo no aviso à equipe, no lembrete da Agenda e nos passos de follow-up.",
+  corpoDosQueFicaram:
+    "Esta conexão passou para outra conta, mas os modelos da anterior não puderam sair: eles seguem na lista e a plataforma os recusa no envio. Se houver serviço da Agenda ativo sem horários ou sem profissional válido, corrija-o primeiro: enquanto ele estiver assim, o banco recusa a limpeza. Depois clique em Sincronizar. O aviso se fecha quando a limpeza passar.",
+} as const;
+
+export const AVISO_MODELOS_SAIRAM = TEXTOS.tituloSairam;
+export const AVISO_MODELOS_FICARAM = TEXTOS.tituloFicaram;
 
 const KIND = "channel_template_review" as const;
 
-function corpoDosQueSairam(quantos: number): string {
+function avisoDosQueSairam(quantos: number, idioma: Idioma): { title: string; body: string } {
   const oQueSaiu =
-    quantos === 1
-      ? "1 modelo da conta anterior saiu"
-      : `${quantos} modelos da conta anterior saíram`;
-  return (
-    `Esta conexão passou para outra conta, e ${oQueSaiu}: a plataforma os recusaria no envio. ` +
-    "Quem usava um deles ficou sem modelo. Sincronize os modelos da conta atual e escolha de " +
-    "novo no aviso à equipe, no lembrete da Agenda e nos passos de follow-up."
-  );
+    quantos === 1 ? traduzir(TEXTOS.umSaiu, idioma) : preencher(traduzir(TEXTOS.nSairam, idioma), { n: quantos });
+  return {
+    title: traduzir(TEXTOS.tituloSairam, idioma),
+    body: preencher(traduzir(TEXTOS.corpoDosQueSairam, idioma), { oQueSaiu }),
+  };
 }
 
-const CORPO_DOS_QUE_FICARAM =
-  "Esta conexão passou para outra conta, mas os modelos da anterior não puderam sair: eles " +
-  "seguem na lista e a plataforma os recusa no envio. Se houver serviço da Agenda ativo sem " +
-  "horários ou sem profissional válido, corrija-o primeiro: enquanto ele estiver assim, o banco " +
-  "recusa a limpeza. Depois clique em Sincronizar. O aviso se fecha quando a limpeza passar.";
+function avisoDosQueFicaram(idioma: Idioma): { title: string; body: string } {
+  return { title: traduzir(TEXTOS.tituloFicaram, idioma), body: traduzir(TEXTOS.corpoDosQueFicaram, idioma) };
+}
 
-async function avisar(admin: SupabaseClient, organizationId: string, title: string, body: string) {
+/** O título do aviso dos que ficaram em todo idioma visível, sem repetição. */
+const tituloDosQueFicaramEmTodoIdioma = (): string[] => [
+  ...new Set(Object.values(emCadaIdioma((idioma) => traduzir(TEXTOS.tituloFicaram, idioma)))),
+];
+
+async function avisar(
+  admin: SupabaseClient,
+  organizationId: string,
+  montar: (idioma: Idioma) => { title: string; body: string },
+) {
   try {
-    await registrarAviso(admin, organizationId, { kind: KIND, severity: "warn", title, body });
+    await registrarAviso(admin, organizationId, (idioma) => ({ kind: KIND, severity: "warn", ...montar(idioma) }));
   } catch (err) {
     logger.warn("[channels.modelos] aviso na Central não foi aberto", {
       detail: err instanceof Error ? err.message : String(err),
@@ -91,7 +117,7 @@ export async function limparModelosDeOutraConta(
       session_id: alvo.sessionId,
       detail: err instanceof Error ? err.message : String(err),
     });
-    await avisar(admin, alvo.organizationId, AVISO_MODELOS_FICARAM, CORPO_DOS_QUE_FICARAM);
+    await avisar(admin, alvo.organizationId, avisoDosQueFicaram);
     return 0;
   }
 
@@ -101,7 +127,7 @@ export async function limparModelosDeOutraConta(
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
       .eq("organization_id", alvo.organizationId)
       .eq("kind", KIND)
-      .eq("title", AVISO_MODELOS_FICARAM)
+      .in("title", tituloDosQueFicaramEmTodoIdioma())
       .eq("status", "open");
     if (error) throw new Error(error.message);
   } catch (err) {
@@ -112,7 +138,7 @@ export async function limparModelosDeOutraConta(
   }
 
   if (apagados > 0) {
-    await avisar(admin, alvo.organizationId, AVISO_MODELOS_SAIRAM, corpoDosQueSairam(apagados));
+    await avisar(admin, alvo.organizationId, (idioma) => avisoDosQueSairam(apagados, idioma));
   }
   return apagados;
 }

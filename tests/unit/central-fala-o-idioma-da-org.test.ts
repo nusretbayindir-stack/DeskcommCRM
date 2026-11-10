@@ -26,6 +26,8 @@ const GRAVA_NA_CENTRAL = [
   // O ajudante genérico do engine (`lib/agent-engine/db/repository.ts`): quem o
   // chama é quem escreve o título e o corpo.
   /\binsertInboxItem\s*\(/,
+  // `registrarAviso` (lib/channels/zernio/avisos.ts) NÃO entra aqui: ela mesma lê
+  // o idioma e só aceita `montar(idioma)`, então o tipo já cobra quem a chama.
 ];
 const LE_O_IDIOMA = /traduzir|idiomaDa|\bIdioma\b/;
 
@@ -47,7 +49,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/agent-engine/obs/metrics.ts",
   "lib/ai/credenciais/aviso-da-assinatura.ts",
   "lib/channels/aviso-do-agendador.ts",
-  "lib/channels/zernio/avisos.ts",
   "lib/event-log/aviso-do-laco.ts",
   "lib/followup/engine.ts",
   "lib/followup/turn-bridge.ts",

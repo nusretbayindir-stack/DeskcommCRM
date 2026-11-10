@@ -14396,6 +14396,22 @@ export const DICIONARIO: Traducoes = {
   "Enquanto este aviso estiver aberto, outras tarefas automáticas que pararem de tentar não abrem aviso novo (a IA que deixa de responder um cliente abre o seu próprio): depois de corrigida a causa, marque-o como resolvido para voltar a ser avisado.": {
     es: "Mientras este aviso esté abierto, otras tareas automáticas que dejen de intentarlo no abren un aviso nuevo (la IA que deja de responder a un cliente abre el suyo propio): una vez corregida la causa, márcalo como resuelto para volver a recibir avisos.",
   },
+  // lib/channels/zernio/avisos.ts e lib/channels/modelos-de-outra-conta.ts (TEXTOS)
+  "Modelo \"{nome}\": {estado}": { es: "Plantilla \"{nome}\": {estado}" },
+  "Os modelos da conta anterior saíram desta conexão": {
+    es: "Las plantillas de la cuenta anterior salieron de esta conexión",
+  },
+  "Os modelos da conta anterior seguem nesta conexão": {
+    es: "Las plantillas de la cuenta anterior siguen en esta conexión",
+  },
+  "1 modelo da conta anterior saiu": { es: "salió 1 plantilla de la cuenta anterior" },
+  "{n} modelos da conta anterior saíram": { es: "salieron {n} plantillas de la cuenta anterior" },
+  "Esta conexão passou para outra conta, e {oQueSaiu}: a plataforma os recusaria no envio. Quem usava um deles ficou sem modelo. Sincronize os modelos da conta atual e escolha de novo no aviso à equipe, no lembrete da Agenda e nos passos de follow-up.": {
+    es: "Esta conexión pasó a otra cuenta y {oQueSaiu}: la plataforma las rechazaría al enviar. Quien usaba alguna de ellas se quedó sin plantilla. Sincroniza las plantillas de la cuenta actual y vuelve a elegir en el aviso al equipo, en el recordatorio de la Agenda y en los pasos de seguimiento.",
+  },
+  "Esta conexão passou para outra conta, mas os modelos da anterior não puderam sair: eles seguem na lista e a plataforma os recusa no envio. Se houver serviço da Agenda ativo sem horários ou sem profissional válido, corrija-o primeiro: enquanto ele estiver assim, o banco recusa a limpeza. Depois clique em Sincronizar. O aviso se fecha quando a limpeza passar.": {
+    es: "Esta conexión pasó a otra cuenta, pero las plantillas de la anterior no pudieron salir: siguen en la lista y la plataforma las rechaza al enviar. Si hay un servicio de la Agenda activo sin horarios o sin un profesional válido, corrígelo primero: mientras siga así, la base de datos rechaza la limpieza. Después haz clic en Sincronizar. El aviso se cierra cuando la limpieza se complete.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
