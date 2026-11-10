@@ -23,11 +23,17 @@ import { arquivosDeCodigo, caminhoRelativo } from "./helpers/varrer-codigo";
 const GRAVA_NA_CENTRAL = [
   /from\(\s*["'`]agent_inbox_items["'`]\s*\)\s*\.\s*(insert|upsert)\s*\(/,
   /insert\s+into\s+(public\.)?agent_inbox_items\b/i,
+  // O ajudante genérico do engine (`lib/agent-engine/db/repository.ts`): quem o
+  // chama é quem escreve o título e o corpo.
+  /\binsertInboxItem\s*\(/,
 ];
 const LE_O_IDIOMA = /traduzir|idiomaDa|\bIdioma\b/;
 
 /** Arquivos que gravam na Central sem texto de tela para traduzir, com o motivo. Só encolhe. */
-const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {};
+const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {
+  "lib/agent-engine/db/repository.ts":
+    "`insertInboxItem` é genérico: título e corpo chegam prontos de quem chama, e quem chama é cobrado por esta guarda",
+};
 
 /**
  * Os que ESTA PR ainda vai corrigir, grupo a grupo (S2a Task 5). Andaime: só
@@ -36,7 +42,7 @@ const SEM_TEXTO_PARA_TRADUZIR: Record<string, string> = {};
 const PENDENTES_DESTA_PR = new Set<string>([
   "app/api/v1/admin/tenants/[id]/members/[userId]/email/route.ts",
   "app/api/v1/cron/task-reminder/route.ts",
-  "lib/agent-engine/db/repository.ts",
+  "lib/agent-engine/edge/crm/drain.ts",
   "lib/agent-engine/edge/crm/vigilancia-do-drain.ts",
   "lib/agent-engine/guardrails/lgpd/legal-basis.ts",
   "lib/agent-engine/obs/metrics.ts",
