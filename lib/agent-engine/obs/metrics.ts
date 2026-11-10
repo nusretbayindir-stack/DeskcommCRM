@@ -22,6 +22,9 @@ import type pg from 'pg';
 
 import { sessionHealthMetrics, type SessionHealthMetric } from '../edge/crm/session-watchdog';
 import type { JobRow, Queryable } from '../queue/queue';
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { traduzir } from '@/lib/i18n/dicionario';
+import { preencher } from '@/lib/i18n/preencher';
 
 /** nome da métrica de 1ª classe do caching — âncora do alerta e dos testes */
 export const CACHE_RATIO_METRIC = 'run_cache_read_ratio';
@@ -145,6 +148,13 @@ export interface CacheAlertResult {
  * exatamente 1× por episódio (enquanto houver item aberto, avaliações novas não
  * duplicam — humano resolve fecha o episódio).
  */
+/** O texto do alerta, no idioma da empresa (S2a Task 5, U14); os números entram crus. */
+const TEXTOS_DO_ALERTA_DE_CACHE = {
+  titulo: 'Cache hit de prompt abaixo do alvo — custo por run acima do esperado',
+  corpo:
+    'média de cache_read/input nos últimos {runs} runs da janela = {media}% (alvo ≥ {alvo}%). Prefixo do prompt possivelmente abaixo do mínimo cacheável do modelo ou com conteúdo volátil antes do último breakpoint — ver CLAUDE.md regra 15 e o smoke de caching.',
+} as const;
+
 export async function evaluateCacheHitAlert(
   db: pg.Pool,
   tenantId: string,
@@ -162,23 +172,25 @@ export async function evaluateCacheHitAlert(
   if (runs < knobs.cacheHitAlertMinRuns || avgRatio === null || avgRatio >= knobs.cacheHitAlertThreshold) {
     return { runs, avgRatio, alerted: false };
   }
+  // No idioma da empresa (S2a Task 5): lido só quando há alerta a abrir. A
+  // deduplicação é por `ref_kind`, que não muda com o idioma.
+  const idioma = await idiomaDaOrgPeloPg(db, tenantId);
   const res = await db.query(
     `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind)
-     select $1, 'other', 'warn',
-            'Cache hit de prompt abaixo do alvo — custo por run acima do esperado',
-            $2,
-            $3
+     select $1, 'other', 'warn', $4, $2, $3
      where not exists (
        select 1 from agent_inbox_items
        where organization_id = $1 and ref_kind = $3 and status = 'open'
      )`,
     [
       tenantId,
-      `média de cache_read/input nos últimos ${runs} runs da janela = ` +
-        `${(avgRatio * 100).toFixed(1)}% (alvo ≥ ${(knobs.cacheHitAlertThreshold * 100).toFixed(0)}%). ` +
-        'Prefixo do prompt possivelmente abaixo do mínimo cacheável do modelo ou com conteúdo ' +
-        'volátil antes do último breakpoint — ver CLAUDE.md regra 15 e o smoke de caching.',
+      preencher(traduzir(TEXTOS_DO_ALERTA_DE_CACHE.corpo, idioma), {
+        runs,
+        media: (avgRatio * 100).toFixed(1),
+        alvo: (knobs.cacheHitAlertThreshold * 100).toFixed(0),
+      }),
       CACHE_ALERT_REF_KIND,
+      traduzir(TEXTOS_DO_ALERTA_DE_CACHE.titulo, idioma),
     ],
   );
   return { runs, avgRatio, alerted: (res.rowCount ?? 0) > 0 };

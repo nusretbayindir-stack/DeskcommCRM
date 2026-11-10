@@ -14556,6 +14556,23 @@ export const DICIONARIO: Traducoes = {
   "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então o áudio não foi enviado ao provedor": {
     es: "se alcanzó el límite de gasto en IA de este mes y la IA está configurada para detenerse en él, así que el audio no se envió al proveedor",
   },
+  // veto de LGPD (lib/agent-engine/guardrails/lgpd/legal-basis.ts) e alerta de cache (lib/agent-engine/obs/metrics.ts)
+  "Contato anonimizado — envio bloqueado por LGPD": { es: "Contacto anonimizado — envío bloqueado por la LGPD" },
+  "O contato deste lead está anonimizado no CRM (anonimização é irreversível): nenhum envio pode ir a ele. Confira o cadastro no CRM — se for engano, reverta a anonimização lá.": {
+    es: "El contacto de este lead está anonimizado en el CRM (la anonimización es irreversible): ningún envío puede llegarle. Revisa el registro en el CRM — si es un error, revierte la anonimización allí.",
+  },
+  "Base legal ausente/inválida — 1º toque bloqueado por LGPD": {
+    es: "Base legal ausente/inválida — primer contacto bloqueado por la LGPD",
+  },
+  "O 1º toque de prospecção a este lead foi bloqueado por falta de base legal válida (consent concedido, ou legitimate_interest com LIA; origem \"import\" exige prova). Registre a base legal no CRM antes de prospectar este contato.": {
+    es: "El primer contacto de prospección con este lead se bloqueó por falta de una base legal válida (consent concedido, o legitimate_interest con LIA; el origen \"import\" exige prueba). Registra la base legal en el CRM antes de prospectar este contacto.",
+  },
+  "Cache hit de prompt abaixo do alvo — custo por run acima do esperado": {
+    es: "Cache hit del prompt por debajo del objetivo — costo por run mayor de lo esperado",
+  },
+  "média de cache_read/input nos últimos {runs} runs da janela = {media}% (alvo ≥ {alvo}%). Prefixo do prompt possivelmente abaixo do mínimo cacheável do modelo ou com conteúdo volátil antes do último breakpoint — ver CLAUDE.md regra 15 e o smoke de caching.": {
+    es: "promedio de cache_read/input en los últimos {runs} runs de la ventana = {media}% (objetivo ≥ {alvo}%). Prefijo del prompt posiblemente por debajo del mínimo cacheable del modelo o con contenido volátil antes del último breakpoint — ver CLAUDE.md regla 15 y el smoke de caching.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
