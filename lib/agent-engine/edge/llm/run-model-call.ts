@@ -51,19 +51,19 @@ import { enviosEmOrdemDeChegada } from './envios-em-ordem';
 import {
   AVISO_CORPO,
   AVISO_TITULO,
-  BLOQUEIO_TITULO,
-  CORPO_TETO_DO_PLANO,
   corpoDoBloqueio,
   decidirOrcamento,
   decidirTetoDoPlano,
   lerTetoDoPlano,
   MOTIVO_TETO_DO_PLANO,
-  TITULO_TETO_DO_PLANO,
   normalizarModoDeOrcamento,
   LIMIAR_PADRAO_PCT,
   SQL_ORCAMENTO,
+  textoDaCentral,
   type ChaveDeOrcamento,
 } from './orcamento';
+import { idiomaDaOrgPeloPg } from '@/lib/ai/agents/idioma-da-org';
+import { IDIOMA_PADRAO, type Idioma } from '@/lib/i18n/idiomas';
 import { corpoComoObjeto, custoInformadoPeloOpenRouter, custoTerraPorPassos, costCents, gravacaoDeUmaHora } from './pricing';
 import { custoDoModeloForaDoMotor } from './pricing-do-catalogo';
 import { chaveDeOrcamentoDaInstalacao } from '../../../instalacao/comportamento';
@@ -400,6 +400,8 @@ interface LinhaDoOrcamento {
   /** `numeric` do Postgres chega como STRING no node-pg. Sempre coagir. */
   gasto: string | number | null;
   avisado_antes: boolean | null;
+  /** O `budget_warning` que este statement abriu, ou nulo. */
+  aviso_id?: string | null;
 }
 
 /**
@@ -491,8 +493,10 @@ export async function aplicarOrcamento(d: EntradaDoGate): Promise<void> {
     ) {
       await recusarPorTeto(d, {
         refKind: 'plano',
-        titulo: TITULO_TETO_DO_PLANO,
-        corpo: CORPO_TETO_DO_PLANO,
+        texto: (idioma) => ({
+          titulo: textoDaCentral('tetoDoPlanoTitulo', idioma),
+          corpo: textoDaCentral('tetoDoPlanoCorpo', idioma),
+        }),
         erro: new LlmBudgetExceededError(MOTIVO_TETO_DO_PLANO),
         gastoCents: plano.gastoUsdCents,
         tetoCents: plano.tetoUsdCents ?? 0,
@@ -528,6 +532,7 @@ export async function aplicarOrcamento(d: EntradaDoGate): Promise<void> {
     });
     return;
   }
+  if (linha?.aviso_id) await avisoDoOrcamentoNoIdioma(d, linha.aviso_id);
   if (linha === undefined) {
     // `select` de CTEs escalares sempre devolve uma linha; zero linhas aqui é
     // um mundo que não deveria existir, e nele a resposta segue sendo a frouxa.
@@ -566,13 +571,39 @@ export async function aplicarOrcamento(d: EntradaDoGate): Promise<void> {
 
   await recusarPorTeto(d, {
     refKind: 'ai_budget',
-    titulo: BLOQUEIO_TITULO,
-    corpo: corpoDoBloqueio(gastoCents, tetoCents),
+    texto: (idioma) => ({
+      titulo: textoDaCentral('bloqueioTitulo', idioma),
+      corpo: corpoDoBloqueio(gastoCents, tetoCents, idioma),
+    }),
     erro: new LlmBudgetExceededError(),
     gastoCents,
     tetoCents,
     inicio,
   });
+}
+
+/**
+ * Põe no idioma da empresa o `budget_warning` que o statement do orçamento
+ * acabou de abrir (S2a Task 5, U14). O idioma é lido só agora, quando o aviso
+ * existe: uma leitura a mais por mês e por empresa, e não uma por chamada de IA.
+ * Português fica como está; falha aqui deixa o aviso em português — nunca
+ * derruba a chamada, que já foi decidida.
+ */
+async function avisoDoOrcamentoNoIdioma(d: EntradaDoGate, avisoId: string): Promise<void> {
+  try {
+    const idioma = await idiomaDaOrgPeloPg(d.db, d.organizationId);
+    if (idioma === IDIOMA_PADRAO) return;
+    await d.db.query('update agent_inbox_items set title = $2, body = $3 where id = $1', [
+      avisoId,
+      textoDaCentral('avisoTitulo', idioma),
+      textoDaCentral('avisoCorpo', idioma),
+    ]);
+  } catch (err) {
+    d.log?.warn('llm: aviso de orçamento ficou em português — a tradução falhou', {
+      organization_id: d.organizationId,
+      ...normalizarErro(err),
+    });
+  }
 }
 
 /**
@@ -589,14 +620,15 @@ async function recusarPorTeto(
   d: EntradaDoGate,
   r: {
     refKind: 'ai_budget' | 'plano';
-    titulo: string;
-    corpo: string;
+    /** Título e corpo no idioma da empresa, lido aqui, na hora de gravar (U14). */
+    texto: (idioma: Idioma) => { titulo: string; corpo: string };
     erro: LlmBudgetExceededError;
     gastoCents: number;
     tetoCents: number;
     inicio: number;
   },
 ): Promise<never> {
+  const { titulo, corpo } = r.texto(await idiomaDaOrgPeloPg(d.db, d.organizationId));
   await d.db.query(
     `insert into agent_inbox_items (organization_id, kind, severity, title, body, ref_kind, ref_id)
      select $1, 'budget_exceeded', 'critical', $2, $3, '${r.refKind}', $1
@@ -613,7 +645,7 @@ async function recusarPorTeto(
      -- continua valendo. Cada família tem o seu índice (0540 para o orçamento
      -- da org; o da cobrança para o plano), então um não cala o outro.
      on conflict do nothing`,
-    [d.organizationId, r.titulo, r.corpo],
+    [d.organizationId, titulo, corpo],
   );
   // A recusa vira LINHA em llm_calls: a tela /app/ai/runs nasceu porque
   // "llm_calls só registrava sucesso", e o único caso em que o agente para DE

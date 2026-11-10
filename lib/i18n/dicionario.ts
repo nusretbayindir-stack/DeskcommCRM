@@ -14322,6 +14322,14 @@ export const DICIONARIO: Traducoes = {
   // Avisos para a EQUIPE, gravados no idioma da organização
   // (tests/unit/central-fala-o-idioma-da-org.test.ts). Bloco do fork.
   "Job descartado após esgotar tentativas": { es: "Tarea en segundo plano descartada tras agotar los intentos" },
+  // lib/agent-engine/edge/llm/orcamento.ts (TEXTOS_DA_CENTRAL)
+  "A IA continua respondendo normalmente — isto é o aviso, não a parada. Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.": {
+    es: "La IA sigue respondiendo con normalidad: esto es el aviso, no la parada. Mira cuánto se ha gastado y ajusta el límite en Uso de IA › Presupuesto.",
+  },
+  "O limite de gasto com IA foi atingido": { es: "Se alcanzó el límite de gasto con IA" },
+  "O gasto de IA deste mês chegou a {gasto} de um limite de {teto} ({pct}%), e você escolheu que a IA parasse ao chegar nele. As conversas que estavam sendo atendidas foram para a FILA DE ATENDIMENTO HUMANO — ninguém ficou sem próximo passo, mas alguém precisa responder. Aumentar o limite ou desligar a parada em Uso de IA › Orçamento evita paradas NOVAS; cada conversa já parada volta ao automático pelo botão \"Devolver ao automático\" no cabeçalho dela.": {
+    es: "El gasto de IA de este mes llegó a {gasto} de un límite de {teto} ({pct}%), y elegiste que la IA se detuviera al alcanzarlo. Las conversaciones que se estaban atendiendo pasaron a la COLA DE ATENCIÓN HUMANA: nadie se quedó sin un siguiente paso, pero alguien tiene que responder. Aumentar el límite o desactivar la parada en Uso de IA › Presupuesto evita paradas NUEVAS; cada conversación ya detenida vuelve al automático con el botón \"Devolver al automático\" de su encabezado.",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

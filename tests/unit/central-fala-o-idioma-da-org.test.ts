@@ -43,8 +43,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/agent-engine/cron/scheduler.ts",
   "lib/agent-engine/db/repository.ts",
   "lib/agent-engine/edge/crm/vigilancia-do-drain.ts",
-  "lib/agent-engine/edge/llm/orcamento.ts",
-  "lib/agent-engine/edge/llm/run-model-call.ts",
   "lib/agent-engine/guardrails/lgpd/legal-basis.ts",
   "lib/agent-engine/obs/metrics.ts",
   "lib/ai/credenciais/aviso-da-assinatura.ts",
@@ -59,7 +57,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "lib/leads/aviso-de-etapa.handler.ts",
   "lib/leads/risk-seed.ts",
   "lib/propostas/aviso-de-revisao.ts",
-  "workers/ai-response-worker.ts",
   "workers/media-derive-worker.ts",
 ]);
 
