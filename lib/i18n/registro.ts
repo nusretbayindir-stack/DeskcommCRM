@@ -85,6 +85,28 @@ export const REGISTRO_DE_IDIOMAS = [
     mantenedor: "Agenterix (@nusretbayindir-stack)",
   },
   {
+    codigo: "nl",
+    nomeNativo: "Nederlands",
+    rotuloCurto: "NL",
+    // `nl-BE` e não `nl`: o público é a Bélgica (Flandres e Bruxelas), e data,
+    // número e moeda saem como lá. Em construção até a leitura do catálogo acabar.
+    tagBcp47: "nl-BE",
+    subtagsDoNavegador: ["nl"],
+    nivel: "em_construcao",
+    mantenedor: "Agenterix (@nusretbayindir-stack)",
+  },
+  {
+    codigo: "fr",
+    nomeNativo: "Français",
+    rotuloCurto: "FR",
+    // `fr-BE` e não `fr`, pela mesma razão do neerlandês: a Bélgica (Bruxelas e
+    // Valônia). Em construção até a leitura do catálogo acabar.
+    tagBcp47: "fr-BE",
+    subtagsDoNavegador: ["fr"],
+    nivel: "em_construcao",
+    mantenedor: "Agenterix (@nusretbayindir-stack)",
+  },
+  {
     codigo: "zh-CN",
     nomeNativo: "简体中文",
     rotuloCurto: "中",
