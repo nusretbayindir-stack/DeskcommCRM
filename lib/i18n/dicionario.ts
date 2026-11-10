@@ -14483,6 +14483,79 @@ export const DICIONARIO: Traducoes = {
   "{critico} sem resposta há muito tempo e {esfriando} esfriando. Eles já estavam assim antes de o sistema passar a acompanhar — por isso aparecem juntos agora, e não porque algo aconteceu hoje. Encerrar o que morreu é o que faz o radar voltar a significar alguma coisa.": {
     es: "{critico} sin respuesta desde hace mucho tiempo y {esfriando} enfriándose. Ya estaban así antes de que el sistema empezara a hacer el seguimiento — por eso aparecen juntos ahora, y no porque algo haya pasado hoy. Cerrar lo que murió es lo que hace que el radar vuelva a significar algo.",
   },
+  // aviso de mídia não lida (workers/media-derive-worker.ts)
+  "O agente não conseguiu ler imagem que o cliente enviou": {
+    es: "El agente no pudo leer la imagen que envió el cliente",
+  },
+  "O agente não conseguiu ler áudio que o cliente enviou": {
+    es: "El agente no pudo leer el audio que envió el cliente",
+  },
+  "O agente não conseguiu ler documento que o cliente enviou": {
+    es: "El agente no pudo leer el documento que envió el cliente",
+  },
+  "O agente não conseguiu ler vídeo que o cliente enviou": {
+    es: "El agente no pudo leer el video que envió el cliente",
+  },
+  "O agente não conseguiu ler mídia que o cliente enviou": {
+    es: "El agente no pudo leer el archivo multimedia que envió el cliente",
+  },
+  "Motivo: {motivo}.": { es: "Motivo: {motivo}." },
+  "Enquanto isso, o agente responde avisando que não conseguiu abrir o arquivo.": {
+    es: "Mientras tanto, el agente responde avisando que no pudo abrir el archivo.",
+  },
+  "Para resolver, ajuste o modelo desse ponto em Agente de IA → Provedores, ou cadastre a chave necessária em Credenciais.": {
+    es: "Para resolverlo, ajusta el modelo de este punto en Agente de IA → Proveedores, o registra la clave necesaria en Credenciales.",
+  },
+  "Cadastre a chave do provedor de conversa da organização (Provedores de IA) ou a chave OpenAI que transcreve — depois disso a próxima nota de voz volta a virar texto.": {
+    es: "Registra la clave del proveedor de conversación de la organización (Proveedores de IA) o la clave de OpenAI que transcribe — después de eso, la próxima nota de voz vuelve a convertirse en texto.",
+  },
+  "O provedor respondeu sem texto. Confira o modelo em Provedores de IA: se ele aceita áudio mas devolve vazio, troque por outro modelo com capacidade audio.": {
+    es: "El proveedor respondió sin texto. Revisa el modelo en Proveedores de IA: si acepta audio pero devuelve vacío, cámbialo por otro modelo con capacidad audio.",
+  },
+  "Envie um áudio menor, de até 25 MB, para que o conteúdo possa ser transcrito.": {
+    es: "Envía un audio más pequeño, de hasta 25 MB, para que el contenido pueda transcribirse.",
+  },
+  "a leitura deu erro em todas as tentativas, ao abrir o arquivo ou ao chamar o provedor de IA": {
+    es: "la lectura falló en todos los intentos, al abrir el archivo o al llamar al proveedor de IA",
+  },
+  "O conteúdo do arquivo não chegou ao agente. Da próxima mensagem em diante ele sabe que houve um arquivo que não deu para ler, e responde avisando em vez de supor o que estava nele.": {
+    es: "El contenido del archivo no llegó al agente. A partir del próximo mensaje sabe que hubo un archivo que no pudo leer, y responde avisándolo en lugar de suponer lo que contenía.",
+  },
+  "Enquanto o limite valer, a IA também não responde: as conversas vão para a fila de atendimento humano.": {
+    es: "Mientras el límite esté vigente, la IA tampoco responde: las conversaciones van a la cola de atención humana.",
+  },
+  "Para resolver, suba o limite ou desligue a parada em Uso de IA › Orçamento.": {
+    es: "Para resolverlo, sube el límite o desactiva la parada en Uso de IA › Presupuesto.",
+  },
+  "o endereço de IA configurado para esta empresa só é usado com a credencial dela: cadastre a chave da empresa em Agente de IA e Provedores, ou tire o endereço próprio para voltar ao provedor padrão da instalação": {
+    es: "la dirección de IA configurada para esta empresa solo se usa con su propia credencial: registra la clave de la empresa en Agente de IA y Proveedores, o quita la dirección propia para volver al proveedor predeterminado de la instalación",
+  },
+  "o endereço configurado para a visão não foi aceito como destino, então não enviei a imagem nem a chave para lá — confira o endereço do provedor em Agente de IA e Provedores; endereço escolhido pela empresa não pode apontar para a rede interna do servidor": {
+    es: "la dirección configurada para la visión no fue aceptada como destino, así que no envié la imagen ni la clave allí — revisa la dirección del proveedor en Agente de IA y Proveedores; una dirección elegida por la empresa no puede apuntar a la red interna del servidor",
+  },
+  "falta uma chave da OpenAI para transcrever": { es: "falta una clave de OpenAI para transcribir" },
+  "o endereço configurado para a transcrição não foi aceito como destino, então não enviei o áudio nem a chave para lá — confira TRANSCRIPTION_BASE_URL; se o serviço roda na rede interna, quem administra a instalação libera o endereço em Administração › Destinos internos": {
+    es: "la dirección configurada para la transcripción no fue aceptada como destino, así que no envié el audio ni la clave allí — revisa TRANSCRIPTION_BASE_URL; si el servicio corre en la red interna, quien administra la instalación habilita la dirección en Administración › Destinos internos",
+  },
+  "o modelo devolveu a transcrição do áudio vazia ({origem}: {motivo})": {
+    es: "el modelo devolvió vacía la transcripción del audio ({origem}: {motivo})",
+  },
+  "o modelo {modelo} não enxerga imagens": { es: "el modelo {modelo} no ve imágenes" },
+  "não sei se o modelo {modelo} enxerga imagens, então não arrisquei enviar a foto — escolha um modelo do catálogo em Agente de IA → Provedores": {
+    es: "no sé si el modelo {modelo} ve imágenes, así que no me arriesgué a enviar la foto — elige un modelo del catálogo en Agente de IA → Proveedores",
+  },
+  "o provedor {provedor} não está disponível nesta instalação": {
+    es: "el proveedor {provedor} no está disponible en esta instalación",
+  },
+  "o áudio excede o limite de 25 MB da transcrição pela OpenRouter e não foi enviado ao serviço": {
+    es: "el audio supera el límite de 25 MB de la transcripción por OpenRouter y no se envió al servicio",
+  },
+  "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então a foto não foi enviada ao provedor": {
+    es: "se alcanzó el límite de gasto en IA de este mes y la IA está configurada para detenerse en él, así que la foto no se envió al proveedor",
+  },
+  "o limite de gasto com IA deste mês foi atingido e a IA está configurada para parar nele, então o áudio não foi enviado ao provedor": {
+    es: "se alcanzó el límite de gasto en IA de este mes y la IA está configurada para detenerse en él, así que el audio no se envió al proveedor",
+  },
   // ─── fim do bloco da Central (S2a Task 5) ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

@@ -46,7 +46,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "app/api/v1/cron/task-reminder/route.ts",
   "lib/agent-engine/guardrails/lgpd/legal-basis.ts",
   "lib/agent-engine/obs/metrics.ts",
-  "workers/media-derive-worker.ts",
 ]);
 
 const gravadores = arquivosDeCodigo(["app", "lib", "workers"])

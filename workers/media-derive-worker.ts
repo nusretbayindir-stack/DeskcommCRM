@@ -46,6 +46,10 @@ import { validarParProvedorModelo } from "@/lib/ai/par-provedor-modelo";
 import { reagirAConclusaoDeDerivacao } from "@/lib/escalacao/handoff-tecnico";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { motivoDaRecusaDeDestino } from "@/lib/automation/destinos-internos-autorizados";
+import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
+import { preencher } from "@/lib/i18n/preencher";
 import { DETALHE_TECNICO } from "@/lib/event-log/aviso-de-evento-morto";
 import { MENSAGEM_REDIGIDA } from "@/lib/lgpd/cascata";
 import { lerPessoalDaConversa } from "@/lib/contacts/contato-pessoal";
@@ -473,7 +477,10 @@ export async function deriveMessageMedia(row: EventRow): Promise<HandlerResult> 
       await avisarMidiaNaoLida(
         msg.organization_id,
         rotuloDoTipo,
-        motivo,
+        {
+          modelo: "o modelo devolveu a transcrição do áudio vazia ({origem}: {motivo})",
+          valores: { origem: decisao.origem, motivo: decisao.motivo },
+        },
         "O provedor respondeu sem texto. Confira o modelo em Provedores de IA: se ele aceita áudio mas devolve vazio, troque por outro modelo com capacidade audio.",
       );
       return { consumer_key, status: "ok", detail: "transcricao_vazia" };
@@ -762,11 +769,12 @@ function buildDeriveDeps(
       // `{image:false}` por conservadorismo — afirmar ao operador que ele "não
       // enxerga imagens" seria gravar uma alegação que ninguém verificou (e
       // era o que acontecia com todo modelo da OpenRouter).
-      const motivo = visao.sabemos
-        ? `o modelo ${llm.defaultModel ?? "configurado"} não enxerga imagens`
-        : `não sei se o modelo ${llm.defaultModel ?? "configurado"} enxerga imagens, ` +
-          `então não arrisquei enviar a foto — escolha um modelo do catálogo em Agente de IA → Provedores`;
-      await avisarMidiaNaoLida(orgId, "imagem", motivo);
+      await avisarMidiaNaoLida(orgId, "imagem", {
+        modelo: visao.sabemos
+          ? "o modelo {modelo} não enxerga imagens"
+          : "não sei se o modelo {modelo} enxerga imagens, então não arrisquei enviar a foto — escolha um modelo do catálogo em Agente de IA → Provedores",
+        valores: { modelo: llm.defaultModel ?? "configurado" },
+      });
       return MARCADOR_NAO_LIDA;
     }
     // O endereço é escolhido por quem administra a instalação (o campo de
@@ -801,7 +809,10 @@ function buildDeriveDeps(
     }
     const factory = registry[llm.provider];
     if (!factory) {
-      await avisarMidiaNaoLida(orgId, "imagem", `o provedor ${llm.provider} não está disponível nesta instalação`);
+      await avisarMidiaNaoLida(orgId, "imagem", {
+        modelo: "o provedor {provedor} não está disponível nesta instalação",
+        valores: { provedor: String(llm.provider) },
+      });
       return MARCADOR_NAO_LIDA;
     }
     // ─── O PAR ANTES DE ENVIAR A FOTO ──────────────────────────────────────
@@ -1240,32 +1251,64 @@ export { MARCADOR_NAO_LIDA };
  * Fire-and-forget: falhar ao avisar não pode derrubar a derivação da mídia.
  */
 /**
- * O título e o corpo do aviso `midia_nao_lida`. Primeiro o que houve e o que
- * fazer, em português; a frase crua do provedor, quando existe, no fim e
- * rotulada (`DETALHE_TECNICO`) — mesma regra do aviso de evento morto.
+ * Uma peça do aviso: a frase fixa, ou um modelo com valores CRUS (nome de
+ * modelo, provedor, origem) — o modelo é traduzido, o valor entra como está.
  */
-export function textoDoAvisoDeMidiaNaoLida(aviso: {
-  tipo: string;
-  motivo: string;
-  consequencia: string;
-  detalheTecnico?: string;
-  /** Quando a saída não é modelo nem chave (ex.: o teto de gasto), o padrão mandaria o operador ao lugar errado. */
-  paraResolver?: string;
-}): { title: string; body: string } {
+export type TextoDoAvisoDeMidia = string | { modelo: string; valores: Record<string, string> };
+
+/** O título por tipo de mídia (o `rotuloDoTipo` do worker), frase inteira para cada idioma poder declinar. */
+const TITULO_DO_AVISO_DE_MIDIA: Record<string, string> = {
+  imagem: "O agente não conseguiu ler imagem que o cliente enviou",
+  áudio: "O agente não conseguiu ler áudio que o cliente enviou",
+  documento: "O agente não conseguiu ler documento que o cliente enviou",
+  vídeo: "O agente não conseguiu ler vídeo que o cliente enviou",
+  mídia: "O agente não conseguiu ler mídia que o cliente enviou",
+};
+
+const PARA_RESOLVER_PADRAO =
+  "Para resolver, ajuste o modelo desse ponto em Agente de IA → Provedores, ou cadastre a chave necessária em Credenciais.";
+
+function pecaNoIdioma(texto: TextoDoAvisoDeMidia, idioma: Idioma): string {
+  return typeof texto === "string"
+    ? traduzir(texto, idioma)
+    : preencher(traduzir(texto.modelo, idioma), texto.valores);
+}
+
+/**
+ * O título e o corpo do aviso `midia_nao_lida`, no idioma da empresa (S2a
+ * Task 5, U14). Primeiro o que houve e o que fazer; a frase crua do provedor,
+ * quando existe, no fim e rotulada (`DETALHE_TECNICO`) — mesma regra do aviso
+ * de evento morto. Cada peça fixa das chamadas tem es e tr
+ * (`aviso-de-midia-no-idioma.test.ts` lê as chamadas e cobra); o português é
+ * o de sempre.
+ */
+export function textoDoAvisoDeMidiaNaoLida(
+  aviso: {
+    tipo: string;
+    motivo: TextoDoAvisoDeMidia;
+    consequencia: string;
+    detalheTecnico?: string;
+    /** Quando a saída não é modelo nem chave (ex.: o teto de gasto), o padrão mandaria o operador ao lugar errado. */
+    paraResolver?: string;
+  },
+  idioma: Idioma = IDIOMA_PADRAO,
+): { title: string; body: string } {
+  const titulo =
+    TITULO_DO_AVISO_DE_MIDIA[aviso.tipo] ?? `O agente não conseguiu ler ${aviso.tipo} que o cliente enviou`;
   return {
-    title: `O agente não conseguiu ler ${aviso.tipo} que o cliente enviou`,
+    title: traduzir(titulo, idioma),
     body:
-      `Motivo: ${aviso.motivo}. ${aviso.consequencia} ` +
-      (aviso.paraResolver ??
-        `Para resolver, ajuste o modelo desse ponto em Agente de IA → Provedores, ou cadastre a chave necessária em Credenciais.`) +
-      (aviso.detalheTecnico ? ` ${DETALHE_TECNICO} ${aviso.detalheTecnico}` : ""),
+      `${preencher(traduzir("Motivo: {motivo}.", idioma), { motivo: pecaNoIdioma(aviso.motivo, idioma) })} ` +
+      `${traduzir(aviso.consequencia, idioma)} ` +
+      traduzir(aviso.paraResolver ?? PARA_RESOLVER_PADRAO, idioma) +
+      (aviso.detalheTecnico ? ` ${traduzir(DETALHE_TECNICO, idioma)} ${aviso.detalheTecnico}` : ""),
   };
 }
 
 async function avisarMidiaNaoLida(
   organizationId: string,
   tipo: string,
-  motivo: string,
+  motivo: TextoDoAvisoDeMidia,
   /**
    * O que aconteceu com o atendimento. O padrão vale para as recusas, que
    * entregam o marcador ao agente; a falha permanente não entrega nada.
@@ -1287,6 +1330,10 @@ async function avisarMidiaNaoLida(
       .maybeSingle();
     if (jaAberto) return;
 
+    // No idioma da empresa (S2a Task 5): lido só quando o aviso vai mesmo
+    // nascer; a leitura que falha vira o padrão, nunca derruba o aviso.
+    const idioma = await idiomaDaOrgPeloSupabase(admin, organizationId);
+
     // `warn`, não `warning`: o CHECK de `agent_inbox_items.severity` aceita
     // info|warn|critical. Com o valor errado o INSERT era recusado com 23514 —
     // e o aviso NUNCA abria. A Central ficava vazia exatamente no caso que esta
@@ -1295,7 +1342,7 @@ async function avisarMidiaNaoLida(
       organization_id: organizationId,
       kind: "midia_nao_lida",
       severity: "warn",
-      ...textoDoAvisoDeMidiaNaoLida({ tipo, motivo, consequencia, detalheTecnico, paraResolver }),
+      ...textoDoAvisoDeMidiaNaoLida({ tipo, motivo, consequencia, detalheTecnico, paraResolver }, idioma),
     });
     // E o retorno é CONFERIDO. O supabase-js devolve `{ error }` em vez de
     // lançar, então o `catch` abaixo era inalcançável para erro de banco: a
