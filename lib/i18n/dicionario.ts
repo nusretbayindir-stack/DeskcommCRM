@@ -14322,6 +14322,7 @@ export const DICIONARIO: Traducoes = {
   // Avisos para a EQUIPE, gravados no idioma da organização
   // (tests/unit/central-fala-o-idioma-da-org.test.ts). Bloco do fork.
   "Job descartado após esgotar tentativas": { es: "Tarea en segundo plano descartada tras agotar los intentos" },
+  "Cron desabilitado após falha de disparo": { es: "Cron desactivado tras un fallo de disparo" },
   // lib/agent-engine/edge/llm/orcamento.ts (TEXTOS_DA_CENTRAL)
   "A IA continua respondendo normalmente — isto é o aviso, não a parada. Veja quanto já foi gasto e ajuste o limite em Uso de IA › Orçamento.": {
     es: "La IA sigue respondiendo con normalidad: esto es el aviso, no la parada. Mira cuánto se ha gastado y ajusta el límite en Uso de IA › Presupuesto.",

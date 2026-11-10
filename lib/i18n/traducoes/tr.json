@@ -2965,6 +2965,7 @@
   "Crie uma empresa de teste com outro e-mail seu (ex.: voce+teste@seudominio.com), abra o convite numa janela anônima, clique em Assinar em Plano e cobrança e pague com o cartão 4242 4242 4242 4242 (qualquer validade futura e qualquer CVC).": "Başka bir e-postanızla bir test şirketi oluşturun (örn.: voce+teste@seudominio.com), daveti gizli pencerede açın, Plan ve ödeme bölümünde Abone ol'a tıklayın ve 4242 4242 4242 4242 kartıyla ödeyin (gelecekteki herhangi bir son kullanma tarihi ve herhangi bir CVC).",
   "Crie uma etapa antes de arquivar": "Arşivlemeden önce bir aşama oluşturun",
   "Crie uma view (uma tabela virtual) só com as colunas que o assistente pode ver, e libere somente ela. Troque os nomes em MAIÚSCULAS pelos do seu banco.": "Yalnızca asistanın görebileceği sütunlardan oluşan bir görünüm (sanal tablo) oluşturun ve yalnızca onu açın. BÜYÜK HARFLİ adları kendi veritabanınızdakilerle değiştirin.",
+  "Cron desabilitado após falha de disparo": "Zamanlanmış görev, tetikleme hatası nedeniyle devre dışı bırakıldı",
   "Crítico": "Kritik",
   "Crítico (<24h)": "Kritik (<24s)",
   "Ctrl + Enter envia. Enter quebra linha.": "Ctrl + Enter gönderir. Enter satır atlar.",

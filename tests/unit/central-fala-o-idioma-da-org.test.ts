@@ -40,7 +40,6 @@ const PENDENTES_DESTA_PR = new Set<string>([
   "app/api/v1/cron/proposal-promised-not-created/route.ts",
   "app/api/v1/cron/proposta-travada/route.ts",
   "app/api/v1/cron/task-reminder/route.ts",
-  "lib/agent-engine/cron/scheduler.ts",
   "lib/agent-engine/db/repository.ts",
   "lib/agent-engine/edge/crm/vigilancia-do-drain.ts",
   "lib/agent-engine/guardrails/lgpd/legal-basis.ts",
