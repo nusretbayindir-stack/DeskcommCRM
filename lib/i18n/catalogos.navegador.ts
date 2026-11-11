@@ -27,6 +27,8 @@ type Catalogo = Readonly<Record<string, string>>;
 
 const CARREGADORES: Partial<Record<Idioma, () => Promise<{ default: Catalogo }>>> = {
   tr: () => import("./traducoes/tr.json"),
+  nl: () => import("./traducoes/nl.json"),
+  fr: () => import("./traducoes/fr.json"),
 };
 
 /** Os idiomas cujo texto vem de um catálogo, e não de coluna do dicionário. */
