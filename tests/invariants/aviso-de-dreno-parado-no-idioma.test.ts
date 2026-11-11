@@ -13,8 +13,9 @@ import { traduzir } from "@/lib/i18n/dicionario";
  * sintaxe aqui vira `warn` e o aviso some em silêncio — o pior desfecho para
  * um aviso de pane. Por isso este arquivo roda contra Postgres.
  *
- *   1. empresa em turco recebe o título turco; idioma ainda escondido (`nl`) e
- *      sem idioma recebem o português — o mesmo de `normalizarIdioma`;
+ *   1. empresa em turco recebe o título turco, em neerlandês o neerlandês (nl
+ *      visível desde o doc S2a, Task 7); idioma ainda escondido (`en`) e sem
+ *      idioma recebem o português — o mesmo de `normalizarIdioma`;
  *   2. o aviso aberto noutro idioma (a empresa trocou de idioma) segura o novo:
  *      um por organização, procurado em todo idioma;
  *   3. a segunda rodada não duplica;
@@ -34,13 +35,15 @@ const pool = new pg.Pool({
 
 const ORG_TR = "d1a90000-0000-4000-8000-000000000001";
 const ORG_PT = "d1a90000-0000-4000-8000-000000000002";
-const ORG_NL = "d1a90000-0000-4000-8000-000000000003";
+const ORG_ESCONDIDO = "d1a90000-0000-4000-8000-000000000003";
 const ORG_TROCOU = "d1a90000-0000-4000-8000-000000000004";
-const ORGS = [ORG_TR, ORG_PT, ORG_NL, ORG_TROCOU];
+const ORG_NL = "d1a90000-0000-4000-8000-000000000005";
+const ORGS = [ORG_TR, ORG_PT, ORG_ESCONDIDO, ORG_TROCOU, ORG_NL];
 
 const warn = vi.fn();
 const log = { info: vi.fn(), warn, error: vi.fn() } as never;
 const TITULO_TR = traduzir(TITULO_DRAIN_PARADO, "tr");
+const TITULO_NL = traduzir(TITULO_DRAIN_PARADO, "nl");
 
 async function abertos(org: string): Promise<string[]> {
   const { rows } = await pool.query<{ title: string }>(
@@ -54,8 +57,9 @@ beforeAll(async () => {
   for (const [id, slug, locale] of [
     [ORG_TR, "dreno-idioma-tr", "tr"],
     [ORG_PT, "dreno-idioma-pt", "pt-BR"],
-    [ORG_NL, "dreno-idioma-nl", "nl"],
+    [ORG_ESCONDIDO, "dreno-idioma-en", "en"],
     [ORG_TROCOU, "dreno-idioma-trocou", "tr"],
+    [ORG_NL, "dreno-idioma-nl", "nl"],
   ] as const) {
     await pool.query(
       `insert into organizations (id, slug, legal_name, display_name, locale)
@@ -81,6 +85,7 @@ afterAll(async () => {
 describe("aviso do dreno parado, no idioma de cada empresa", () => {
   it("parado: uma linha por empresa, no idioma dela; o aviso antigo noutro idioma segura o novo", async () => {
     expect(TITULO_TR).not.toBe(TITULO_DRAIN_PARADO);
+    expect(TITULO_NL).not.toBe(TITULO_DRAIN_PARADO);
 
     await sincronizarAvisoDoDrain(pool, "parado", log);
     await sincronizarAvisoDoDrain(pool, "parado", log);
@@ -88,7 +93,8 @@ describe("aviso do dreno parado, no idioma de cada empresa", () => {
     expect(warn, "o SQL falhou e o aviso sumiu em silêncio").not.toHaveBeenCalled();
     expect(await abertos(ORG_TR)).toEqual([TITULO_TR]);
     expect(await abertos(ORG_PT)).toEqual([TITULO_DRAIN_PARADO]);
-    expect(await abertos(ORG_NL), "idioma escondido cai no português").toEqual([TITULO_DRAIN_PARADO]);
+    expect(await abertos(ORG_NL), "neerlandês visível recebe o neerlandês").toEqual([TITULO_NL]);
+    expect(await abertos(ORG_ESCONDIDO), "idioma escondido cai no português").toEqual([TITULO_DRAIN_PARADO]);
     expect(await abertos(ORG_TROCOU)).toEqual([TITULO_DRAIN_PARADO]);
 
     const { rows } = await pool.query<{ body: string }>(
