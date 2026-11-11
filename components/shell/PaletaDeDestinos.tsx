@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useT } from "@/hooks/i18n/useT";
+import { semContexto } from "@/lib/i18n/no-contexto";
 import { MagnifyingGlass } from "@/lib/ui/icons";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -157,7 +158,9 @@ function Resultados({
       const casaCategoria = categoriaAtiva === "todos" || d.group === categoriaAtiva;
       if (!casaCategoria) return false;
       if (!termo) return true;
-      return normalizar(`${d.label} ${d.description} ${rotuloGrupo.get(d.group) ?? ""}`).includes(
+      // A tela do grupo passa por `t()`, que tira o contexto (`Atendimento@@menu`);
+      // a busca lê o rótulo cru e precisa tirar ela mesma.
+      return normalizar(`${d.label} ${d.description} ${semContexto(rotuloGrupo.get(d.group) ?? "")}`).includes(
         termo,
       );
     });

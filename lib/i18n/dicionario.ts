@@ -14762,6 +14762,11 @@ export const DICIONARIO: Traducoes = {
     es: "La configuración se recuperó. Las respuestas usan la versión publicada del agente.",
   },
   // ─── fim do bloco da Central (S2a Task 5) ───
+  // ─── Acabamentos de U41/U42 (S2a Task 7b). Bloco do fork. ───
+  // O botão de telefonar da fila do Cold Call: "Ligar" sozinho é o interruptor
+  // ("Activar"), ver o "Chamar" acima e `lib/i18n/no-contexto.ts`.
+  "Ligar@@chamada": { es: "Llamar" },
+  // ─── fim do bloco da Task 7b ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {

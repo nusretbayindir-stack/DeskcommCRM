@@ -1155,7 +1155,7 @@ function Sessao({
                 ) : lead.telefone ? (
                   <Button className="flex-1 transition-transform active:scale-[.98]" onClick={() => void ligacao.ligar()} data-testid="ligar">
                     <Phone size={16} className="mr-2" weight="fill" aria-hidden />
-                    {ligacao.fase === "encerrada" ? t("Rediscar") : t("Ligar")}
+                    {ligacao.fase === "encerrada" ? t("Rediscar") : t("Ligar@@chamada")}
                   </Button>
                 ) : (
                   <span className="flex-1 text-center text-xs text-text-muted">{t("Este lead não tem telefone.")}</span>
