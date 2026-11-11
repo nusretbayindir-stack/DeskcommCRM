@@ -13305,6 +13305,7 @@ export const DICIONARIO: Traducoes = {
   // agendamento→cita, atendente→agente, marcar→agendar.
   "MMMM 'de' yyyy": { es: "MMMM 'de' yyyy" },
   "d 'de' MMM": { es: "d 'de' MMM" },
+  "dd 'de' MMM yyyy": { es: "dd 'de' MMM yyyy" },
   "d 'de' MMMM": { es: "d 'de' MMMM" },
   "EEEE, d 'de' MMMM": { es: "EEEE, d 'de' MMMM" },
   "EEEE, d 'de' MMM": { es: "EEEE, d 'de' MMM" },

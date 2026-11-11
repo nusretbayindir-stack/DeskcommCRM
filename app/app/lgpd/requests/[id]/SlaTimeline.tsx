@@ -160,7 +160,7 @@ export function SlaTimeline({ received_at, due_at, request_type }: SlaTimelinePr
                   D+{m.targetDay} — {t(m.label)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {format(m.date, "dd 'de' MMM yyyy", { locale: localeDaData })}
+                  {format(m.date, t("dd 'de' MMM yyyy"), { locale: localeDaData })}
                 </p>
               </div>
             </li>
