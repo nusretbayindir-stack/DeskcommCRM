@@ -35,6 +35,7 @@ import {
   useSalvarAvisoDeAgendamento,
   useTestarAvisoDeAgendamento,
 } from "@/hooks/agenda/useAvisoDeAgendamento";
+import { usePaisDaOrgAtiva } from "@/hooks/auth/AuthProvider";
 import { useTelefoneExemplo } from "@/hooks/contacts/useTelefoneExemplo";
 import { useT } from "@/hooks/i18n/useT";
 import {
@@ -51,6 +52,7 @@ import {
   type StatusDaEntregaDeAgendamento,
 } from "@/lib/agenda/vocabulario-do-aviso-de-agendamento";
 import { ApiError } from "@/lib/api/types";
+import { perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { normalizarTelefoneDeAviso, telefoneDeAvisoValido } from "@/lib/escalacao/estado-do-aviso";
 import { FRASE_DO_ERRO_DO_AVISO } from "@/lib/escalacao/vocabulario-do-aviso";
 import { CheckCircle, PaperPlaneTilt, WarningOctagon } from "@/lib/ui/icons";
@@ -123,6 +125,7 @@ function FormularioDoAviso({ estado }: { estado: EstadoDaTelaDoAvisoDeAgendament
   const salvar = useSalvarAvisoDeAgendamento();
   const testar = useTestarAvisoDeAgendamento();
   const telefoneExemplo = useTelefoneExemplo();
+  const noBrasil = perfilDoPais(usePaisDaOrgAtiva()).codigo === "BR";
   const [rascunho, setRascunho] = useState<Rascunho>(() => rascunhoDoEstado(estado));
   const [confirmarContato, setConfirmarContato] = useState<string | null>(null);
 
@@ -256,7 +259,10 @@ function FormularioDoAviso({ estado }: { estado: EstadoDaTelaDoAvisoDeAgendament
               aria-invalid={rascunho.telefone !== "" && !telefoneOk}
             />
             <p className="text-xs text-muted-foreground">
-              {t("Comece pelo código do país. Um celular do Brasil fica assim: +55, DDD e o número.")}
+              {/* Como no aviso de caso (`AvisoNoWhatsApp`): a frase brasileira fica para o Brasil. */}
+              {noBrasil
+                ? t("Comece pelo código do país. Um celular do Brasil fica assim: +55, DDD e o número.")
+                : t("Comece pelo código do país, por exemplo {exemplo}.").replace("{exemplo}", () => telefoneExemplo)}
             </p>
             {rascunho.telefone !== "" && !telefoneOk ? (
               <p className="text-xs text-destructive" data-testid="telefone-invalido">

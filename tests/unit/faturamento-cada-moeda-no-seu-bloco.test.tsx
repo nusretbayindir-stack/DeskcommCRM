@@ -164,8 +164,8 @@ describe("faturamento com UMA moeda — a tela de antes", () => {
     montar("BRL");
     await screen.findByTestId("resumo-de-comandas");
 
-    expect(cartao(document.body, "Entrou")).toBe("200,00 €");
-    expect(cartao(document.body, "Ticket médio")).toBe("200,00 €");
+    expect(cartao(document.body, "Entrou")).toBe("€ 200,00");
+    expect(cartao(document.body, "Ticket médio")).toBe("€ 200,00");
     expect(semNbsp(document.body.textContent ?? "")).not.toContain("R$");
   });
 });
@@ -182,10 +182,10 @@ describe("faturamento com DUAS moedas — um bloco para cada, nada somado", () =
     ).toBeTruthy();
     expect(cartao(real, "Entrou")).toBe("R$ 150,00");
     expect(cartao(real, "Ticket médio")).toBe("R$ 75,00");
-    expect(cartao(euro, "Entrou")).toBe("200,00 €");
-    expect(cartao(euro, "Ticket médio")).toBe("200,00 €");
+    expect(cartao(euro, "Entrou")).toBe("€ 200,00");
+    expect(cartao(euro, "Ticket médio")).toBe("€ 200,00");
     expect(semNbsp(within(euro).getByText("Ana").parentElement?.textContent ?? "")).toContain(
-      "20,00 €",
+      "€ 20,00",
     );
 
     const tudo = semNbsp(document.body.textContent ?? "");

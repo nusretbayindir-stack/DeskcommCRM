@@ -1,19 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { IDIOMAS, parseAcceptLanguage } from "@/lib/i18n/idiomas";
 import { REGISTRO_DE_IDIOMAS } from "@/lib/i18n/registro";
 
 /**
- * O NEERLANDÊS E O FRANCÊS DA BÉLGICA ENTRAM NO REGISTRO SEM APARECER.
+ * O NEERLANDÊS E O FRANCÊS DA BÉLGICA NO REGISTRO.
  *
  * O fork vende para empresas na Bélgica (Flandres e Bruxelas). Os dois idiomas
- * entram no registro como `em_construcao`: o catálogo pode ser traduzido e
- * medido sem que ninguém escolha uma língua que ainda não foi lida. A tag é a
- * da Bélgica (`nl-BE`, `fr-BE`): data, número e moeda saem como lá ("€ 1.500,00"),
- * e não como na Holanda ou na França.
+ * entraram no registro como `em_construcao` (Task 4 do doc S2a): o catálogo foi
+ * traduzido e medido sem que ninguém escolhesse uma língua ainda não lida. Com
+ * os catálogos completos, a Task 7 os promove a `completo`: aparecem nas
+ * listas, e toda frase de tela passa a precisar deles. A tag é a da Bélgica
+ * (`nl-BE`, `fr-BE`): a data sai como lá, e não como na Holanda ou na França.
  *
- * Promover um deles é outra decisão (doc S2a, D11: língua cuja leitura não
- * acabou não é vendida), e este teste muda junto com ela.
+ * Que eles chegam a quem usa (lista, navegador, catálogo, data) é a régua de
+ * `i18n-catalogos-belgas-sao-servidos`. Vender um deles a cliente continua
+ * sendo outra decisão (doc S2a, D11: língua cuja leitura não acabou não é
+ * vendida).
  */
 const ESPERADO = {
   nl: { nomeNativo: "Nederlands", rotuloCurto: "NL", tagBcp47: "nl-BE", subtagsDoNavegador: ["nl"] },
@@ -23,11 +25,11 @@ const ESPERADO = {
 const indiceDe = (codigo: string) => REGISTRO_DE_IDIOMAS.findIndex((idioma) => idioma.codigo === codigo);
 
 describe("os idiomas da Bélgica no registro", () => {
-  it.each(Object.entries(ESPERADO))("%s: nome, rótulo, tag e subtag da Bélgica, em construção", (codigo, esperado) => {
+  it.each(Object.entries(ESPERADO))("%s: nome, rótulo, tag e subtag da Bélgica, completo", (codigo, esperado) => {
     const idioma = REGISTRO_DE_IDIOMAS.find((candidato) => candidato.codigo === codigo);
     expect(idioma).toMatchObject({
       ...esperado,
-      nivel: "em_construcao",
+      nivel: "completo",
       mantenedor: "Agenterix (@nusretbayindir-stack)",
     });
   });
@@ -36,17 +38,5 @@ describe("os idiomas da Bélgica no registro", () => {
     expect(indiceDe("tr")).toBeGreaterThanOrEqual(0);
     expect(indiceDe("nl")).toBe(indiceDe("tr") + 1);
     expect(indiceDe("fr")).toBe(indiceDe("tr") + 2);
-  });
-});
-
-describe("em construção, eles ainda não chegam a ninguém", () => {
-  it("a lista servida não tem nl nem fr", () => {
-    expect(IDIOMAS).not.toContain("nl");
-    expect(IDIOMAS).not.toContain("fr");
-  });
-
-  it("um navegador belga não escolhe nl nem fr", () => {
-    expect(parseAcceptLanguage("nl-BE,nl;q=0.9")).toBeNull();
-    expect(parseAcceptLanguage("fr-BE,fr;q=0.9")).toBeNull();
   });
 });

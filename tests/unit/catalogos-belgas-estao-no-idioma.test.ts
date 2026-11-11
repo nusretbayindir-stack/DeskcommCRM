@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { REGISTRO_DE_IDIOMAS } from "@/lib/i18n/registro";
+
 /**
  * OS CATÁLOGOS DA BÉLGICA ESTÃO NO IDIOMA — e não em português com outra extensão.
  *
@@ -20,6 +22,11 @@ import { describe, expect, it } from "vitest";
  * Catálogo vazio não é cobrado: o idioma está em construção e a tradução só
  * começa depois do glossário aprovado (doc S2a, Task 4). O detector é testado
  * à parte, com catálogos de exemplo, para a guarda não passar cega.
+ *
+ * Com o idioma `completo` (Task 7), as duas tabelas de exceção não podem ter
+ * linha morta: toda exceção do Brasil está no catálogo e ainda cita o Brasil, e
+ * toda exceção de tratamento ainda casa algum valor. Exceção que não protege
+ * nada esconde o próximo erro de verdade.
  */
 
 const RAIZ = join(__dirname, "..", "..");
@@ -93,6 +100,14 @@ const REGRAS: Readonly<Record<"nl" | "fr", RegrasDoIdioma>> = {
     },
   },
 };
+
+/**
+ * Exceção que o glossário APROVADO declara com todas as letras ("Tek istisna
+ * gerçek bir addır: ton de voix", `fr-sozluk.md`): vale mesmo sem frase que a
+ * use hoje, porque um rótulo "Ton de voix" é tradução legítima e mudar o
+ * glossário pede a leitora. A régua de exceção morta não a cobra.
+ */
+const EXCECAO_DECLARADA_NO_GLOSSARIO: ReadonlySet<string> = new Set(["ton de voix"]);
 
 type Problemas = Record<
   | "letraPortuguesa"
@@ -290,6 +305,23 @@ describe.each(["nl", "fr"] as const)("o catálogo %s", (codigo) => {
 
   it.skipIf(vazio)("está no idioma: nada de português, Brasil, tratamento informal, termo do vizinho ou inglês herdado", () => {
     expect(problemasDoCatalogo(catalogo, REGRAS[codigo], nomesQueNaoSeTraduzem(codigo))).toEqual(NENHUM);
+  });
+
+  const completo = REGISTRO_DE_IDIOMAS.find((idioma) => idioma.codigo === codigo)?.nivel === "completo";
+
+  it.runIf(completo)("completo: toda exceção do Brasil está no catálogo e ainda cita o Brasil", () => {
+    const mortas = Object.keys(BRASIL_DE_PROPOSITO).filter((chave) => !DO_BRASIL.test(catalogo[chave] ?? ""));
+    expect(mortas).toEqual([]);
+  });
+
+  it.runIf(completo)("completo: toda exceção de tratamento ainda casa algum valor do catálogo", () => {
+    const valores = Object.values(catalogo).map((valor) => valor.replace(PLACEHOLDER, " "));
+    const mortas = Object.keys(REGRAS[codigo].naoETratamento).filter(
+      (expressao) =>
+        !EXCECAO_DECLARADA_NO_GLOSSARIO.has(expressao) &&
+        !valores.some((valor) => new RegExp(expressao, "iu").test(valor)),
+    );
+    expect(mortas).toEqual([]);
   });
 
   it.skipIf(vazio)("a exceção do Brasil só vale para frase traduzida que ainda cita o Brasil", () => {

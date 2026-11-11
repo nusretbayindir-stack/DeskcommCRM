@@ -108,7 +108,7 @@ function SlaTimelineInline({ received_at, due_at, request_type }: SlaTimelinePro
                   D+{m.day} — {m.label}
                 </p>
                 <p className="text-xs text-muted-foreground opacity-70">
-                  {format(milestoneDate, "dd 'de' MMM yyyy", { locale: localeDaData })}
+                  {format(milestoneDate, t("dd 'de' MMM yyyy"), { locale: localeDaData })}
                 </p>
               </div>
             </li>

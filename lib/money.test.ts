@@ -181,10 +181,10 @@ describe("formatCents", () => {
     // decide, não uma tabela nossa.
     expect(semNbsp(formatCents(24990, "AOA"))).toBe("249,90 Kz");
     // Euro: moeda sem país. A maximização de `und-EU` daria `€249.90`, a
-    // convenção irlandesa; Portugal, Espanha, França, Alemanha e Itália
-    // escrevem assim.
-    expect(semNbsp(formatCents(24990, "EUR"))).toBe("249,90 €");
-    expect(semNbsp(formatCents(149700, "EUR"))).toBe("1497,00 €");
+    // convenção irlandesa; o fork vende na Bélgica, e lá se escreve assim
+    // (`nl-BE`, doc S2a §5.1).
+    expect(semNbsp(formatCents(24990, "EUR"))).toBe("€ 249,90");
+    expect(semNbsp(formatCents(149700, "EUR"))).toBe("€ 1.497,00");
   });
 
   /**
@@ -336,11 +336,11 @@ describe("formatSomaPorMoeda", () => {
       ["BRL", 10000],
     ]);
     expect(semNbsp(formatSomaPorMoeda(soma, formatCents, { primeira: "USD" }))).toBe(
-      "$100.00 + R$ 100,00 + 100,00 €",
+      "$100.00 + R$ 100,00 + € 100,00",
     );
     // `primeira` fora da soma é ignorada — não inventa uma parcela zerada.
     expect(semNbsp(formatSomaPorMoeda(soma, formatCents, { primeira: "MXN" }))).toBe(
-      "R$ 100,00 + 100,00 € + $100.00",
+      "R$ 100,00 + € 100,00 + $100.00",
     );
   });
 
@@ -357,7 +357,7 @@ describe("formatSomaPorMoeda", () => {
       ["BRL", 10000],
       ["EUR", 10000],
     ]);
-    expect(semNbsp(formatSomaPorMoeda(realEEuro, formatCents))).toBe("R$ 100,00 + 100,00 €");
+    expect(semNbsp(formatSomaPorMoeda(realEEuro, formatCents))).toBe("R$ 100,00 + € 100,00");
   });
 
   it("soma vazia é texto vazio", () => {

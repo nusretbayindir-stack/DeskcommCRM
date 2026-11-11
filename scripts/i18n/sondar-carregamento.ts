@@ -7,10 +7,11 @@
  * a página com o app de produção já no ar (`next start`) e responde as três
  * perguntas que só o navegador responde:
  *
- *   1. quem lê em turco nunca vê o português piscar antes da hidratação;
+ *   1. quem lê em turco, neerlandês ou francês nunca vê o português piscar
+ *      antes da hidratação;
  *   2. o console não acusa erro de hidratação;
- *   3. o catálogo turco chega numa resposta só, e nenhum outro catálogo vem
- *      junto — e quem lê em português não baixa catálogo nenhum.
+ *   3. o catálogo de cada um chega numa resposta só, e nenhum outro catálogo
+ *      vem junto — e quem lê em português não baixa catálogo nenhum.
  *
  * Os catálogos são reconhecidos pela mesma sentinela de `./pacote.ts`. Com
  * `--so-medir` (a medição de base, antes do carregamento por idioma), relata e
@@ -38,8 +39,15 @@ const catalogos = Object.fromEntries(
 );
 const sentinelas = sentinelasDosCatalogos(catalogos);
 
-/** O texto do botão de entrar em português: é ele que não pode aparecer na tela turca. */
+/** O texto do botão de entrar em português: é ele que não pode aparecer na tela de quem lê outra língua. */
 const PALAVRA_PORTUGUESA = /\bEntrar\b/;
+
+/** Quem lê pelo catálogo: o navegador da pessoa e o catálogo que ela deve baixar, e só ele. */
+const LEITORES_DE_CATALOGO = [
+  { locale: "tr-TR", codigo: "tr", nome: "turco" },
+  { locale: "nl-BE", codigo: "nl", nome: "neerlandês" },
+  { locale: "fr-BE", codigo: "fr", nome: "francês" },
+] as const;
 
 interface Leitura {
   status: number;
@@ -106,23 +114,29 @@ async function ler(navegador: Browser, locale: string): Promise<Leitura> {
 
 async function main() {
   const navegador = await chromium.launch();
-  const turco = await ler(navegador, "tr-TR");
+  const leituras: Array<{ locale: string; leitura: Leitura }> = [];
+  const falhas: string[] = [];
+  for (const leitor of LEITORES_DE_CATALOGO) {
+    const leitura = await ler(navegador, leitor.locale);
+    leituras.push({ locale: leitor.locale, leitura });
+    if (leitura.status >= 400) falhas.push(`a página não abriu em ${leitor.nome} (${leitura.status})`);
+    if (leitura.viuPortugues) falhas.push(`a tela em ${leitor.nome} mostrou o português em algum momento`);
+    if (leitura.catalogosBaixados[leitor.codigo] !== 1) {
+      falhas.push(
+        `o catálogo ${leitor.nome} chegou em ${leitura.catalogosBaixados[leitor.codigo] ?? 0} respostas (esperado 1)`,
+      );
+    }
+    for (const [idioma, vezes] of Object.entries(leitura.catalogosBaixados)) {
+      if (idioma !== leitor.codigo && vezes > 0) falhas.push(`quem lê em ${leitor.nome} baixou também o catálogo ${idioma}`);
+    }
+  }
   const portugues = await ler(navegador, "pt-BR");
+  leituras.push({ locale: "pt-BR", leitura: portugues });
   await navegador.close();
 
-  const falhas: string[] = [];
-  if (turco.status >= 400 || portugues.status >= 400) {
-    falhas.push(`a página não abriu (turco ${turco.status}, português ${portugues.status})`);
-  }
-  if (turco.viuPortugues) falhas.push("a tela turca mostrou o português em algum momento");
-  for (const erro of [...turco.errosDeHidratacao, ...portugues.errosDeHidratacao]) {
-    falhas.push(`erro de hidratação: ${erro.slice(0, 200)}`);
-  }
-  if (turco.catalogosBaixados.tr !== 1) {
-    falhas.push(`o catálogo turco chegou em ${turco.catalogosBaixados.tr ?? 0} respostas (esperado 1)`);
-  }
-  for (const [idioma, vezes] of Object.entries(turco.catalogosBaixados)) {
-    if (idioma !== "tr" && vezes > 0) falhas.push(`quem lê em turco baixou também o catálogo ${idioma}`);
+  if (portugues.status >= 400) falhas.push(`a página não abriu em português (${portugues.status})`);
+  for (const { leitura } of leituras) {
+    for (const erro of leitura.errosDeHidratacao) falhas.push(`erro de hidratação: ${erro.slice(0, 200)}`);
   }
   for (const [idioma, vezes] of Object.entries(portugues.catalogosBaixados)) {
     if (vezes > 0) falhas.push(`quem lê em português baixou o catálogo ${idioma}`);
@@ -135,15 +149,11 @@ async function main() {
     "",
     "| Leitor | Status | Viu português | Erros de hidratação | Outros erros no console | Catálogos baixados |",
     "|---|---|---|---|---|---|",
-    ...[
-      ["tr-TR", turco],
-      ["pt-BR", portugues],
-    ].map(([nome, l]) => {
-      const leitura = l as Leitura;
+    ...leituras.map(({ locale: nome, leitura }) => {
       const baixados = Object.entries(leitura.catalogosBaixados)
         .map(([idioma, vezes]) => `${idioma}: ${vezes}`)
         .join(", ");
-      return `| ${nome as string} | ${leitura.status} | ${leitura.viuPortugues ? "sim" : "não"} | ${leitura.errosDeHidratacao.length} | ${leitura.outrosErros} | ${baixados} |`;
+      return `| ${nome} | ${leitura.status} | ${leitura.viuPortugues ? "sim" : "não"} | ${leitura.errosDeHidratacao.length} | ${leitura.outrosErros} | ${baixados} |`;
     }),
     "",
     falhas.length === 0 ? "Sonda aprovada." : `**${falhas.length} falha(s):**`,
@@ -156,4 +166,9 @@ async function main() {
   if (falhas.length > 0 && !soMedir) process.exit(1);
 }
 
-void main();
+// Uma falha do próprio navegador (o `networkidle` que não chega, por exemplo)
+// vira saída 1 com a causa no log, e não uma rejeição solta sem relatório.
+main().catch((erro: unknown) => {
+  console.error("[sonda] a sonda não terminou:", erro);
+  process.exit(1);
+});

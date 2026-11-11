@@ -35,6 +35,7 @@
 // `next.config.ts` troca o leitor no pacote do navegador.
 import { entradaDoCatalogo } from "@/lib/i18n/catalogos";
 import type { Idioma } from "./idiomas";
+import { semContexto } from "./no-contexto";
 import { TEXTOS_AGENDA_CONFIGURACAO } from "./agenda-configuracao";
 import { TEXTOS_AGENDA_SERVICOS } from "./agenda-servicos";
 
@@ -13304,6 +13305,7 @@ export const DICIONARIO: Traducoes = {
   // agendamento→cita, atendente→agente, marcar→agendar.
   "MMMM 'de' yyyy": { es: "MMMM 'de' yyyy" },
   "d 'de' MMM": { es: "d 'de' MMM" },
+  "dd 'de' MMM yyyy": { es: "dd 'de' MMM yyyy" },
   "d 'de' MMMM": { es: "d 'de' MMMM" },
   "EEEE, d 'de' MMMM": { es: "EEEE, d 'de' MMMM" },
   "EEEE, d 'de' MMM": { es: "EEEE, d 'de' MMM" },
@@ -21114,6 +21116,13 @@ export const DICIONARIO: Traducoes = {
  * tradução parcial não pode deixar a tela PIOR do que estava.
  */
 export function traduzir(texto: string, idioma: Idioma): string {
-  if (idioma === "pt-BR") return texto;
-  return DICIONARIO[texto]?.[idioma] ?? entradaDoCatalogo(idioma, texto) ?? texto;
+  // Chave com contexto (`"<frase>@@<contexto>"`, `./no-contexto.ts`): o
+  // português lê a frase; a língua sem entrada própria cai na da frase.
+  const frase = semContexto(texto);
+  if (idioma === "pt-BR") return frase;
+  return (
+    DICIONARIO[texto]?.[idioma] ??
+    entradaDoCatalogo(idioma, texto) ??
+    (frase === texto ? texto : traduzir(frase, idioma))
+  );
 }

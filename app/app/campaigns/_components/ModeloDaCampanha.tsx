@@ -44,7 +44,8 @@ export const ROTULO_DA_ORIGEM: Record<FonteDaCampanha["kind"], string> = {
 export const ROTULO_DA_CATEGORIA: Record<string, string> = {
   MARKETING: "Marketing",
   UTILITY: "Utilidade",
-  AUTHENTICATION: "Autenticação",
+  // `@@categoria-meta`: o neerlandês usa o nome do Meta, "Verificatie" (lib/i18n/no-contexto.ts).
+  AUTHENTICATION: "Autenticação@@categoria-meta",
 };
 
 function chaveDoModelo(m: { name: string; language: string }): string {

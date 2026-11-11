@@ -30,6 +30,10 @@ const PALAVRAS_DE_PASSAGEM_PADRAO: Record<Idioma, readonly string[]> = {
   // exemplo que a tela mostra; o pedido turco em si a detecção determinística
   // (`HUMAN_HANDOFF_PATTERNS`) já reconhece, com as variações.
   tr: ["canlı destek", "gerçek bir insan", "yetkiliyle görüşmek istiyorum", "temsilciyle görüşmek istiyorum"],
+  // Os valores do doc S2a (Task 7), no tratamento formal dos glossários
+  // ("medewerker" e "conseiller" são o atendente humano). Nenhuma palavra solta.
+  nl: ["met een medewerker spreken", "met iemand spreken", "echte persoon"],
+  fr: ["parler à un conseiller", "parler à quelqu'un", "vraie personne"],
 };
 
 export function palavrasDePassagemPadrao(idioma: Idioma): readonly string[] {

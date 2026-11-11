@@ -49,7 +49,10 @@ describe("idiomaDaOrganizacao", () => {
     ["pt-BR", "pt-BR"],
     [null, "pt-BR"],
     [undefined, "pt-BR"],
-    ["fr-FR", "pt-BR"],
+    // O francês virou idioma servido (doc S2a, Task 7): fr-FR cai no francês;
+    // o alemão segue fora.
+    ["fr-FR", "fr"],
+    ["de-DE", "pt-BR"],
   ])("locale %s → %s", async (locale, esperado) => {
     expect(await idiomaDaOrganizacao(db(locale as string | null | undefined) as never, ORG)).toBe(esperado);
   });

@@ -426,7 +426,7 @@ function Editor({
           {t("Cancelar")}
         </Button>
         <Button type="button" onClick={onGuardar} disabled={ocupado}>
-          {ocupado ? t("Salvando…") : t("Salvar plano")}
+          {ocupado ? t("Salvando…") : t("Salvar plano@@tarefas")}
         </Button>
       </div>
     </Card>

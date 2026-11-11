@@ -63,8 +63,9 @@ export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  // Sem sessão, numa instalação da Bélgica: holandês e francês não são idiomas do
-  // produto, então o texto vem de `politica-belga.ts`. Com sessão, nada disto vale.
+  // Sem sessão, numa instalação da Bélgica: o texto vem de `politica-belga.ts`, a
+  // política escrita para lá. Com sessão, nada disto vale: holandês e francês são
+  // idiomas do produto desde o doc S2a (Task 7) e o texto vem do catálogo.
   const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
   const semSessaoNaBelgica = !user && perfilDoPais(op.pais).codigo === "BE";
   const belga = semSessaoNaBelgica ? await idiomaBelgaDoVisitante(op.pais, escolha) : null;

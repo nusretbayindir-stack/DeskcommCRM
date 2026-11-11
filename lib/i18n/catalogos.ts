@@ -24,9 +24,11 @@
  * do catálogo no navegador, e quem espera por ela é o `IdiomaProvider`.
  */
 import type { Idioma } from "./idiomas";
+import fr from "./traducoes/fr.json";
+import nl from "./traducoes/nl.json";
 import tr from "./traducoes/tr.json";
 
-const CATALOGOS: Partial<Record<Idioma, Readonly<Record<string, string>>>> = { tr };
+const CATALOGOS: Partial<Record<Idioma, Readonly<Record<string, string>>>> = { tr, nl, fr };
 
 /** Os idiomas cujo texto vem de um catálogo, e não de coluna do dicionário. */
 export const IDIOMAS_COM_CATALOGO = Object.keys(CATALOGOS) as Idioma[];

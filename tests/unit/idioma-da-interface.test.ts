@@ -24,6 +24,7 @@ import { traduzir } from "@/lib/i18n/dicionario";
 import { IDIOMAS, IDIOMA_PADRAO, normalizarIdioma, parseAcceptLanguage } from "@/lib/i18n/idiomas";
 import { NAV_DESTINATIONS, NAV_GROUPS } from "@/lib/navigation/registry";
 import { DICIONARIO } from "@/lib/i18n/dicionario";
+import { semContexto } from "@/lib/i18n/no-contexto";
 
 describe("traduzir", () => {
   it("devolve o espanhol quando existe", () => {
@@ -83,7 +84,8 @@ describe("Accept-Language de quem ainda não tem sessão", () => {
   });
 
   it("sem nenhum idioma suportado na lista, devolve null (cai no padrão depois)", () => {
-    expect(parseAcceptLanguage("en-US,en;q=0.9,fr;q=0.8")).toBeNull();
+    // O francês virou idioma servido (doc S2a, Task 7); o alemão segue fora.
+    expect(parseAcceptLanguage("en-US,en;q=0.9,de;q=0.8")).toBeNull();
   });
 
   it("cabeçalho ausente ou vazio devolve null", () => {
@@ -224,7 +226,8 @@ describe("o dicionário acompanha o registro de navegação", () => {
   });
 
   it("todo grupo da barra lateral tem tradução", () => {
-    const semTraducao = NAV_GROUPS.filter((g) => !(g.label in DICIONARIO));
+    // Chave com contexto (`lib/i18n/no-contexto.ts`): o espanhol é o da frase.
+    const semTraducao = NAV_GROUPS.filter((g) => !(semContexto(g.label) in DICIONARIO));
     expect(semTraducao.map((g) => g.label)).toEqual([]);
   });
 });

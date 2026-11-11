@@ -1,4 +1,4 @@
-import { es, ptBR, tr } from "date-fns/locale";
+import { es, fr, nlBE, ptBR, tr } from "date-fns/locale";
 import type { Locale } from "date-fns";
 
 import { IDIOMA_PADRAO, type Idioma } from "./idiomas";
@@ -36,6 +36,10 @@ const LOCALE_DE_DATA: Record<Idioma, Locale> = {
   "pt-BR": ptBR,
   es,
   tr,
+  // A Bélgica, como a tag do registro (`nl-BE`); o francês do `date-fns` não
+  // tem variante belga, e mês e dia da semana são os mesmos da França.
+  nl: nlBE,
+  fr,
 };
 
 /** O `Locale` do date-fns para quem está lendo. */

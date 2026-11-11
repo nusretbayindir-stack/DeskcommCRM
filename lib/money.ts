@@ -64,7 +64,7 @@ export function parseReaisToCents(input: string, moeda: string = MOEDA_PADRAO): 
    *                exatamente 3 dígitos (a régua de sempre). Com 2 dígitos
    *                depois não é grupo em convenção nenhuma — ver o caso
    *                ambíguo declarado em `lib/money.test.ts`.
-   *   "semRegra" — sinal que a moeda nem usa («.» em EUR, cujo milhar é
+   *   "semRegra" — sinal que a moeda nem usa («.» em AOA, cujo milhar é
    *                espaço): fica a leitura generosa de antes, para nenhum
    *                texto legível virar null.
    */
@@ -211,16 +211,21 @@ const formatadores = new Map<string, Intl.NumberFormat>();
 /**
  * Moeda cujo código ISO não começa por um país. `EU` maximiza para `en-EU`, e
  * `en-EU` escreve `€249.90` — ponto decimal e símbolo na frente, a convenção da
- * Irlanda. Português, espanhol, francês, alemão e italiano escrevem `249,90 €`,
- * e é o que `pt-PT` devolve (medido no ICU do Node 22, junto com `de-DE`,
- * `fr-FR`, `es-ES` e `it-IT`).
+ * Irlanda.
  *
- * ponytail: um formato só para a zona euro. Holanda (`€ 249,90`) e Irlanda
- * (`€249.90`) leem a convenção vizinha; quando `organizations.country` puder
- * escolher o locale, é ele que decide, e esta tabela some.
+ * O fork vende na Bélgica (doc S2a §5.1), então o euro sai como lá: `nl-BE`
+ * escreve `€ 1.500,00` — símbolo antes, ponto no milhar, vírgula nos centavos
+ * (medido no ICU do Node 24). Antes era `pt-PT` (`1500,00 €`, milhar por espaço
+ * só a partir de cinco dígitos), a convenção de Portugal.
+ *
+ * ponytail: um formato só para a zona euro. Portugal, França e Alemanha
+ * (`1.500,00 €`, `1 500,00 €`) e a Irlanda (`€1,500.00`) leem a convenção
+ * belga; a tela em francês também (a leitora pode pedir `1 500,00 €`, e aí é
+ * parâmetro de idioma). Quando `organizations.country` puder escolher o
+ * locale, é ele que decide, e esta tabela some.
  */
 const LOCALE_DA_MOEDA_SEM_PAIS: Readonly<Record<string, string>> = {
-  EUR: "pt-PT",
+  EUR: "nl-BE",
   // PYG tem país, mas a maximização responde o idioma ERRADO para dinheiro:
   // `und-PY` vira `gn-Latn-PY` (guarani), que o ICU não tem, e o formatador
   // caía em `en-US` — `PYG 125,000`, com vírgula de milhar. `es-PY` escreve
@@ -289,10 +294,10 @@ function casasDaMoeda(moeda: string): number {
  * milhar é «,» (o inverso do pt-BR) sem tabela na mão e sem lista para
  * envelhecer: a moeda que o `Intl` conhece já chega com os sinais dela.
  *
- * Medido no ICU do Node 22: USD e MXN `decimal="." grupo=","`; BRL
- * `decimal="," grupo="."`; EUR (pt-PT) e AOA (pt-AO) `decimal="," grupo=" "` —
- * o milhar é ESPAÇO, que o parser descarta antes de olhar, e por isso o sinal
- * que sobra fica sem papel declarado (`semRegra`).
+ * Medido no ICU do Node 22: USD e MXN `decimal="." grupo=","`; BRL e EUR
+ * (`nl-BE`, medido no Node 24) `decimal="," grupo="."`; AOA (pt-AO)
+ * `decimal="," grupo=" "` — o milhar é ESPAÇO, que o parser descarta antes de
+ * olhar, e por isso o sinal que sobra fica sem papel declarado (`semRegra`).
  *
  * Moeda sem subunidade (JPY, PYG) não emite parte decimal em `formatToParts`;
  * aí o complemento do milhar é a resposta certa — é o ponto decimal daquela
@@ -492,8 +497,8 @@ export function formatSomaPorMoeda(
  * lista NÃO muda o padrão de ninguém — `MOEDA_PADRAO` continua `BRL`, e é isso
  * que o `default` da coluna grava em quem não escolheu.
  *
- * `EUR` entrou pelo mesmo motivo, para quem opera em Portugal e no resto da
- * zona euro. É o caso que a maximização não resolve (ver
+ * `EUR` entrou pelo mesmo motivo, para quem opera na zona euro (a Bélgica
+ * primeiro, doc S2a). É o caso que a maximização não resolve (ver
  * `LOCALE_DA_MOEDA_SEM_PAIS`): sem a exceção, `formatCents(24990, "EUR")`
  * sairia `€249.90`, e a varredura de degradação deixaria passar.
  *

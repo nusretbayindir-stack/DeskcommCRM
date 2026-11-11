@@ -28,6 +28,8 @@ export const MARCADORES_DE_FAQ: Record<Idioma, MarcadoresDeFaq> = {
   "pt-BR": { pergunta: ["Pergunta", "P"], resposta: ["Resposta", "R"] },
   es: { pergunta: ["Pregunta"], resposta: ["Respuesta"] },
   tr: { pergunta: ["Soru"], resposta: ["Yanıt", "Cevap"] },
+  nl: { pergunta: ["Vraag"], resposta: ["Antwoord"] },
+  fr: { pergunta: ["Question"], resposta: ["Réponse"] },
 };
 
 /**

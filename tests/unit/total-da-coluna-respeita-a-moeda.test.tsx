@@ -156,7 +156,7 @@ describe("total da coluna do funil", () => {
 
     const total = screen.getByText((texto) => semNbsp(texto).includes("5.000,00"));
     // `pt-PT` não agrupa 4 dígitos (o `money.test` já prende "1497,00 €").
-    expect(semNbsp(total.textContent ?? "")).toBe("R$ 5.000,00 + 5000,00 €");
+    expect(semNbsp(total.textContent ?? "")).toBe("R$ 5.000,00 + € 5.000,00");
     expect(semNbsp(document.body.textContent ?? "")).not.toMatch(/10[. ]000/);
   });
 
@@ -168,7 +168,7 @@ describe("total da coluna do funil", () => {
     ]);
 
     const total = screen.getByText((texto) => semNbsp(texto).includes("1.000,00"));
-    expect(semNbsp(total.textContent ?? "")).toBe("5000,00 € + R$ 1.000,00");
+    expect(semNbsp(total.textContent ?? "")).toBe("€ 5.000,00 + R$ 1.000,00");
   });
 
   it("conta negócios, não soma valores: a moeda com mais negócios vem primeiro mesmo valendo menos", () => {
@@ -183,7 +183,7 @@ describe("total da coluna do funil", () => {
     ]);
 
     const total = screen.getByText((texto) => semNbsp(texto).includes("300,00"));
-    expect(semNbsp(total.textContent ?? "")).toBe("R$ 300,00 + 9000,00 €");
+    expect(semNbsp(total.textContent ?? "")).toBe("R$ 300,00 + € 9.000,00");
   });
 
   it("empate no número de negócios cai em ordem alfabética do código", () => {
@@ -225,9 +225,9 @@ describe("total da coluna do funil", () => {
     );
 
     const ponderado = screen.getByText((texto) => semNbsp(texto).includes("ponderado"));
-    expect(semNbsp(ponderado.textContent ?? "")).toBe("· ponderado 150,00 € + R$ 4.500,00");
+    expect(semNbsp(ponderado.textContent ?? "")).toBe("· ponderado € 150,00 + R$ 4.500,00");
     expect(semNbsp(ponderado.parentElement?.textContent ?? "")).toBe(
-      "300,00 € + R$ 9.000,00· ponderado 150,00 € + R$ 4.500,00",
+      "€ 300,00 + R$ 9.000,00· ponderado € 150,00 + R$ 4.500,00",
     );
   });
 

@@ -88,11 +88,13 @@ export const REGISTRO_DE_IDIOMAS = [
     codigo: "nl",
     nomeNativo: "Nederlands",
     rotuloCurto: "NL",
-    // `nl-BE` e não `nl`: o público é a Bélgica (Flandres e Bruxelas), e data,
-    // número e moeda saem como lá. Em construção até a leitura do catálogo acabar.
+    // `nl-BE` e não `nl`: o público é a Bélgica (Flandres e Bruxelas), e data e
+    // número saem como lá. A moeda não passa por aqui: o euro de toda tela sai
+    // na convenção belga por `lib/money.ts`. Catálogo em
+    // `lib/i18n/traducoes/nl.json`, completo desde o doc S2a (Task 7).
     tagBcp47: "nl-BE",
     subtagsDoNavegador: ["nl"],
-    nivel: "em_construcao",
+    nivel: "completo",
     mantenedor: "Agenterix (@nusretbayindir-stack)",
   },
   {
@@ -100,10 +102,11 @@ export const REGISTRO_DE_IDIOMAS = [
     nomeNativo: "Français",
     rotuloCurto: "FR",
     // `fr-BE` e não `fr`, pela mesma razão do neerlandês: a Bélgica (Bruxelas e
-    // Valônia). Em construção até a leitura do catálogo acabar.
+    // Valônia). Catálogo em `lib/i18n/traducoes/fr.json`, completo desde o doc
+    // S2a (Task 7).
     tagBcp47: "fr-BE",
     subtagsDoNavegador: ["fr"],
-    nivel: "em_construcao",
+    nivel: "completo",
     mantenedor: "Agenterix (@nusretbayindir-stack)",
   },
   {

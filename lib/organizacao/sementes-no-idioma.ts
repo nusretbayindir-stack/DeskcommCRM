@@ -49,6 +49,8 @@ export const TIPOS_DA_AGENDA_SEMEADOS: Record<Idioma, Record<SlugDoTipo, string>
   "pt-BR": { consulta: "Consulta", reuniao: "Reunião", atendimento: "Atendimento" },
   es: { consulta: "Consulta", reuniao: "Reunión", atendimento: "Atención" },
   tr: { consulta: "Danışma", reuniao: "Toplantı", atendimento: "Görüşme" },
+  nl: { consulta: "Consultatie", reuniao: "Vergadering", atendimento: "Afspraak" },
+  fr: { consulta: "Consultation", reuniao: "Réunion", atendimento: "Rendez-vous" },
 };
 
 /** O funil do gatilho. `Ödendi` e `İptal edildi` são as mesmas palavras de `vocabulario-padrao.ts`. */
@@ -92,6 +94,33 @@ export const FUNIL_SEMEADO: Record<Idioma, { nome: string; etapas: Record<SlugDa
       cancelado: "İptal edildi",
     },
   },
+  // As palavras dos catálogos e dos glossários (pós-venda = nazorg / après-vente).
+  nl: {
+    nome: "Bestellingen",
+    etapas: {
+      carrinho_abandonado: "Verlaten winkelmandje",
+      aguardando_pagamento: "Wacht op betaling",
+      pago: "Betaald",
+      em_separacao: "In voorbereiding",
+      enviado: "Verzonden",
+      entregue: "Geleverd",
+      pos_venda: "Nazorg",
+      cancelado: "Geannuleerd",
+    },
+  },
+  fr: {
+    nome: "Commandes",
+    etapas: {
+      carrinho_abandonado: "Panier abandonné",
+      aguardando_pagamento: "En attente de paiement",
+      pago: "Payé",
+      em_separacao: "En préparation",
+      enviado: "Envoyé",
+      entregue: "Livré",
+      pos_venda: "Après-vente",
+      cancelado: "Annulé",
+    },
+  },
 };
 
 /**
@@ -105,6 +134,10 @@ export const ETIQUETAS_SEMEADAS: Record<Idioma, readonly string[]> = {
   "pt-BR": ["dúvida", "reclamação", "troca", "devolução", "elogio", "orçamento", "pós-venda", "urgente"],
   es: ["duda", "reclamo", "cambio", "devolución", "elogio", "presupuesto", "posventa", "urgente"],
   tr: ["soru", "şikayet", "değişim", "iade", "teşekkür", "teklif", "satış sonrası", "acil"],
+  // "orçamento" aqui é o pedido de preço do cliente (offerte / devis), não o
+  // orçamento de IA da tela.
+  nl: ["vraag", "klacht", "ruil", "retour", "compliment", "offerte", "nazorg", "dringend"],
+  fr: ["question", "réclamation", "échange", "retour", "compliment", "devis", "après-vente", "urgent"],
 };
 
 const SLUG_DO_FUNIL_SEMEADO = "pedidos";

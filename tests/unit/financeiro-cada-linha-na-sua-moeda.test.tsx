@@ -76,7 +76,7 @@ describe("lançamentos do período", () => {
   it("o lançamento em euro sai em euro, e não em real", () => {
     montar();
     const linha = linhaDe("Material importado");
-    expect(linha).toContain("+50,00 €");
+    expect(linha).toContain("+€ 50,00");
     expect(linha).not.toContain("R$");
   });
 });
@@ -106,7 +106,7 @@ describe("lançamentos recorrentes", () => {
   it("a recorrência em euro sai em euro, e não em real", () => {
     montar();
     const linha = linhaDe("Licença anual");
-    expect(linha).toContain("50,00 €");
+    expect(linha).toContain("€ 50,00");
     expect(linha).not.toContain("R$");
   });
 });

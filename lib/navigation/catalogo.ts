@@ -90,7 +90,8 @@ export interface NavMetadata {
  * mesma conversa para a sexta tela.
  */
 export const NAV_GROUPS: NavGroup[] = [
-  { id: "atendimento", label: "Atendimento" },
+  // `@@menu`: o português lê "Atendimento"; o francês, "Conversations" (lib/i18n/no-contexto.ts).
+  { id: "atendimento", label: "Atendimento@@menu" },
   { id: "crm", label: "CRM", hub: { href: "/app/crm", label: "Ver tudo em CRM" } },
   { id: "ia", label: "Agente de IA", hub: { href: "/app/ai", label: "Ver tudo em IA" } },
   { id: "canais", label: "Canais" },

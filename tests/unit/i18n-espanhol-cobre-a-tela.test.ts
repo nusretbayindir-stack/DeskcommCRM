@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { DICIONARIO } from "@/lib/i18n/dicionario";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { semContexto } from "@/lib/i18n/no-contexto";
 import { IDIOMAS, type Idioma } from "@/lib/i18n/idiomas";
 import { IDIOMAS_EM_CONSTRUCAO, IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
 
@@ -497,7 +498,8 @@ describe("a chave é o texto em português, e o português não muda", () => {
 describe("toda chave usada na tela tem espanhol", () => {
   it("nenhuma chamada t() cai no português por falta de tradução", () => {
     const semEspanhol = [...chavesUsadas().entries()]
-      .filter(([chave]) => !DICIONARIO[chave]?.es)
+      // Chave com contexto (`lib/i18n/no-contexto.ts`): sem entrada própria, vale a da frase.
+      .filter(([chave]) => !(DICIONARIO[chave]?.es ?? DICIONARIO[semContexto(chave)]?.es))
       .map(([chave, onde]) => `${onde[0]} → t(${JSON.stringify(chave)})`);
     expect(
       semEspanhol,
@@ -636,7 +638,9 @@ function catalogoDe(codigo: string): Record<string, string> {
 /** O idioma tem a frase: na coluna dele no dicionário, ou no catálogo dele. */
 function temTraducao(idioma: Idioma): (chave: string) => boolean {
   const catalogo = catalogoDe(idioma);
-  return (chave) => Boolean(DICIONARIO[chave]?.[idioma as Exclude<Idioma, "pt-BR">] ?? catalogo[chave]);
+  const naLingua = (chave: string) => DICIONARIO[chave]?.[idioma as Exclude<Idioma, "pt-BR">] ?? catalogo[chave];
+  // Chave com contexto (`lib/i18n/no-contexto.ts`): sem entrada própria, vale a da frase.
+  return (chave) => Boolean(naLingua(chave) ?? naLingua(semContexto(chave)));
 }
 
 /**
