@@ -64,6 +64,28 @@ const VOCABULARIO_DO_FUNIL_PADRAO: Record<Idioma, VocabularioDoFunil> = {
     stage: "Aşama",
     stage_plural: "Aşamalar",
   },
+  // As palavras dos glossários aprovados (doc S2a): negócio = verkoopkans /
+  // opportunité, etapa = fase / étape.
+  nl: {
+    lead: "Contact",
+    lead_plural: "Contacten",
+    deal: "Verkoopkans",
+    deal_plural: "Verkoopkansen",
+    won: "Gewonnen",
+    lost: "Verloren",
+    stage: "Fase",
+    stage_plural: "Fasen",
+  },
+  fr: {
+    lead: "Contact",
+    lead_plural: "Contacts",
+    deal: "Opportunité",
+    deal_plural: "Opportunités",
+    won: "Gagné",
+    lost: "Perdu",
+    stage: "Étape",
+    stage_plural: "Étapes",
+  },
 };
 
 /**

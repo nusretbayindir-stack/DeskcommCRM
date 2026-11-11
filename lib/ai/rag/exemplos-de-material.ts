@@ -52,6 +52,28 @@ embalaje original. El envío de la devolución corre por nuestra cuenta cuando e
 Teslimattan sonraki 30 gün içinde, ürün kullanılmamış ve orijinal ambalajında ise değişim kabul ediyoruz.
 Kusur üretimden kaynaklanıyorsa iade kargo ücretini biz karşılıyoruz.`,
   },
+  nl: {
+    perguntas: ["Wat is de levertermijn?", "Kan ik een product ruilen?"],
+    respostas: [
+      "2 tot 3 werkdagen na de bevestiging van de betaling.",
+      "Ja, binnen 30 dagen, als het product ongebruikt is.",
+    ],
+    documento: `# Ruilbeleid
+
+We aanvaarden een ruil tot 30 dagen na de levering, als het product ongebruikt is en in de originele
+verpakking zit. Bij een fabricagefout betalen wij de verzendkosten voor de terugzending.`,
+  },
+  fr: {
+    perguntas: ["Quel est le délai de livraison\u00a0?", "Peut-on échanger un produit\u00a0?"],
+    respostas: [
+      "De 2 à 3 jours ouvrables après la confirmation du paiement.",
+      "Oui, dans les 30 jours, si le produit n'a pas été utilisé.",
+    ],
+    documento: `# Politique d'échange
+
+Nous acceptons les échanges jusqu'à 30 jours après la livraison, si le produit n'a pas été utilisé et se
+trouve dans son emballage d'origine. Les frais de retour sont à notre charge en cas de défaut de fabrication.`,
+  },
 };
 
 export function exemploDeFaq(idioma: Idioma): string {

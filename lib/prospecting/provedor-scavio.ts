@@ -64,6 +64,9 @@ const CONECTIVO: Record<Idioma, string> = {
   // O turco marca o lugar com sufixo ("İstanbul'da"), não com palavra solta:
   // sem conectivo, "nicho local" é a busca que um turco digitaria.
   tr: "",
+  // "kapper in Gent", "coiffeur à Bruxelles".
+  nl: "in",
+  fr: "à",
 };
 
 interface BuscaCodificada {

@@ -267,13 +267,106 @@ const FECHOS_TR = {
   ],
 } as const;
 
+/**
+ * OS MESMOS avisos em neerlandês e em francês, pela mesma razão: o fork vende
+ * na Bélgica (doc S2a), e a organização em `nl` ou `fr` conversa nesse idioma.
+ *
+ * Tratamento formal dos glossários: "u" em neerlandês (com o vocabulário de
+ * Flandres, "verwittigen"), "vous" em francês. "Medewerker" e "conseiller" são
+ * o atendente humano dos glossários. O fecho fora de expediente segue a escolha
+ * do dono para o turco (U24): nada de "ninguém disponível" logo depois de "estou
+ * chamando alguém", nada de fila nem de convite a esperar. Em francês, o espaço
+ * antes de `:`, `;` e `!` é o inseparável (`\u00a0`), como no catálogo.
+ */
+const ABERTURAS_NL: Record<MotivoDoAviso, readonly string[]> = {
+  suspeita_de_opt_out: [
+    "Begrepen. Ik stuur u hier geen automatische berichten meer.",
+    "Goed, genoteerd: naar dit nummer gaan geen automatische berichten meer.",
+    "Oké! Ik stop nu meteen de automatische berichten op dit kanaal.",
+  ],
+  pediu_humano: [
+    "Natuurlijk! Ik roep meteen iemand van ons team erbij om u verder te helpen.",
+    "Geen probleem. Ik heb net een medewerker verwittigd om het hier over te nemen.",
+    "Prima. Ik heb uw gesprek nu doorgegeven aan een medewerker.",
+  ],
+  orcamento_de_ia: [
+    "Ik geef uw gesprek door aan iemand van ons team.",
+    "Vanaf nu helpt iemand van ons team u verder.",
+    "Ik zet dit gesprek door naar een medewerker.",
+  ],
+  outro: [
+    "Dit lost een medewerker beter op. Ik heb het team al verwittigd.",
+    "Ik neem hier liever geen risico: ik heb uw vraag doorgegeven aan een medewerker.",
+    "Ik vraag iemand van ons team om dit samen met u te bekijken.",
+  ],
+};
+
+const FECHOS_NL = {
+  sem_equipe: [
+    "Uw vraag is genoteerd en het team antwoordt zo snel mogelijk.",
+    "Ik heb alles genoteerd; we komen zo snel mogelijk bij u terug.",
+    "Het is geregistreerd, en iemand antwoordt u bij de eerste gelegenheid.",
+  ],
+  fora_de_expediente: [
+    "Ons team kan nu niet meteen antwoorden, maar uw vraag is genoteerd.",
+    "Het team is op dit moment niet bereikbaar; ik heb uw vraag voor hen genoteerd.",
+    "Het team kan u nu niet meteen helpen; uw vraag is genoteerd en we komen bij u terug.",
+  ],
+  com_equipe: [
+    "U hoeft hier in het gesprek maar even te wachten.",
+    "Blijf gerust hier, u krijgt zo een antwoord.",
+    "Even geduld in dit gesprek, alstublieft.",
+  ],
+} as const;
+
+const ABERTURAS_FR: Record<MotivoDoAviso, readonly string[]> = {
+  suspeita_de_opt_out: [
+    "C'est noté. Je ne vous envoie plus de messages automatiques ici.",
+    "Bien compris\u00a0: plus aucun message automatique ne sera envoyé à ce numéro.",
+    "D'accord\u00a0! J'arrête dès maintenant les envois automatiques sur ce canal.",
+  ],
+  pediu_humano: [
+    "Bien sûr\u00a0! J'appelle tout de suite quelqu'un de l'équipe pour vous aider.",
+    "Pas de souci. Je viens de prévenir un conseiller pour qu'il prenne le relais ici.",
+    "Parfait. J'ai transmis votre conversation à un conseiller.",
+  ],
+  orcamento_de_ia: [
+    "Je transmets votre demande à quelqu'un de l'équipe.",
+    "À partir d'ici, c'est quelqu'un de l'équipe qui vous répond.",
+    "Je transfère cette conversation à un conseiller.",
+  ],
+  outro: [
+    "Un conseiller saura mieux vous aider ici. J'ai déjà prévenu l'équipe.",
+    "Je préfère ne pas prendre de risque\u00a0: j'ai transmis votre demande à un conseiller.",
+    "Je demande à quelqu'un de l'équipe de regarder cela avec vous.",
+  ],
+};
+
+const FECHOS_FR = {
+  sem_equipe: [
+    "Votre demande est enregistrée et l'équipe vous répond dès que possible.",
+    "J'ai tout noté\u00a0; nous revenons vers vous dès que possible.",
+    "C'est enregistré, et quelqu'un vous répondra à la première occasion.",
+  ],
+  fora_de_expediente: [
+    "L'équipe ne peut pas répondre tout de suite, mais votre demande est bien notée.",
+    "Pour le moment, l'équipe n'est pas joignable\u00a0; j'ai noté votre demande pour elle.",
+    "L'équipe ne peut pas vous aider à l'instant\u00a0; votre demande est notée et nous revenons vers vous.",
+  ],
+  com_equipe: [
+    "Il suffit de patienter un instant ici, dans la conversation.",
+    "Restez ici, quelqu'un vous répond dans un instant.",
+    "Merci de patienter un moment dans cette conversation.",
+  ],
+} as const;
+
 interface TextosDoAviso {
   aberturas: Record<MotivoDoAviso, readonly string[]>;
   fechos: { sem_equipe: readonly string[]; fora_de_expediente: readonly string[]; com_equipe: readonly string[] };
   fechoDoOptOut: string;
 }
 
-const TEXTOS: Record<"pt" | "es" | "tr", TextosDoAviso> = {
+const TEXTOS: Record<"pt" | "es" | "tr" | "nl" | "fr", TextosDoAviso> = {
   pt: {
     aberturas: ABERTURAS,
     fechos: FECHOS,
@@ -289,6 +382,16 @@ const TEXTOS: Record<"pt" | "es" | "tr", TextosDoAviso> = {
     fechos: FECHOS_TR,
     fechoDoOptOut: "Talebinizi onaylaması için ekibimizden birine ilettim.",
   },
+  nl: {
+    aberturas: ABERTURAS_NL,
+    fechos: FECHOS_NL,
+    fechoDoOptOut: "Ik heb uw verzoek doorgegeven aan een medewerker, die het zal bevestigen.",
+  },
+  fr: {
+    aberturas: ABERTURAS_FR,
+    fechos: FECHOS_FR,
+    fechoDoOptOut: "J'ai transmis votre demande à un conseiller, qui la confirmera.",
+  },
 };
 
 /**
@@ -299,6 +402,8 @@ function textosDoIdioma(idioma: string | null | undefined): TextosDoAviso {
   const codigo = (idioma ?? "").trim().toLowerCase();
   if (codigo.startsWith("es")) return TEXTOS.es;
   if (codigo.startsWith("tr")) return TEXTOS.tr;
+  if (codigo.startsWith("nl")) return TEXTOS.nl;
+  if (codigo.startsWith("fr")) return TEXTOS.fr;
   return TEXTOS.pt;
 }
 

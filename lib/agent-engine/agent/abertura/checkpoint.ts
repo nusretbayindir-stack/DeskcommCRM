@@ -125,6 +125,8 @@ const IDIOMA_DOS_TEXTOS_DO_FECHAMENTO: Record<Idioma, string | null> = {
   "pt-BR": null,
   es: "espanhol (español)",
   tr: "turco (Türkçe)",
+  nl: "holandês (Nederlands)",
+  fr: "francês (français)",
 };
 
 export function instrucaoDeIdiomaDoFechamento(idioma: Idioma): string | null {

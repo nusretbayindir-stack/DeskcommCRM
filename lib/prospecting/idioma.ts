@@ -41,4 +41,7 @@ export const IDIOMA_DA_CONVERSA: Record<Idioma, string> = {
   "pt-BR": "português do Brasil",
   es: "espanhol",
   tr: "turco",
+  // O fork vende na Bélgica: a variante belga, e não a da Holanda nem a da França.
+  nl: "neerlandês da Bélgica",
+  fr: "francês da Bélgica",
 };

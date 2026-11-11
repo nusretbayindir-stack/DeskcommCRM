@@ -572,6 +572,8 @@ const LOCALE_DO_ZOD: Record<Idioma, () => { localeError: z.core.$ZodErrorMap }> 
   "pt-BR": z.locales.pt,
   es: z.locales.es,
   tr: z.locales.tr,
+  nl: z.locales.nl,
+  fr: z.locales.fr,
 };
 
 /**

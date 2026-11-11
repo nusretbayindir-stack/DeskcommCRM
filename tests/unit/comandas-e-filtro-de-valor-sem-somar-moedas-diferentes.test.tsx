@@ -97,11 +97,11 @@ describe("atendimentos sem comanda — o total por moeda", () => {
     // pt-PT: "5000,00 €") — o MESMO formatador do total da coluna que o #1829
     // corrigiu. O que este caso trava é a ESTRUTURA: duas moedas lado a lado.
     const texto = semNbsp(botaoFaturar().textContent ?? "");
-    expect(texto).toContain("R$ 5.000,00 + 5000,00 €");
+    expect(texto).toContain("R$ 5.000,00 + € 5.000,00");
     // O defeito: a soma dos dois centavos escrita em real.
     expect(texto).not.toContain("R$ 10.000,00");
     // E a linha em euro também não pode vestir real.
-    expect(screen.getByText((t) => semNbsp(t) === "5000,00 €")).toBeTruthy();
+    expect(screen.getByText((t) => semNbsp(t) === "€ 5.000,00")).toBeTruthy();
   });
 
   it("controle — com uma moeda só, o total continua como hoje", () => {
@@ -157,8 +157,8 @@ describe("organização em outra moeda — a linha sem moeda veste a da organiza
     montar([pendente({ appointment_id: "e1", suggested_price_cents: 500_000 })], "EUR");
     marcar("e1");
     const texto = semNbsp(botaoFaturar().textContent ?? "");
-    expect(texto).toContain("5000,00 €");
+    expect(texto).toContain("€ 5.000,00");
     expect(texto).not.toContain("R$");
-    expect(screen.getAllByText((t) => semNbsp(t) === "5000,00 €").length).toBeGreaterThan(0);
+    expect(screen.getAllByText((t) => semNbsp(t) === "€ 5.000,00").length).toBeGreaterThan(0);
   });
 });

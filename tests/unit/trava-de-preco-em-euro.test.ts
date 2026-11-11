@@ -43,8 +43,9 @@ describe("a trava reconhece preço em euro", () => {
   it("veta abaixo do mínimo e responde na moeda que a mensagem usou", () => {
     const decisao = decidePromise({ candidate: "Faço por 1 € para ti.", table: { minPriceCents: 3900 } });
     expect(decisao.allow).toBe(false);
-    expect(decisao.reason).toContain("1,00 €");
-    expect(decisao.reason).toContain("39,00 €");
+    // A resposta escreve o euro como a tela (`formatCents`, convenção belga).
+    expect(decisao.reason).toContain("€ 1,00");
+    expect(decisao.reason).toContain("€ 39,00");
     expect(decisao.reason).not.toContain("R$");
   });
 

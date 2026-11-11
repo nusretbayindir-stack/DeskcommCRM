@@ -103,7 +103,7 @@ describe("o valor do negócio usa a moeda certa — e o eco embaixo do campo tam
     orgAtiva.atual = { currency: "BRL", country: null };
     render(<LeadFieldsForm lead={NEGOCIO} pipelineId={FUNIL} />);
     expect(screen.getByText(/Valor \(€\)/)).toBeTruthy();
-    expect(screen.getByText(/= 249,90/)).toBeTruthy();
+    expect(screen.getByText(/= € 249,90/)).toBeTruthy();
     expect(screen.queryByText(/R\$/)).toBeNull();
   });
 
