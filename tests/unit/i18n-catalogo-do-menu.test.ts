@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DICIONARIO } from "@/lib/i18n/dicionario";
+import { semContexto } from "@/lib/i18n/no-contexto";
 import { NAV_CATALOG, NAV_GROUPS } from "@/lib/navigation/catalogo";
 
 /**
@@ -17,7 +18,9 @@ import { NAV_CATALOG, NAV_GROUPS } from "@/lib/navigation/catalogo";
  * adivinhar: todo texto que a navegação mostra precisa ter a coluna `es`.
  */
 
-const temEspanhol = (texto: string): boolean => Boolean(DICIONARIO[texto]?.es);
+// Chave com contexto (`lib/i18n/no-contexto.ts`): sem entrada própria, vale a da frase.
+const temEspanhol = (texto: string): boolean =>
+  Boolean(DICIONARIO[texto]?.es ?? DICIONARIO[semContexto(texto)]?.es);
 
 interface TextoDoMenu {
   readonly onde: string;
