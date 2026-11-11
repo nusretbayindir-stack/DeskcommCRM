@@ -205,3 +205,194 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 **Durdurma kelimeleri çevrilmez.** Metin müşterinin yazacağı bir kelimeyi söylüyorsa (`responda PARAR`, `envie SAIR`, `BAJA`, `STOP`), Fransızcada **STOP** yazılır: "Demandez au client d'envoyer STOP." Sistem bu kelimeyi her dilde tanır.
 
 Tırnak içindeki örnek adlar (`etiqueta “cliente”` gibi) çevrilir: « client ». Bunlar kayıtlı veri değil, açıklamadaki örneklerdir.
+
+## Sonradan onaylanan terimler
+
+Fransızca katalog (S2a Görev 6, PR #45) çevrilirken bu sözlükte olmayan terimler. Gece görevinin listesi (belge deposu `docs/handoff/2026-11-11-fr-terimler-onaya.md`) 2026-11-11'de okuyucunun okuma sayfasında onaylandı: 5 karar, 1 not; başka satıra itiraz yok. Aşağıdaki tablolar o sayfanın kaynağından alındı (`docs/handoff/2026-11-11-fr-terimler-sayfa-kaynagi.md`). Buradaki bir terimi değiştirmek de onay ister.
+
+### Okuyucunun kararları
+
+- **Görüşme menüsü** (pt Atendimento) → **Conversations**. Yalnız menü adı; cümle içinde "prise en charge" kalır (yukarıdaki Terimler tablosu). Katalogdaki `Atendimento` anahtarı ajandada da kullanılıyor (bekleme listesinde hizmet alanı, Ekip sayfasında sekme), orada "Conversations" yanlış okunur. Bu yüzden katalogda şimdilik "Prise en charge" duruyor; menü için ayrı anahtar Görev 7'de açılır ve menü o zaman "Conversations" olur.
+- **Sağlayıcılar menüsü** (pt Provedores) → Fournisseurs.
+- **Teklifler** (pt Propostas) → Offres.
+- **Rol adı müdür** (pt Gerente, Gestor, Manager) → Manager.
+- **Rol adı Admin** (pt Admin) → Administrateur. Yönetim bölümü anlamında cümle içinde geçen "Admin" (ör. "Admin › E-mail") → Administration.
+
+### Menü ve ekran adları
+
+Cümle içinde anıldığında da aynı yazılır (ör. "IA › Fournisseurs").
+
+| Portekizce | Türkçe | Fransızca |
+|---|---|---|
+| Atendimento | Görüşme | Conversations (menü adı; bkz. yukarıdaki ilk karar) |
+| CRM | CRM | CRM |
+| Ver tudo em CRM / IA / Análise | Tümünü gör: CRM / AI / Analiz | Tout voir dans CRM / IA / Analyse |
+| IA (menu) | AI | IA |
+| Agente de IA | AI asistanı | Assistant IA |
+| Agentes / Agentes IA | Asistanlar / AI asistanları | Assistants / Assistants IA |
+| Canais | Kanallar | Canaux |
+| Análise | Analiz | Analyse |
+| Organização | Şirket | Entreprise |
+| Configurações | Ayarlar | Paramètres |
+| Configurações do app | Uygulama ayarları | Paramètres de l'application |
+| Prospecção | Müşteri adayı bulma | Prospection |
+| O dia a dia da venda | Satışın günlük işleyişi | La vente au quotidien |
+| Inbox | Gelen kutusu | Boîte de réception |
+| Radar | Radar | Radar |
+| Agenda | Takvim | Agenda |
+| Lista de espera | Bekleme listesi | Liste d'attente |
+| Respostas rápidas | Hazır yanıtlar | Réponses rapides |
+| Funis | Satış hunileri | Pipelines |
+| Etapas do funil | Satış hunisi aşamaları | Étapes du pipeline |
+| Campanhas | Kampanyalar | Campagnes |
+| Contatos | Kişiler | Contacts |
+| Empresas | Şirketler | Entreprises |
+| Pessoas | Kişiler | Personnes |
+| Tarefas | Görevler | Tâches |
+| Planos de tarefa | Görev planları | Plans de tâches |
+| Chamadas | Aramalar | Appels |
+| Cold Call | Cold Call | Cold Call |
+| Produtos | Ürünler | Produits |
+| Preparar a venda | Satışı hazırla | Préparer la vente |
+| Importações | İçe aktarmalar | Importations |
+| Propostas | Teklifler | Offres |
+| Modelos de proposta | Teklif şablonları | Modèles d'offre |
+| Fechar a venda | Satışı kapat | Conclure la vente |
+| Tipos de agendamento | Randevu türleri | Types de rendez-vous |
+| Aviso de agendamento | Randevu bildirimi | Notification de rendez-vous |
+| Sua empresa | Şirketiniz | Votre entreprise |
+| Comandas | Adisyonlar | Additions |
+| Financeiro | Finans | Finances |
+| Montar o agente | Asistanı kur | Configurer l'assistant |
+| Follow-ups | Takip mesajları | Messages de relance |
+| Fluxos de atendimento | Görüşme akışları | Flux de prise en charge |
+| Roteadores | Yönlendiriciler | Répartiteurs |
+| Credenciais | Kimlik bilgileri | Identifiants |
+| Provedores | Sağlayıcılar | Fournisseurs |
+| Conhecimento | Bilgi | Connaissances |
+| Ensinar o agente | Asistana öğretin | Former l'assistant |
+| Memória | Hafıza | Mémoire |
+| Skills | Beceriler | Compétences |
+| Casos | Vakalar | Dossiers |
+| Acompanhar o agente | Asistanı izle | Suivre l'assistant |
+| Alertas | Uyarılar | Alertes |
+| Aviso no WhatsApp | WhatsApp bildirimi | Notification WhatsApp |
+| Execuções | Çalıştırmalar | Exécutions |
+| Uso de IA | AI kullanımı | Utilisation de l'IA |
+| Uso e orçamento | Kullanım ve bütçe | Utilisation et budget |
+| Orçamento | Bütçe | Budget |
+| Conexões | Bağlantılar | Connexions |
+| Central de Conexões | Bağlantı merkezi | Centre de connexions |
+| Webhooks | Webhooks | Webhooks |
+| Faturamento | Ciro | Chiffre d'affaires |
+| Dinheiro | Nakit | Argent |
+| Honorários | Vekâlet ücretleri | Honoraires |
+| Desempenho | Performans | Performances |
+| Os números do período | Dönemin rakamları | Les chiffres de la période |
+| Meta de vendas | Satış hedefi | Objectif de vente |
+| Meta Ads | Meta Ads | Meta Ads |
+| Atividades | Etkinlikler | Activités |
+| Evolução da IA | AI gelişimi | Évolution de l'IA |
+| O histórico que se consulta | Sorgulanan geçmiş | L'historique à consulter |
+| Audit Log | Denetim kaydı | Journal d'audit |
+| Perfil | Profil | Profil |
+| Sua conta | Hesabınız | Votre compte |
+| Segurança | Güvenlik | Sécurité |
+| Notificações | Bildirimler | Notifications |
+| App no celular | Telefonda uygulama | Application sur GSM |
+| Equipe | Ekip | Équipe |
+| Distribuição de atendimento | Görüşme dağıtımı | Répartition des prises en charge |
+| Automações | Otomasyonlar | Automatisations |
+| Tags | Etiketler | Étiquettes |
+| Recursos opcionais | İsteğe bağlı özellikler | Fonctions optionnelles |
+| Conversões | Dönüşümler | Conversions |
+| Marca | Marka | Marque |
+| Plano e cobrança | Plan ve ödeme | Formule et facturation |
+| Cobrança | Ödeme | Facturation |
+| LGPD (menu) | GDPR | RGPD |
+| Dados e acesso | Veriler ve erişim | Données et accès |
+| API Tokens | API token'ları | Jetons API |
+| Chaves de API | API anahtarları | Clés API |
+| Trunk SIP | SIP trunk | Trunk SIP |
+| Servidor MCP externo | Harici MCP sunucusu | Serveur MCP externe |
+| Extensões | Eklentiler | Extensions |
+| Dados externos | Harici veriler | Données externes |
+| Ajuda | Yardım | Aide |
+| Operação | Operasyon | Opérations |
+| Clientes | Müşteriler | Clients |
+| Plataforma | Platform | Plateforme |
+| Dashboard / Painel | Panel | Tableau de bord |
+| Incidents | Olaylar | Incidents |
+| Audit | Denetim | Audit |
+| Tenants | Şirketler | Entreprises |
+| Users | Kullanıcılar | Utilisateurs |
+| Platform Admins | Platform Yöneticileri | Administrateurs de la plateforme |
+| Usage | Kullanım | Utilisation |
+| Google Agenda | Google Takvim | Google Agenda |
+| API Oficial (Meta) | Resmî API (Meta) | API officielle (Meta) |
+| E-mail | E-posta | E-mail |
+| Destinos internos | İç hedefler | Destinations internes |
+| Cadastro (admin menu, sign-up settings) | Kayıt | Inscription |
+| Módulos | Modüller | Modules |
+| Proteção de envio | Gönderim koruması | Protection des envois |
+| Comportamento | Davranış | Comportement |
+| Básico | Temel | Base |
+| Biblioteca | Kütüphane | Bibliothèque |
+| Grupos | Gruplar | Groupes |
+| Central / Central de avisos | Bildirim merkezi | Centre de notifications |
+
+### Çeviri sırasında sabitlenen terimler
+
+| Portekizce | Türkçe | Fransızca |
+|---|---|---|
+| titular (dos dados) | veri sahibi (kişisel verisi işlenen kişi) | personne concernée |
+| encarregado (da proteção de dados) | veri koruma görevlisi | délégué à la protection des données (DPO) |
+| provedor | sağlayıcı («AI sağlayıcıları» → «Fournisseurs d'IA») | fournisseur |
+| ficha (do cliente) | müşteri kartı | fiche |
+| captação (formulário) | müşteri adayı formu | formulaire de prospects |
+| chamada (de voz) | arama; sesli arama | appel; appel vocal |
+| recibo | makbuz | reçu |
+| carência | ek süre (ödeme gecikince tanınan) | délai de grâce |
+| agendamento de envio / disparo agendado | zamanlanmış gönderim | envoi programmé |
+| avisar | haber vermek | prévenir |
+| reserva | rezervasyon | réservation |
+| reserva (cópia) | yedek (veri yedeği) | sauvegarde |
+| pós-venda | satış sonrası | après-vente |
+| rascunho / publicada | taslak / yayında | brouillon / publiée |
+| superado | yerine yenisi gelmiş (sürüm durumu) | remplacée |
+| cifrar / cifra | şifrelemek / şifreleme | chiffrer / chiffrement |
+| caixa / aresta | kutu / bağlantı çizgisi (otomasyon tasarımcısında) | bloc / liaison |
+| nó | düğüm (akış şemasında) | nœud |
+| molde | örnek şirket (kopyalanarak kullanılan) | exemple |
+| 1ª, 2º | 1., 2. | 1re, 2e |
+| aquecimento | numara ısındırma (yeni numarada gönderimi yavaş yavaş artırma) | montée en charge |
+| credencial | kimlik bilgisi | identifiant |
+| cobrança | ödeme talebi (tek bir tahsilat) | demande de paiement |
+| setor | departman | service |
+| ponto (endpoint) | nokta (bağlantı adresi) | point |
+
+### Birleştirilen terimler
+
+Farklı çevirmenlerin farklı yazdığı, düzeltme turunda bütün katalogda eşitlenen terimler. Parantezdeki sayı, değişen cümle sayısı.
+
+- **Müdür / yönetici rolü** (pt gerente, gestor) → manager; «gestionnaire» ve «responsable» yazılan yerler eşitlendi (14). Rol adı da Manager (yukarıdaki kararlar).
+- **Görüşme akışı ve senaryo** (pt roteiro): «Görüşme akışları» modülünde → flux (21); soğuk aramada → Script (3).
+- **Hazır veri sorgusu** (pt receita) → requête prédéfinie (7). Bir cümlenin anlamı tamamen yanlıştı, düzeldi.
+- **Toplu yayın** (pt broadcast; hızlı gönderimin yanındaki mod) → diffusion (6). «Toplu gönderim» (pt disparo) → envoi groupé olarak kaldı.
+- **Geri dönüş, geri arama** (pt retorno; asistanın planladığı) → rappel (11). Vadesi geçmiş ödeme akışı «flux de relance»; girişten sonra dönülen adres «adresse de redirection» kaldı.
+- **Materyal** (pt material) → tek bir belge için document, genel içerik için contenu (8).
+- **Kimliğine bürünme** (pt impersonate; platform yöneticisi bir şirketin ekranını o şirketin gözüyle açar, yalnız platform yöneticisi görür) → suivi, düğmede « Suivre l'entreprise » (12).
+- **Telefon rehberi** (pt agenda do celular) → répertoire (du GSM) (3).
+- **Kurulumdaki AI çalışanı** (pt seu funcionário) → votre employé IA (13). Yalın «employé» insan gibi okunuyordu.
+- **Operatör** (pt operador; sunucuyu işleten) → opérateur (1). Kişisel veri işleme anlamındaki «operador» → sous-traitant kaldı.
+- **Asistanın görüşme aşaması** (pt passo do atendimento) → phase (6). Akış ve takip adımları «étape» kaldı.
+- **Engellemek / engeller** (pt vetar, vetos) → bloquer / blocages (1).
+- **Devral** düğmesi (pt Assumir; görüşmeyi asistandan alır) → Prendre la main (1).
+- **Kutu ve bağlantı** (pt caixa, ligação; otomasyon tasarımcısında) → bloc, liaison (1). Mesaj yazma kutusu (pt caixa de mensagem) → zone de saisie (1).
+- **Yolculuk** (pt jornada; araç seçicide) → parcours (1); yayımlanmış çalışma düzeni → horaire de travail (1).
+- **Yeni kaynak** (pt Novo recurso; hazır yanıt ekranında) → Nouvelle réponse rapide; gelişim ekranında «her kaynak» → outil (2).
+- **Abonelikten çıkma** (pt descadastro) → désabonnement (1).
+- **İlk kurulum** (pt onboarding) → configuration initiale (2).
+- **Gün adları** tek biçimde: Lun Mar Mer Jeu Ven Sam Dim ve Lundi … Dimanche (4). Düğme ve etiket oldukları için büyük harfle başlıyor; cümle içinde küçük harf kuralı geçerli.
+- **AI token'ı** (pt LLM token; kullanım ölçüsü) → tokens (3). API anahtarı anlamındaki «jeton» kaldı.
+- **Otomatiğe geri ver** düğmesi (pt Devolver ao automático; görüşmeyi yeniden asistana bırakır) → « Remettre en automatique » ve onu anan 4 cümle.
