@@ -113,7 +113,9 @@ describe("POST /api/v1/admin/tenants — idioma e fuso da empresa nova", () => {
   });
 
   it("idioma que a instalação não serve → 400, nada criado", async () => {
-    const res = await POST(pedido({ locale: "fr", timezone: "Europe/Brussels" }));
+    // `en` está no registro, mas em construção: a instalação não o serve. (O
+    // francês era o exemplo até virar idioma servido, doc S2a Task 7.)
+    const res = await POST(pedido({ locale: "en", timezone: "Europe/Brussels" }));
     expect(res.status).toBe(400);
     expect(h.banco.rpcs).toEqual([]);
   });

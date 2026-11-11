@@ -60,6 +60,7 @@ vi.mock("@/lib/i18n/dicionario", async (original) => {
 
 import LegalLayout from "@/app/legal/layout";
 import PrivacyPage, { generateMetadata } from "@/app/legal/privacy/page";
+import { entradaDoCatalogo } from "@/lib/i18n/catalogos";
 import { traduzir } from "@/lib/i18n/dicionario";
 import {
   idiomaBelgaDoCabecalho,
@@ -214,11 +215,14 @@ describe("sem sessão, numa instalação da Bélgica", () => {
 
 describe("fora desse caso nada muda", () => {
   it("instalação sem país: holandês não abre o texto belga", async () => {
+    // Desde que o holandês é idioma do produto (doc S2a, Task 7), o visitante
+    // lê a política do PRODUTO traduzida pelo catálogo — a do país padrão, com
+    // as seções dela —, e não o texto belga, que tem o seletor de língua.
     estado.pais = null;
     estado.cabecalho = "nl-BE";
     const pagina = await abrir("nl");
-    expect(pagina.querySelector("h1")?.textContent).toBe("Política de Privacidade");
-    expect(pagina.textContent).toContain("1. Quem é o controlador");
+    expect(pagina.querySelector("h1")?.textContent).toBe(entradaDoCatalogo("nl", "Política de Privacidade"));
+    expect(pagina.textContent).toContain(entradaDoCatalogo("nl", "1. Quem é o controlador"));
     expect(pagina.querySelector("nav")).toBeNull();
   });
 

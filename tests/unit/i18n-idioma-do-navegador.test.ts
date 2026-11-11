@@ -17,7 +17,8 @@ describe("idiomaDelNavegador", () => {
   });
 
   it("cai no padrão sem idioma servido ou com lista vazia", () => {
-    expect(idiomaDelNavegador(["fr-FR", "de"])).toBe(IDIOMA_PADRAO);
+    // O francês virou idioma servido (doc S2a, Task 7); alemão e italiano seguem fora.
+    expect(idiomaDelNavegador(["de-DE", "it"])).toBe(IDIOMA_PADRAO);
     expect(idiomaDelNavegador([])).toBe(IDIOMA_PADRAO);
   });
 });
