@@ -14766,6 +14766,9 @@ export const DICIONARIO: Traducoes = {
   // O botão de telefonar da fila do Cold Call: "Ligar" sozinho é o interruptor
   // ("Activar"), ver o "Chamar" acima e `lib/i18n/no-contexto.ts`.
   "Ligar@@chamada": { es: "Llamar" },
+  // Etapa do funil de Cold Call (`ETAPAS_DO_COLD_CALL`), que agora nasce no idioma de
+  // quem cria o funil (app/api/v1/cold-call/route.ts). As outras etapas já tinham entrada.
+  "Reunião pedida": { es: "Reunión solicitada" },
   // ─── fim do bloco da Task 7b ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

@@ -115,7 +115,8 @@ describe("linhasDoRoteiro", () => {
     }
     expect(roteiroPadrao("es")).toContain("Apertura");
     expect(roteiroPadrao("en")).toContain("Opening");
-    expect(roteiroPadrao("tr")).toBe(roteiroPadrao("pt-BR"));
+    // Turco, neerlandês e francês têm roteiro do fork (lib/cold-call/no-idioma.ts); a língua sem roteiro segue no português.
+    expect(roteiroPadrao("de")).toBe(roteiroPadrao("pt-BR"));
   });
 });
 
