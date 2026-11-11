@@ -204,3 +204,189 @@ Emin olunmayan bir terimde bu tablo esas alınır. Aynı Portekizce terim her ye
 **Durdurma kelimeleri çevrilmez.** Metin müşterinin yazacağı bir kelimeyi söylüyorsa (`responda PARAR`, `envie SAIR`, `BAJA`, `STOP`), Hollandacada **STOP** yazılır: "Vraag de klant om STOP te sturen." Sistem bu kelimeyi her dilde tanır.
 
 Tırnak içindeki örnek adlar (`etiqueta “cliente”` gibi) çevrilir: “klant”. Bunlar kayıtlı veri değil, açıklamadaki örneklerdir.
+
+## Sonradan onaylanan terimler
+
+Hollandaca katalog (S2a Görev 6, PR #44) çevrilirken bu sözlükte olmayan terimler. Liste (belge deposu `docs/handoff/2026-11-10-nl-terimler-onaya.md`) 2026-11-11'de ürün sahibinin okuma sayfasında onaylandı: 4 karar, not yok. Aşağıdaki tablolar o sayfanın kaynağından alındı (`docs/handoff/2026-11-11-nl-terimler-sayfa-kaynagi.md`). Buradaki bir terimi değiştirmek de onay ister.
+
+### Ürün sahibinin kararları
+
+- **Görüşme menüsü** (pt Atendimento) → Klantcontact (sözlükteki karşılık; Fransızcada menü "Conversations").
+- **Rol adı müdür** (pt Gerente, Gestor, Manager) → Manager.
+- **Meta şablon kategorisi UTILITY** (pt Utilidade) → **Hulpprogramma**, Meta'nın Hollandaca adı. "Service" yazılmaz: Meta'da "Service" ayrı bir kategori (müşterinin başlattığı konuşmalar).
+- **Meta şablon kategorisi AUTHENTICATION** (pt Autenticação) → **Verificatie**, Meta'nın Hollandaca adı. Yalnız Meta kategorisi için. Bağlantı ya da sunucu kimlik doğrulaması "authenticatie" kalır. Katalogdaki tek başına `Autenticação` anahtarı asistanın MCP sunucusu ayarında da kullanıldığı için şimdilik "Authenticatie"; kategori için ayrı anahtar Görev 7'de açılır ve kampanya ekranındaki kategori adı o zaman "Verificatie" olur.
+
+### Menü ve ekran adları
+
+Cümle içinde anıldığında da aynı yazılır (ör. "AI › Aanbieders").
+
+| Portekizce | Türkçe | Hollandaca |
+|---|---|---|
+| Atendimento | Görüşme | Klantcontact |
+| CRM | CRM | CRM |
+| Ver tudo em CRM / IA / Análise | Tümünü gör: CRM / AI / Analiz | Alles bekijken in CRM / AI / Analyse |
+| IA (menu) | AI | AI |
+| Agente de IA | AI asistanı | AI-assistent |
+| Agentes / Agentes IA | Asistanlar / AI asistanları | Assistenten / AI-assistenten |
+| Canais | Kanallar | Kanalen |
+| Análise | Analiz | Analyse |
+| Organização | Şirket | Bedrijf |
+| Configurações | Ayarlar | Instellingen |
+| Configurações do app | Uygulama ayarları | App-instellingen |
+| Admin / Administração | Admin / Yönetim (yönetim bölümü) | Beheer |
+| Prospecção | Müşteri adayı bulma | Prospectie |
+| O dia a dia da venda | Satışın günlük işleyişi | De dagelijkse verkoop |
+| Inbox | Gelen kutusu | Inbox |
+| Radar | Radar | Radar |
+| Agenda | Takvim | Agenda |
+| Lista de espera | Bekleme listesi | Wachtlijst |
+| Respostas rápidas | Hazır yanıtlar | Snelle antwoorden |
+| Funis | Satış hunileri | Pijplijnen |
+| Etapas do funil | Satış hunisi aşamaları | Fasen van de pijplijn |
+| Campanhas | Kampanyalar | Campagnes |
+| Contatos | Kişiler | Contacten |
+| Empresas | Şirketler | Bedrijven |
+| Pessoas | Kişiler | Personen |
+| Tarefas | Görevler | Taken |
+| Planos de tarefa | Görev planları | Takenplannen |
+| Chamadas | Aramalar | Oproepen |
+| Cold Call | Cold Call | Cold Call |
+| Produtos | Ürünler | Producten |
+| Preparar a venda | Satışı hazırla | De verkoop voorbereiden |
+| Importações | İçe aktarmalar | Importen |
+| Propostas | Teklifler | Offertes |
+| Modelos de proposta | Teklif şablonları | Offertesjablonen |
+| Fechar a venda | Satışı kapat | De verkoop afsluiten |
+| Tipos de agendamento | Randevu türleri | Afspraaktypes |
+| Aviso de agendamento | Randevu bildirimi | Afspraakmelding |
+| Sua empresa | Şirketiniz | Uw bedrijf |
+| Comandas | Adisyonlar | Rekeningen |
+| Financeiro | Finans | Financiën |
+| Montar o agente | Asistanı kur | De assistent opbouwen |
+| Follow-ups | Takip mesajları | Opvolgberichten |
+| Fluxos de atendimento | Görüşme akışları | Klantcontactflows |
+| Roteadores | Yönlendiriciler | Verdelers |
+| Credenciais | Kimlik bilgileri | Toegangsgegevens |
+| Provedores | Sağlayıcılar | Aanbieders |
+| Conhecimento | Bilgi | Kennis |
+| Ensinar o agente | Asistana öğretin | De assistent trainen |
+| Memória | Hafıza | Geheugen |
+| Skills | Beceriler | Vaardigheden |
+| Casos | Vakalar | Dossiers |
+| Acompanhar o agente | Asistanı izle | De assistent opvolgen |
+| Alertas | Uyarılar | Waarschuwingen |
+| Aviso no WhatsApp | WhatsApp bildirimi | Melding via WhatsApp |
+| Execuções | Çalıştırmalar | Uitvoeringen |
+| Uso de IA | AI kullanımı | AI-gebruik |
+| Uso e orçamento | Kullanım ve bütçe | Gebruik en budget |
+| Orçamento | Bütçe | Budget |
+| Conexões | Bağlantılar | Verbindingen |
+| Central de Conexões | Bağlantı merkezi | Verbindingscentrum |
+| Webhooks | Webhooks | Webhooks |
+| Faturamento | Ciro | Omzet |
+| Dinheiro | Nakit | Geld |
+| Honorários | Vekâlet ücretleri | Erelonen |
+| Desempenho | Performans | Prestaties |
+| Os números do período | Dönemin rakamları | De cijfers van de periode |
+| Meta de vendas | Satış hedefi | Verkoopdoel |
+| Meta Ads | Meta Ads | Meta Ads |
+| Atividades | Etkinlikler | Activiteiten |
+| Evolução da IA | AI gelişimi | Evolutie van de AI |
+| O histórico que se consulta | Sorgulanan geçmiş | De geschiedenis om te raadplegen |
+| Audit Log | Denetim kaydı | Auditlog |
+| Perfil | Profil | Profiel |
+| Sua conta | Hesabınız | Uw account |
+| Segurança | Güvenlik | Beveiliging |
+| Notificações | Bildirimler | Meldingen |
+| App no celular | Telefonda uygulama | App op de gsm |
+| Equipe | Ekip | Team |
+| Distribuição de atendimento | Görüşme dağıtımı | Verdeling van klantcontacten |
+| Automações | Otomasyonlar | Automatiseringen |
+| Tags | Etiketler | Labels |
+| Recursos opcionais | İsteğe bağlı özellikler | Optionele functies |
+| Conversões | Dönüşümler | Conversies |
+| Marca | Marka | Merk |
+| Plano e cobrança | Plan ve ödeme | Plan en facturatie |
+| Cobrança | Ödeme | Facturatie |
+| LGPD (menu) | GDPR | GDPR |
+| Dados e acesso | Veriler ve erişim | Gegevens en toegang |
+| API Tokens | API token'ları | API-tokens |
+| Chaves de API | API anahtarları | API-sleutels |
+| Trunk SIP | SIP trunk | SIP-trunk |
+| Servidor MCP externo | Harici MCP sunucusu | Externe MCP-server |
+| Extensões | Eklentiler | Extensies |
+| Dados externos | Harici veriler | Externe gegevens |
+| Ajuda | Yardım | Help |
+| Operação | Operasyon | Operaties |
+| Clientes | Müşteriler | Klanten |
+| Plataforma | Platform | Platform |
+| Dashboard / Painel | Panel | Dashboard |
+| Incidents | Olaylar | Incidenten |
+| Audit | Denetim | Audit |
+| Tenants | Şirketler | Bedrijven |
+| Users | Kullanıcılar | Gebruikers |
+| Platform Admins | Platform Yöneticileri | Platformbeheerders |
+| Usage | Kullanım | Gebruik |
+| Google Agenda | Google Takvim | Google Agenda |
+| API Oficial (Meta) | Resmî API (Meta) | Officiële API (Meta) |
+| E-mail | E-posta | E-mail |
+| Destinos internos | İç hedefler | Interne bestemmingen |
+| Cadastro (admin menu, sign-up settings) | Kayıt | Registratie |
+| Módulos | Modüller | Modules |
+| Proteção de envio | Gönderim koruması | Verzendbescherming |
+| Comportamento | Davranış | Gedrag |
+| Básico | Temel | Basis |
+| Biblioteca | Kütüphane | Bibliotheek |
+| Grupos | Gruplar | Groepen |
+
+### Çeviri sırasında seçilen terimler
+
+| Portekizce | Türkçe | Hollandaca |
+|---|---|---|
+| titular (dos dados) | veri sahibi (kişisel verisi işlenen kişi) | betrokkene |
+| encarregado (da proteção de dados) | veri koruma görevlisi | functionaris voor gegevensbescherming |
+| provedor | sağlayıcı; «AI sağlayıcıları» | aanbieder; AI-aanbieders |
+| ficha (do cliente) | müşteri kartı | fiche |
+| captação (formulário) | müşteri adayı formu | leadformulier |
+| chamada (de voz) | arama; sesli arama | oproep; spraakoproep |
+| recibo | makbuz | ontvangstbewijs |
+| carência | ek süre (ödeme gecikince tanınan) | respijtperiode |
+| agendamento de envio / disparo agendado | zamanlanmış gönderim | geplande verzending |
+| avisar | haber vermek | verwittigen |
+| reserva | rezervasyon | reservatie |
+| reserva (cópia) | yedek (veri yedeği) | back-up |
+| pós-venda | satış sonrası | nazorg |
+| rascunho / publicada | taslak / yayında | concept / gepubliceerd |
+| superado | yerine yenisi gelmiş (sürüm durumu) | vervangen |
+| cifrar / cifra | şifrelemek / şifreleme | versleutelen / versleuteling |
+| caixa / aresta | kutu / bağlantı çizgisi (otomasyon tasarımcısında) | vak / verbinding |
+| nó | düğüm (akış şemasında) | knooppunt |
+| molde | örnek şirket (kopyalanarak kullanılan) | voorbeeld |
+| 1ª, 2º | 1., 2. | 1e, 2e |
+
+### Birleştirilen terimler
+
+Farklı çevirmenlerin farklı yazdığı, düzeltme turunda bütün katalogda eşitlenen terimler. Parantezdeki sayı, değişen cümle sayısı.
+
+- **Araç** (pt ferramenta; asistanın kullandığı) → tool; «hulpmiddel(en)» yazılan yerler eşitlendi (7).
+- **Vaka** (pt demanda; menüde «Vakalar» = Dossiers) → dossier; «aanvraag» eşitlendi (9). «İstek üzerine» (pt sob demanda) → op aanvraag kaldı.
+- **Hazır veri sorgusu** (pt receita) → standaardquery / standaardquery's; «vaste query», «recept» gibi yazımlar eşitlendi (11).
+- **Tablo dosyası** (pt planilha) → spreadsheet; «rekenblad», «werkblad» eşitlendi (3).
+- **Müdür rolü** (pt gestor; görüşme devretme penceresinde) → Manager; «Leidinggevende» eşitlendi (1). Rol adı da Manager (yukarıdaki kararlar).
+- **Her zamanki AI** (pt IA de sempre) → gebruikelijke AI; «gewone AI» eşitlendi (17).
+- **Kurulum ücreti** (pt implantação; ilk kurulumda alınan ücret) → opstartkosten; «installatiekosten» eşitlendi, çünkü bu üründe «installatie» sunucu kurulumu demek (3).
+- **Deneme çalıştırması** (pt ensaio) → testrun; «proef», «proefrun» eşitlendi (3).
+- **Öğrenilen ders** (pt aprendizado; asistanın çıkardığı) → leerpunt; «inzichten», «het geleerde» eşitlendi (5).
+- **Telefon rehberi** (pt agenda do celular) → adresboek van de gsm; «telefoonboek», «contactenlijst» eşitlendi (3).
+- **Alan kodu** (pt DDD) → netnummer; «zonenummer» eşitlendi (2).
+- **Hesap planı** (pt plano de contas; muhasebe) → rekeningschema (1).
+- **Toplu yayın** (pt broadcast; hızlı gönderimin yanındaki mod) → broadcast; «massaverzending» eşitlendi (7). «Toplu gönderim» (pt disparo) → massaverzending olarak kaldı.
+- **Operatör** (pt operador; sunucuyu işleten) → operator; «exploitant», «beheerder» eşitlendi (6). Kişisel veri işleme anlamındaki operatör → verwerker (sözlük).
+- **Uzman** (pt profissional; randevu veren kişi) → professional; «medewerker», «specialist» eşitlendi (4).
+- **Gizli anahtar** (pt segredo; webhook imzası için) → geheim / handtekeninggeheim (18).
+- **Gelmeme** (pt falta; randevuya gelmeyen müşteri) → no-show; durum etiketi «Gelmedi» (pt Faltou / Não compareceu) → «Niet opgedaagd» (16).
+- **Admin rolü** (pt Admin; kullanıcı listesi, görüşme devretme) → Beheerder; «Beheer» eşitlendi (1). Menüdeki «Beheer» (yönetim bölümü) bu anahtar değil.
+- **Gün kısaltmaları** tek biçimde: Ma Di Wo Do Vr Za Zo; «ma», «Woe», «Don» eşitlendi (3).
+- **Kayıt** (pt enrollment; bir akışa ya da programa kaydolma) → inschrijving (3).
+- **Geri dönüş** (pt retorno; asistanın planladığı geri arama) → opvolgmoment; «terugkoppeling», «opvolging» gibi yazımlar eşitlendi (28). İstisnalar: Meta reklam geri bildirimi «terugkoppeling», girişten sonra dönülen adres «terugkeeradres», «fluxo de retorno» «terugkeerflow», gönderilmiş ve sıradaki mesajlar «opvolgbericht» kaldı.
+- **Görüşme akışı** (pt roteiro de atendimento; «Görüşme akışları» modülü, menüde «Klantcontactflows») → (klantcontact)flow; «scenario», «script» gibi yazımlar eşitlendi (22). Soğuk aramadaki senaryo → Script; genel senaryolar «script», beceriler «draaiboeken» kaldı.
