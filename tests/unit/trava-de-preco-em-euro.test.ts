@@ -13,6 +13,7 @@
 import { describe, expect, it } from "vitest";
 
 import { decidePromise, extractPromises } from "@/lib/agent-engine/guardrails/promise/engine";
+import { formatCents } from "@/lib/money";
 
 const precos = (texto: string) => extractPromises(texto).filter((p) => p.kind === "price").map((p) => p.value);
 
@@ -28,6 +29,16 @@ describe("a trava reconhece preço em euro", () => {
     expect(precos("A configuração anual sai 1 497,00 €.")).toEqual([149700]);
     expect(precos("A configuração anual sai 1 497,00 €.")).toEqual([149700]);
     expect(precos("Total de € 2 150.")).toEqual([215000]);
+  });
+
+  it("lê o formato belga que o próprio sistema escreve: símbolo antes e ponto de milhar", () => {
+    // S2a Task 7 (revisão do #47, M5): o euro passou a sair em `nl-BE`, e é isso
+    // que o agente repete. Medido certo; esta linha fixa para nenhuma mudança na
+    // expressão quebrar sem aviso.
+    const belga = formatCents(150000, "EUR");
+    expect(belga).toMatch(/^€\s1\.500,00$/u);
+    expect(precos(`O pacote anual sai ${belga}.`)).toEqual([150000]);
+    expect(precos("O pacote anual sai € 1.500,00.")).toEqual([150000]);
   });
 
   it("não começa nem para no meio de um número: o que não lê inteiro, não lê", () => {
