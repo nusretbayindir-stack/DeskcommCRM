@@ -79,9 +79,10 @@ const CATALOGOS_DE_DADOS: { nome: string; textos: () => readonly string[] }[] = 
   {
     // S2a Task 7b (U42): a capacidade crm_start_conversation_and_send aparecia
     // inteira em português no ToolPicker (`t(capacidade.rotulo)`,
-    // `t(capacidade.explicacao)`) — sem entrada em língua nenhuma.
-    nome: "lib/mcp/tools/catalogo (capacidades do assistente no ToolPicker)",
-    textos: () => [...new Set(TOOL_CATALOG.flatMap((c) => [c.rotulo, c.explicacao]))],
+    // `t(capacidade.explicacao)`) — sem entrada em língua nenhuma. E o ToolPicker
+    // mostra também `t(capacidade.o_que_toca)` (revisão do #48, I2).
+    nome: "lib/mcp/tools/catalogo (rótulo, explicação e o que toca, no ToolPicker)",
+    textos: () => [...new Set(TOOL_CATALOG.flatMap((c) => [c.rotulo, c.explicacao, c.oQueToca]))],
   },
 ];
 

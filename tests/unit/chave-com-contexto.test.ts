@@ -104,21 +104,31 @@ describe("o botão de telefonar do Cold Call", () => {
  * português. Toda chave com `@@` — literal no código ou chave de catálogo —
  * tem de ter exatamente essa forma.
  */
-const FORMA_DO_CONTEXTO = /^[^@]+@@[a-z0-9-]+$/;
-// Chave com contexto: o `@@` colado na frase e o resto do literal sem espaço.
-// Fica de fora o operador de busca textual do SQL (` @@ `, entre espaços) e o
-// `"@@"` sozinho de `no-contexto.ts`.
-const LITERAL_COM_CONTEXTO = /(["'`])([^"'`\n]*?\S@@[^\s"'`]*)\1/g;
+// A frase não termina em espaço: "Salvar plano @@tarefas" daria ao Brasil
+// "Salvar plano " (revisão do #48, M4).
+const FORMA_DO_CONTEXTO = /^[^@]*[^@\s]@@[a-z0-9-]+$/;
+const LITERAL_COM_ARROBAS = /(["'`])([^"'`\n]*@@[^"'`\n]*)\1/g;
+
+/**
+ * Todo literal da linha que contém `@@` — inclusive os mal formados, que são o
+ * que a guarda existe para pegar. Ficam de fora só o operador de busca textual
+ * do SQL (` @@ `, entre espaços) e o `"@@"` sozinho de `no-contexto.ts`.
+ */
+function literaisComArrobasEm(linha: string): string[] {
+  return [...linha.matchAll(LITERAL_COM_ARROBAS)]
+    .map((m) => m[2] ?? "")
+    .filter((literal) => literal !== "@@" && !/\s@@\s/.test(literal));
+}
 
 function literaisComContexto(): { chave: string; local: string }[] {
   const achados: { chave: string; local: string }[] = [];
-  for (const arquivo of arquivosDeCodigo(["app", "components", "lib", "hooks", "curso"])) {
+  for (const arquivo of arquivosDeCodigo(["app", "components", "lib", "hooks", "workers", "curso"])) {
     const linhas = readFileSync(arquivo, "utf8").split("\n");
     linhas.forEach((linha, i) => {
       // Comentário explica a forma (`"<frase>@@<contexto>"`); não é chave.
       if (/^\s*(\/\/|\*|\/\*)/.test(linha)) return;
-      for (const m of linha.matchAll(LITERAL_COM_CONTEXTO)) {
-        achados.push({ chave: m[2] ?? "", local: `${caminhoRelativo(arquivo)}:${i + 1}` });
+      for (const chave of literaisComArrobasEm(linha)) {
+        achados.push({ chave, local: `${caminhoRelativo(arquivo)}:${i + 1}` });
       }
     });
   }
@@ -154,6 +164,18 @@ describe("todo contexto tem a forma que semContexto tira", () => {
     expect(semContexto("@@menu")).toBe("");
     expect(FORMA_DO_CONTEXTO.test("@@menu")).toBe(false);
     expect(FORMA_DO_CONTEXTO.test("Salvar plano@@tarefas")).toBe(true);
+    // Estes o semContexto tira, mas deixam lixo no português (revisão do #48, M4).
+    expect(semContexto("Salvar plano @@tarefas")).toBe("Salvar plano ");
+    expect(FORMA_DO_CONTEXTO.test("Salvar plano @@tarefas")).toBe(false);
+    expect(FORMA_DO_CONTEXTO.test("Salvar plano@@tarefas v2")).toBe(false);
+  });
+
+  it("a varredura recolhe os mal formados, e não o operador do SQL", () => {
+    expect(literaisComArrobasEm('t("Salvar plano @@tarefas")')).toEqual(["Salvar plano @@tarefas"]);
+    expect(literaisComArrobasEm('t("Salvar plano@@tarefas v2")')).toEqual(["Salvar plano@@tarefas v2"]);
+    expect(literaisComArrobasEm('t("@@menu")')).toEqual(["@@menu"]);
+    expect(literaisComArrobasEm('.or(", c.content) @@ websearch_to_tsquery(")')).toEqual([]);
+    expect(literaisComArrobasEm('const SEP = "@@";')).toEqual([]);
   });
 
   it("nenhuma chave com @@ fora da forma", () => {

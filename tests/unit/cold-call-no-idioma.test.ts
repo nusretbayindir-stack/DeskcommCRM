@@ -55,7 +55,8 @@ describe("as etapas do funil de Cold Call", () => {
     expect(nomeNaCriacao("Reunião pedida", "nl")).toBe("Vergadering gevraagd");
     expect(nomeNaCriacao("Reunião pedida", "fr")).toBe("Réunion demandée");
     expect(nomeNaCriacao("Follow-up", "tr")).toBe("Tekrar aranacak");
-    expect(nomeNaCriacao("Follow-up", "nl")).toBe("Opvolgen");
+    // "ligar de novo depois": Terugbellen (revisão do #48, M8; "Opvolgen" era genérico).
+    expect(nomeNaCriacao("Follow-up", "nl")).toBe("Terugbellen");
     expect(nomeNaCriacao("Follow-up", "fr")).toBe("À relancer");
     expect(nomeNaCriacao("Follow-up", "es")).toBe(traduzir("Follow-up", "es"));
   });
@@ -71,6 +72,13 @@ describe("os botões de resultado da ligação", () => {
     const tela = fonte("app/app/cold-call/_client.tsx");
     expect(tela).not.toMatch(/\bt\(RESULTADOS\[/);
     expect(tela.match(/\bt\(naTelaDoColdCall\(RESULTADOS\[/g)?.length).toBe(4);
+  });
+
+  it("a etapa gravada também: um funil antigo guarda \"Follow-up\" e a tela lê pela chave de tela", () => {
+    // Revisão do #48, M3: funil criado antes desta mudança (ou por quem usa português).
+    const tela = fonte("app/app/cold-call/_client.tsx");
+    expect(tela).not.toMatch(/\bt\(lead\.etapa_nome\)/);
+    expect(tela).toContain("t(naTelaDoColdCall(lead.etapa_nome))");
   });
 
   it("o dado gravado não muda", () => {

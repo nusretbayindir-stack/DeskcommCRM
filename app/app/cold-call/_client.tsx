@@ -574,7 +574,7 @@ function Fila({
                         ) : lead.tentativas === 0 && lead.etapa === "na-fila" ? (
                           t("Não iniciada")
                         ) : (
-                          t(lead.etapa_nome)
+                          t(naTelaDoColdCall(lead.etapa_nome))
                         )}
                         {lead.tentativas > 0 && (
                           <span className="ml-1.5 text-xs tabular-nums text-text-muted">· {lead.tentativas}x</span>

@@ -135,10 +135,11 @@ describe("o catálogo turco fala com quem vende na Europa", () => {
  * yetenekler" — no turco o adjetivo vem antes, e o plural mora no fim
  * ("-ları/-leri" quando o substantivo é composto). Agora toda palavra conta,
  * com ou sem o possessivo; e o JSX aceita a etiqueta que fecha e o `{" "}`
- * entre o número e o pedaço (`{n}</strong>{" "}{t(…)}`, ToolPicker).
+ * entre o número e o pedaço (`{n}</strong>{" "}{t(…)}`, ToolPicker), e o `{" "}`
+ * colado no número com o pedaço na linha de baixo (`{n}{" "}` ↵ `{t(…)}`, revisão do #48).
  */
 const CONTAGEM_NO_TEMPLATE = /\$\{\s*([^{}]+?)\s*\}(?=\s+\$\{([^{}]*?)\})/g;
-const CONTAGEM_NO_JSX = /\{\s*([^{}$]+?)\s*\}(?=(?:\s+|\s*<\/[\w.]+>\s*(?:\{" "\})?\s*)\{([^{}]*?)\})/g;
+const CONTAGEM_NO_JSX = /\{\s*([^{}$]+?)\s*\}(?=(?:\s+|\s*<\/[\w.]+>\s*(?:\{" "\})?\s*|\{" "\}\s*)\{([^{}]*?)\})/g;
 const CHAMADA_DE_T = /\bt\(([^()]*)\)/g;
 const LITERAL = /"([^"]+)"/g;
 const PLURAL = /\p{L}(ler|lar)(ı|i)?$/u;
@@ -161,6 +162,14 @@ const NAO_E_CONTAGEM: Record<string, string> = {
   "na aba Credenciais.": "segue o NOME do provedor (`{provider}</Link>`); \"Kimlik bilgileri\" é o nome da aba",
   "dias não abrem negócio novo.":
     "o número rege \"gün\" (\"son 30 gündeki satın almalar\"); o plural é das compras, não do que se conta",
+  "As escolhas voltaram para o que está gravado agora — confira e escolha de novo.":
+    "segue a MENSAGEM de erro (`{erro}{\" \"}`), não um número",
+  "reúne em um só lugar as conversas com os clientes, o funil de vendas, a agenda de atendimentos e agentes de inteligência artificial que respondem, qualificam o interesse e passam a conversa para uma pessoa quando é preciso.":
+    "segue o NOME da marca (`{marca.nome}{\" \"}`), não um número",
+  "mostra a ocupação da agenda e cria, altera e cancela os agendamentos pedidos pela própria pessoa. Quando conecta o Google Ads, devolve ao anúncio as vendas que ele trouxe. O uso dos dados do Google está descrito na":
+    "segue o NOME da marca (`{marca.nome}{\" \"}`), não um número",
+  "estão nesta etapa e não há outra coluna em aberto para recebê-los.":
+    "\"onları\" é o pronome que retoma os negócios contados (\"12 fırsat bu aşamada ve onları alacak…\"): plural certo",
 };
 
 function pedacosDepoisDeContagem(): { chave: string; local: string }[] {
@@ -189,7 +198,15 @@ describe("depois de um número, o turco usa o singular", () => {
 
   it("a varredura enxerga — o verde abaixo não é vacuidade", () => {
     expect(achados.map((a) => a.chave)).toEqual(
-      expect.arrayContaining(["solicitações", "dias", "incidentes", "números de teste autorizados", "capacidades ligadas"]),
+      expect.arrayContaining([
+        "solicitações",
+        "dias",
+        "incidentes",
+        "números de teste autorizados",
+        "capacidades ligadas",
+        // `{n}{" "}` e o pedaço na linha de baixo (revisão do #48, I1)
+        "resultados repetidos ou indisponíveis foram desconsiderados.",
+      ]),
     );
   });
 
