@@ -37,6 +37,7 @@ import {
   type MotivoParaNaoLigar,
   type ResultadoDaLigacao,
 } from "@/lib/cold-call/regras";
+import { naTelaDoColdCall } from "@/lib/cold-call/no-idioma";
 import { liberarSons, tocarAtendeu, tocarDiscando, tocarEncerrou, tocarRecusada } from "@/lib/cold-call/sons";
 import { GuiaDoColdCall, guiaJaVisto } from "./_guia";
 import {
@@ -173,7 +174,7 @@ export function SeletorDoResultado({
         <option value="">--</option>
         {RESULTADOS_DA_LIGACAO.map((id) => (
           <option key={id} value={id}>
-            {t(RESULTADOS[id].rotulo)}
+            {t(naTelaDoColdCall(RESULTADOS[id].rotulo))}
           </option>
         ))}
       </select>
@@ -573,7 +574,7 @@ function Fila({
                         ) : lead.tentativas === 0 && lead.etapa === "na-fila" ? (
                           t("Não iniciada")
                         ) : (
-                          t(lead.etapa_nome)
+                          t(naTelaDoColdCall(lead.etapa_nome))
                         )}
                         {lead.tentativas > 0 && (
                           <span className="ml-1.5 text-xs tabular-nums text-text-muted">· {lead.tentativas}x</span>
@@ -1040,7 +1041,7 @@ function Sessao({
               {lead.historico.slice(-3).map((h) => (
                 <li key={h.em} className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2 py-1 text-xs text-text">
                   <Phone size={12} weight="fill" className="text-accent" aria-hidden />
-                  {h.resultado && RESULTADOS[h.resultado] ? t(RESULTADOS[h.resultado].rotulo) : t("Ligação")}
+                  {h.resultado && RESULTADOS[h.resultado] ? t(naTelaDoColdCall(RESULTADOS[h.resultado].rotulo)) : t("Ligação")}
                   <span className="tabular-nums text-text-muted">{hora(h.em, idioma)}</span>
                 </li>
               ))}
@@ -1155,7 +1156,7 @@ function Sessao({
                 ) : lead.telefone ? (
                   <Button className="flex-1 transition-transform active:scale-[.98]" onClick={() => void ligacao.ligar()} data-testid="ligar">
                     <Phone size={16} className="mr-2" weight="fill" aria-hidden />
-                    {ligacao.fase === "encerrada" ? t("Rediscar") : t("Ligar")}
+                    {ligacao.fase === "encerrada" ? t("Rediscar") : t("Ligar@@chamada")}
                   </Button>
                 ) : (
                   <span className="flex-1 text-center text-xs text-text-muted">{t("Este lead não tem telefone.")}</span>
@@ -1200,7 +1201,7 @@ function Sessao({
                     )}
                   >
                     <Icone size={17} className="shrink-0" aria-hidden />
-                    {t(RESULTADOS[id].rotulo)}
+                    {t(naTelaDoColdCall(RESULTADOS[id].rotulo))}
                   </button>
                 );
               })}
@@ -1329,7 +1330,7 @@ function Sessao({
                     {[...lead.historico].reverse().map((h) => (
                       <li key={h.em} className="rounded-lg border border-border/60 px-3 py-2">
                         <p className="font-medium text-text">
-                          {h.resultado && RESULTADOS[h.resultado] ? t(RESULTADOS[h.resultado].rotulo) : t("Ligação")}
+                          {h.resultado && RESULTADOS[h.resultado] ? t(naTelaDoColdCall(RESULTADOS[h.resultado].rotulo)) : t("Ligação")}
                         </p>
                         <p className="text-xs tabular-nums text-text-muted">{dataEHora(h.em, idioma)}</p>
                       </li>

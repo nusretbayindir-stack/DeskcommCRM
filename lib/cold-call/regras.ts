@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { preencherLacunasDoFork, roteiroDoFork } from "./no-idioma";
+
 /**
  * O COLD CALL: uma fila de ligações sobre um funil comum do CRM.
  *
@@ -142,10 +144,14 @@ const ROTEIROS_PADRAO: Record<"pt" | "es" | "en", string> = {
 /**
  * O roteiro inicial no idioma de quem cria o funil; o que não for espanhol nem inglês sai em
  * português. `string`, e não `Idioma`: o inglês ainda está em construção e não entra no tipo,
- * mas o roteiro dele já fica pronto para quando entrar.
+ * mas o roteiro dele já fica pronto para quando entrar. Turco, neerlandês e francês vêm do fork
+ * (`./no-idioma.ts`).
  */
 export function roteiroPadrao(idioma: string): string {
-  return idioma === "es" ? ROTEIROS_PADRAO.es : idioma === "en" ? ROTEIROS_PADRAO.en : ROTEIROS_PADRAO.pt;
+  return (
+    roteiroDoFork(idioma) ??
+    (idioma === "es" ? ROTEIROS_PADRAO.es : idioma === "en" ? ROTEIROS_PADRAO.en : ROTEIROS_PADRAO.pt)
+  );
 }
 
 export type LinhaDoRoteiro =
@@ -154,7 +160,7 @@ export type LinhaDoRoteiro =
 
 /** O texto vira linhas para a tela, com o nome do lead no lugar da lacuna. Nunca vira HTML. */
 export function linhasDoRoteiro(roteiro: string, dados: { negocio: string; quemLiga: string; suaEmpresa?: string }): LinhaDoRoteiro[] {
-  const preenchido = roteiro
+  const preenchido = preencherLacunasDoFork(roteiro, dados)
     .replace(/\[(?:sua empresa|tu empresa|your company)\]/gi, () => dados.suaEmpresa ?? "")
     // `$` no nome do lead é texto: a função impede o `replace` de ler como padrão.
     .replace(/\[(?:nome d[ao] )?(?:neg[oó]cio|empresa|lead|cliente)\]/gi, () => dados.negocio)

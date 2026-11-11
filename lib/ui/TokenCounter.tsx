@@ -2,30 +2,39 @@
 import * as React from "react";
 import { encode } from "gpt-tokenizer";
 
+import { useT } from "@/hooks/i18n/useT";
+import { tagDeIdioma } from "@/lib/i18n/datas";
+import { useIdioma } from "@/lib/i18n/IdiomaProvider";
+
 interface Props {
   text: string;
   contextWindow?: number | null;
   className?: string;
 }
 
+// No idioma de quem lê (S2a Task 7b, U42): "tokens", os avisos e o formato do
+// número eram fixos em português ("~830 tokens", `toLocaleString("pt-BR")`).
+// O português sai igual.
 export function TokenCounter({ text, contextWindow, className }: Props) {
+  const t = useT();
+  const tag = tagDeIdioma(useIdioma());
   const [count, setCount] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    const t = setTimeout(() => {
+    const espera = setTimeout(() => {
       try {
         setCount(encode(text ?? "").length);
       } catch {
         setCount(null);
       }
     }, 200);
-    return () => clearTimeout(t);
+    return () => clearTimeout(espera);
   }, [text]);
 
   if (count === null) {
     return (
       <span className={className} aria-live="polite">
-        — tokens
+        — {t("tokens")}
       </span>
     );
   }
@@ -42,10 +51,10 @@ export function TokenCounter({ text, contextWindow, className }: Props) {
 
   return (
     <span className={`${tone} ${className ?? ""}`} aria-live="polite">
-      ~{count.toLocaleString("pt-BR")} tokens
-      {contextWindow ? ` / ${contextWindow.toLocaleString("pt-BR")}` : ""}
-      {warn && !danger ? " · próximo do limite" : ""}
-      {danger ? " · acima do limite" : ""}
+      ~{count.toLocaleString(tag)} {t("tokens")}
+      {contextWindow ? ` / ${contextWindow.toLocaleString(tag)}` : ""}
+      {warn && !danger ? ` · ${t("próximo do limite")}` : ""}
+      {danger ? ` · ${t("acima do limite")}` : ""}
     </span>
   );
 }

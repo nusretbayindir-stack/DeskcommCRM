@@ -17,6 +17,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { semContexto } from "../lib/i18n/no-contexto";
 import { GRUPO_NO_RODAPE, NAV_CATALOG, NAV_GROUPS } from "../lib/navigation/catalogo";
 import { Modulo, chaveDoPasso } from "./licao";
 import { Nicho, validarJornadas } from "./jornada";
@@ -134,7 +135,8 @@ if (faltando.length)
 type ItemDoMenu = { href: string; rotulo: string; descricao: string; modulo: string | null };
 const menu: Array<{ grupo: string; itens: ItemDoMenu[] }> = NAV_GROUPS.map((g) => ({
   // o grupo do rodapé aparece no produto pelo nome do hub ("Configurações"), não pelo id do grupo
-  grupo: g.id === GRUPO_NO_RODAPE && g.hub ? g.hub.label : g.label,
+  // e sem o contexto da chave (`Atendimento@@menu`, lib/i18n/no-contexto.ts): o site é em português
+  grupo: semContexto(g.id === GRUPO_NO_RODAPE && g.hub ? g.hub.label : g.label),
   itens: NAV_CATALOG.filter(
     (d) =>
       d.group === g.id && (("sidebar" in d && d.sidebar) || modulos.some((m) => m.tela === d.href)),

@@ -22,6 +22,7 @@ import {
   roteiroSchema,
 } from "@/lib/cold-call/regras";
 import { seColdCallDesligado } from "@/lib/cold-call/modulo";
+import { naTelaDoColdCall } from "@/lib/cold-call/no-idioma";
 import { lotesDeIds } from "@/lib/kanban/selecao";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { posicaoEntre, slugDeFunil } from "@/lib/pipelines/pipeline-editing";
@@ -233,7 +234,8 @@ export async function POST(): Promise<Response> {
       ETAPAS_DO_COLD_CALL.map((etapa, i) => ({
         organization_id: orgId,
         pipeline_id: criado.id,
-        name: etapa.name,
+        // No idioma de quem cria, como a descrição (S2a Task 7b); o slug é o que a fila lê.
+        name: traduzir(naTelaDoColdCall(etapa.name), authz.user.idioma),
         slug: etapa.slug,
         position: (i + 1) * 1000,
         is_won: etapa.is_won,

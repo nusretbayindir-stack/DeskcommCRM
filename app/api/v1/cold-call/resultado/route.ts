@@ -20,6 +20,7 @@ import {
   RESULTADOS,
   resultadoSchema,
 } from "@/lib/cold-call/regras";
+import { naTelaDoColdCall } from "@/lib/cold-call/no-idioma";
 import { seColdCallDesligado } from "@/lib/cold-call/modulo";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         .maybeSingle();
       if (erroEtapa) return fail("internal_error", erroEtapa.message, 500, { requestId });
       if (!etapa) {
-        return fail("unprocessable_entity", `${t("Falta a etapa no funil:")} ${t(regra.rotulo)}`, 422, { requestId });
+        return fail("unprocessable_entity", `${t("Falta a etapa no funil:")} ${t(naTelaDoColdCall(regra.rotulo))}`, 422, { requestId });
       }
       if (etapa.id !== lead.stage_id) await moveLeadHandler(supabase, ctx, leadId, { to_stage_id: etapa.id });
     } else {

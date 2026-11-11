@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/hooks/i18n/useT";
+import { preencher } from "@/lib/i18n/preencher";
 /**
  * O QUE ESTE ASSISTENTE CONSULTA ANTES DE RESPONDER (0181).
  *
@@ -169,10 +170,18 @@ export function BasesDoAgente({ materiais, value, onChange, disabled = false }: 
 
       {acervoTodoDeFora ? (
         <p data-testid="agente-acervo-de-fora" className="text-xs text-warning-fg">
-          {t("Você tem")} {ativos.length} {ativos.length === 1 ? t("material") : t("materiais")}{" "}
-          {t(
-            "no acervo e este assistente não lê nenhum. Ele vai responder de improviso sobre assuntos que já estão escritos.",
-          )}
+          {/* Uma frase só, com o número na lacuna: em pedaços o turco lia "Şunlara
+              sahipsiniz 1 materyal arşivde var…" (S2a Task 7b, U42). */}
+          {ativos.length === 1
+            ? t(
+                "Você tem 1 material no acervo e este assistente não lê nenhum. Ele vai responder de improviso sobre assuntos que já estão escritos.",
+              )
+            : preencher(
+                t(
+                  "Você tem {n} materiais no acervo e este assistente não lê nenhum. Ele vai responder de improviso sobre assuntos que já estão escritos.",
+                ),
+                { n: ativos.length },
+              )}
         </p>
       ) : null}
 

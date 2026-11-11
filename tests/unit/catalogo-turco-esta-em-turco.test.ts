@@ -128,17 +128,48 @@ describe("o catálogo turco fala com quem vende na Europa", () => {
  * pedaço é traduzido sozinho, sem saber que vem depois de um número. O
  * português e o espanhol põem o plural ali; o turco não. A varredura acha todo
  * pedaço que segue uma expressão (`${n} ${t(…)}` e `{n} {t(…)}`) e reprova o
- * valor turco cuja primeira palavra tem o sufixo de plural.
+ * valor turco com uma palavra no plural.
+ *
+ * S2a Task 7b (U42): a primeira versão olhava só a PRIMEIRA palavra e só o
+ * sufixo nu, e deixou passar "2 yetkili test numaraları" e "0 / 27 açık
+ * yetenekler" — no turco o adjetivo vem antes, e o plural mora no fim
+ * ("-ları/-leri" quando o substantivo é composto). Agora toda palavra conta,
+ * com ou sem o possessivo; e o JSX aceita a etiqueta que fecha e o `{" "}`
+ * entre o número e o pedaço (`{n}</strong>{" "}{t(…)}`, ToolPicker), e o `{" "}`
+ * colado no número com o pedaço na linha de baixo (`{n}{" "}` ↵ `{t(…)}`, revisão do #48).
  */
 const CONTAGEM_NO_TEMPLATE = /\$\{\s*([^{}]+?)\s*\}(?=\s+\$\{([^{}]*?)\})/g;
-const CONTAGEM_NO_JSX = /\{\s*([^{}$]+?)\s*\}(?=\s+\{([^{}]*?)\})/g;
+const CONTAGEM_NO_JSX = /\{\s*([^{}$]+?)\s*\}(?=(?:\s+|\s*<\/[\w.]+>\s*(?:\{" "\})?\s*|\{" "\}\s*)\{([^{}]*?)\})/g;
 const CHAMADA_DE_T = /\bt\(([^()]*)\)/g;
 const LITERAL = /"([^"]+)"/g;
-const PLURAL = /\p{L}(ler|lar)$/u;
+const PLURAL = /\p{L}(ler|lar)(ı|i)?$/u;
+
+/**
+ * Alguma palavra do valor turco tem o sufixo de plural (com ou sem o
+ * possessivo). Só o trecho que o número rege conta: até a primeira pontuação
+ * (o resto da frase pode ter plural de verdade — "… müdürler ve yöneticiler
+ * düzenleyebilir").
+ */
+function temPalavraNoPlural(valor: string): boolean {
+  return (valor.trim().split(/[—–,.:;(?!]/)[0] ?? "")
+    .split(/\s+/)
+    .some((palavra) => PLURAL.test(palavra.replace(/\p{P}+$/u, "")));
+}
 
 /** Pedaços que seguem uma expressão que não é contagem, com o motivo. Só encolhe. */
 const NAO_E_CONTAGEM: Record<string, string> = {
   "continua em Propostas": "segue o ANO da proposta (0042/2026); \"Teklifler\" é o nome da seção",
+  "na aba Credenciais.": "segue o NOME do provedor (`{provider}</Link>`); \"Kimlik bilgileri\" é o nome da aba",
+  "dias não abrem negócio novo.":
+    "o número rege \"gün\" (\"son 30 gündeki satın almalar\"); o plural é das compras, não do que se conta",
+  "As escolhas voltaram para o que está gravado agora — confira e escolha de novo.":
+    "segue a MENSAGEM de erro (`{erro}{\" \"}`), não um número",
+  "reúne em um só lugar as conversas com os clientes, o funil de vendas, a agenda de atendimentos e agentes de inteligência artificial que respondem, qualificam o interesse e passam a conversa para uma pessoa quando é preciso.":
+    "segue o NOME da marca (`{marca.nome}{\" \"}`), não um número",
+  "mostra a ocupação da agenda e cria, altera e cancela os agendamentos pedidos pela própria pessoa. Quando conecta o Google Ads, devolve ao anúncio as vendas que ele trouxe. O uso dos dados do Google está descrito na":
+    "segue o NOME da marca (`{marca.nome}{\" \"}`), não um número",
+  "estão nesta etapa e não há outra coluna em aberto para recebê-los.":
+    "\"onları\" é o pronome que retoma os negócios contados (\"12 fırsat bu aşamada ve onları alacak…\"): plural certo",
 };
 
 function pedacosDepoisDeContagem(): { chave: string; local: string }[] {
@@ -148,8 +179,8 @@ function pedacosDepoisDeContagem(): { chave: string; local: string }[] {
     for (const padrao of [CONTAGEM_NO_TEMPLATE, CONTAGEM_NO_JSX]) {
       for (const casamento of fonte.matchAll(padrao)) {
         const antes = casamento[1] ?? "";
-        // `{" "}` e `{t("…")}` antes do pedaço são texto, não número.
-        if (/^["'`]|^t\(/.test(antes)) continue;
+        // `{" "}` e `{t("…")}` antes do pedaço são texto, não número; `{/* … */}` é comentário.
+        if (/^["'`]|^t\(|^\/\*/.test(antes)) continue;
         const linha = fonte.slice(0, casamento.index).split("\n").length;
         for (const chamada of (casamento[2] ?? "").matchAll(CHAMADA_DE_T)) {
           for (const literal of (chamada[1] ?? "").matchAll(LITERAL)) {
@@ -166,13 +197,31 @@ describe("depois de um número, o turco usa o singular", () => {
   const achados = pedacosDepoisDeContagem();
 
   it("a varredura enxerga — o verde abaixo não é vacuidade", () => {
-    expect(achados.map((a) => a.chave)).toEqual(expect.arrayContaining(["solicitações", "dias", "incidentes"]));
+    expect(achados.map((a) => a.chave)).toEqual(
+      expect.arrayContaining([
+        "solicitações",
+        "dias",
+        "incidentes",
+        "números de teste autorizados",
+        "capacidades ligadas",
+        // `{n}{" "}` e o pedaço na linha de baixo (revisão do #48, I1)
+        "resultados repetidos ou indisponíveis foram desconsiderados.",
+      ]),
+    );
+  });
+
+  it("a regra vê o plural no fim e com o possessivo", () => {
+    expect(temPalavraNoPlural("yetkili test numaraları")).toBe(true);
+    expect(temPalavraNoPlural("açık yetenekler")).toBe(true);
+    expect(temPalavraNoPlural("talepler")).toBe(true);
+    expect(temPalavraNoPlural("yetkili test numarası")).toBe(false);
+    expect(temPalavraNoPlural("açık yetenek")).toBe(false);
   });
 
   it("nenhum pedaço depois de uma contagem fica no plural", () => {
     const plurais = achados
       .filter(({ chave }) => !(chave in NAO_E_CONTAGEM))
-      .filter(({ chave }) => PLURAL.test((CATALOGO[chave] ?? "").trim().split(/\s+/)[0]?.replace(/\p{P}+$/u, "") ?? ""))
+      .filter(({ chave }) => temPalavraNoPlural(CATALOGO[chave] ?? ""))
       .map(({ chave, local }) => `${local} → t(${JSON.stringify(chave)}) = ${JSON.stringify(CATALOGO[chave])}`);
     expect([...new Set(plurais)], `${plurais.length} contagem(ns) com o pedaço turco no plural`).toEqual([]);
   });

@@ -22,6 +22,7 @@ import { describe, expect, it } from "vitest";
 import { GRUPOS_DA_TELA } from "@/app/admin/(protected)/configuracao/_grupos";
 import { entradaDoCatalogo, IDIOMAS_COM_CATALOGO } from "@/lib/i18n/catalogos";
 import { CATALOGO_DA_INSTALACAO } from "@/lib/instalacao/catalogo";
+import { TOOL_CATALOG } from "@/lib/mcp/tools/catalogo";
 
 /** Marca e sigla saem iguais em toda língua: a tela as mostra sem tradução. */
 const IGUAIS_EM_TODA_LINGUA = new Set(["WhatsApp"]);
@@ -75,6 +76,14 @@ const CATALOGOS_DE_DADOS: { nome: string; textos: () => readonly string[] }[] = 
     nome: `${arquivo} (${campos.join(", ")})`,
     textos: () => literaisDosCampos(arquivo, campos),
   })),
+  {
+    // S2a Task 7b (U42): a capacidade crm_start_conversation_and_send aparecia
+    // inteira em português no ToolPicker (`t(capacidade.rotulo)`,
+    // `t(capacidade.explicacao)`) — sem entrada em língua nenhuma. E o ToolPicker
+    // mostra também `t(capacidade.o_que_toca)` (revisão do #48, I2).
+    nome: "lib/mcp/tools/catalogo (rótulo, explicação e o que toca, no ToolPicker)",
+    textos: () => [...new Set(TOOL_CATALOG.flatMap((c) => [c.rotulo, c.explicacao, c.oQueToca]))],
+  },
 ];
 
 describe("catálogo de dados que chega à tela por t()", () => {
