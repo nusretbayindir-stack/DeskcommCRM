@@ -14769,6 +14769,27 @@ export const DICIONARIO: Traducoes = {
   // Etapa do funil de Cold Call (`ETAPAS_DO_COLD_CALL`), que agora nasce no idioma de
   // quem cria o funil (app/api/v1/cold-call/route.ts). As outras etapas já tinham entrada.
   "Reunião pedida": { es: "Reunión solicitada" },
+  // Frases com número numa chave só (U41/U42): o espanhol sai como saía em pedaços.
+  // Radar de risco (app/app/radar/_components/RiskRadarList.tsx).
+  "parado há {horas}h": { es: "parado hace {horas}h" },
+  "parado há {dias}d": { es: "parado hace {dias}d" },
+  "Assistente retorna agora": { es: "El asistente dará seguimiento ahora" },
+  "Assistente retorna em {horas}h": { es: "El asistente dará seguimiento en {horas}h" },
+  "Assistente retorna em {dias}d": { es: "El asistente dará seguimiento en {dias}d" },
+  // Material do acervo que o assistente não lê (BasesDoAgente.tsx).
+  "Você tem 1 material no acervo e este assistente não lê nenhum. Ele vai responder de improviso sobre assuntos que já estão escritos.": {
+    es: "Tienes 1 material en el acervo y este asistente no lee ninguno. Va a responder de improviso sobre temas que ya están escritos.",
+  },
+  "Você tem {n} materiais no acervo e este assistente não lê nenhum. Ele vai responder de improviso sobre assuntos que já estão escritos.": {
+    es: "Tienes {n} materiales en el acervo y este asistente no lee ninguno. Va a responder de improviso sobre temas que ya están escritos.",
+  },
+  // Uso de IA, agente de contexto caro (lib/ai/usage/frase-do-contexto-caro.ts).
+  "{percentual}% das chamadas de turno passaram de 100 mil tokens de entrada nos últimos 30 dias ({acima} de {total}).": {
+    es: "{percentual}% de las llamadas de turno superaron los 100 mil tokens de entrada en los últimos 30 días ({acima} de {total}).",
+  },
+  // Contador de tokens do prompt (lib/ui/TokenCounter.tsx).
+  "próximo do limite": { es: "cerca del límite" },
+  "acima do limite": { es: "por encima del límite" },
   // ─── fim do bloco da Task 7b ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.

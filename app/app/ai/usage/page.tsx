@@ -11,6 +11,7 @@ import {
   LIMITE_DE_TOKENS_DE_ENTRADA,
   PROPOSITOS_DE_TURNO,
 } from "@/lib/ai/usage/agente-caro";
+import { fraseDoContextoCaro } from "@/lib/ai/usage/frase-do-contexto-caro";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
 import { UsageDashboardClient } from "./_client";
@@ -147,12 +148,9 @@ export default async function AiUsagePage({ searchParams }: PageProps) {
             {avisos.map(({ agente, aviso }) => (
               <li key={agente.id}>
                 <span className="font-medium text-foreground">{agente.name}</span>
-                {` — ${aviso.percentual}% `}
-                {traduzir(
-                  "das chamadas de turno passaram de 100 mil tokens de entrada nos últimos 30 dias",
-                  idioma,
-                )}
-                {` (${aviso.acima_do_limite.toLocaleString("pt-BR")} de ${aviso.chamadas.toLocaleString("pt-BR")}).`}
+                {" — "}
+                {/* Uma frase com lacunas, no formato de número do idioma (S2a Task 7b). */}
+                {fraseDoContextoCaro(aviso, idioma)}
               </li>
             ))}
           </ul>

@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { useT } from "@/hooks/i18n/useT";
+import { preencher } from "@/lib/i18n/preencher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,17 +28,20 @@ const RISK_META: Record<
   em_voo: { label: "Em voo", variant: "info" },
 };
 
+// Uma chave por frase, com o número na lacuna: montada em pedaços, a ordem do
+// português vazava ("şu süredir duruyor: 10d", "Asistan takip eder 5 saat
+// içinde"). S2a Task 7b, U42; o português sai igual.
 function coldFor(hours: number, t: (texto: string) => string): string {
-  if (hours < 48) return `${t("parado há")} ${hours}h`;
-  return `${t("parado há")} ${Math.round(hours / 24)}d`;
+  if (hours < 48) return preencher(t("parado há {horas}h"), { horas: hours });
+  return preencher(t("parado há {dias}d"), { dias: Math.round(hours / 24) });
 }
 
-function followupWhen(iso: string, t: (texto: string) => string): string {
+function assistenteRetorna(iso: string, t: (texto: string) => string): string {
   const diffMs = new Date(iso).getTime() - Date.now();
-  if (diffMs <= 0) return t("agora");
+  if (diffMs <= 0) return t("Assistente retorna agora");
   const hours = Math.round(diffMs / 3_600_000);
-  if (hours < 48) return `${t("em")} ${Math.max(1, hours)}h`;
-  return `${t("em")} ${Math.round(hours / 24)}d`;
+  if (hours < 48) return preencher(t("Assistente retorna em {horas}h"), { horas: Math.max(1, hours) });
+  return preencher(t("Assistente retorna em {dias}d"), { dias: Math.round(hours / 24) });
 }
 
 /**
@@ -287,7 +291,7 @@ function RadarRow({ lead }: { lead: AtRiskLead }) {
           ) : lead.in_flight && lead.next_followup_at ? (
             <p className="mt-1 inline-flex items-center gap-1 text-xs text-info-fg">
               <PaperPlaneTilt size={13} aria-hidden />
-              {t("Assistente retorna")} {followupWhen(lead.next_followup_at, t)}
+              {assistenteRetorna(lead.next_followup_at, t)}
             </p>
           ) : (
             <p className="mt-1 inline-flex items-center gap-1 text-xs text-warning-fg">
