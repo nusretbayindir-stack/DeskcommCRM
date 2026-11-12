@@ -81,11 +81,18 @@ interface FormShape {
 const IDIOMA_AUTOMATICO = "auto";
 
 /**
- * O que o seletor mostra ao abrir: o idioma gravado, se é um que o produto
- * serve; senão (vazio, ou um valor antigo como `en`), a opção automática.
+ * O que o seletor mostra ao abrir: o idioma gravado, ou a opção automática
+ * quando está vazio. Um valor antigo que o produto não serve (`en`) aparece
+ * COMO ESTÁ (ver `idiomaAntigo`): mostrá-lo como automático escondia que ele
+ * existe e tornava impossível limpá-lo — escolher "automático" não mudava nada.
  */
 function idiomaDoSeletor(locale: string | null | undefined): string {
-  return IDIOMAS_VISIVEIS.some((idioma) => idioma.codigo === locale) ? (locale as string) : IDIOMA_AUTOMATICO;
+  return locale ? locale : IDIOMA_AUTOMATICO;
+}
+
+/** O valor gravado que não é um idioma servido — vira uma opção à parte, só para poder sair dele. */
+function idiomaAntigo(locale: string | null | undefined): string | null {
+  return locale && !IDIOMAS_VISIVEIS.some((idioma) => idioma.codigo === locale) ? locale : null;
 }
 
 /** O rótulo de cada tipo, na língua da tela — a chave é o valor da coluna. */
@@ -289,7 +296,7 @@ export function EditContactDialog({
     payload.contact_type = values.contact_type ?? "cliente";
     // O IDIOMA (S2a, Task 10): só quando a pessoa MUDOU o seletor. Salvar sem
     // tocar não reescreve o que a detecção gravou, nem leva ao servidor um valor
-    // antigo que ele recusaria (`en`, que o seletor mostra como automático).
+    // antigo que ele recusaria (`en`, que o seletor mostra como está).
     const idiomaAoAbrir = idiomaDoSeletor(contact.locale);
     const idiomaAgora = values.locale ?? IDIOMA_AUTOMATICO;
     if (idiomaAgora !== idiomaAoAbrir) {
@@ -401,6 +408,11 @@ export function EditContactDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={IDIOMA_AUTOMATICO}>{t("Detectar automaticamente")}</SelectItem>
+                {idiomaAntigo(contact.locale) !== null && (
+                  <SelectItem value={idiomaAntigo(contact.locale) as string}>
+                    {idiomaAntigo(contact.locale)}
+                  </SelectItem>
+                )}
                 {IDIOMAS_VISIVEIS.map((idioma) => (
                   <SelectItem key={idioma.codigo} value={idioma.codigo}>
                     {idioma.nomeNativo}

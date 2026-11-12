@@ -114,8 +114,6 @@ describe("o campo Idioma da ficha", () => {
     await user.click(screen.getByRole("button", { name: "Salvar" }));
     expect(mutateAsync).toHaveBeenCalledTimes(1);
     expect(mutateAsync.mock.calls[0]?.[0]).not.toHaveProperty("locale");
-
-    mutateAsync.mockClear();
   });
 
   it("um idioma gravado que o produto não serve não bloqueia o salvar", async () => {
@@ -125,5 +123,22 @@ describe("o campo Idioma da ficha", () => {
     await user.click(screen.getByRole("button", { name: "Salvar" }));
     expect(mutateAsync).toHaveBeenCalledTimes(1);
     expect(mutateAsync.mock.calls[0]?.[0]).not.toHaveProperty("locale");
+  });
+
+  // Controle da revisão: um valor antigo (`en`) aparecia como "automático", e
+  // escolher "automático" não mudava nada — o valor ficava para sempre, e o
+  // envio caía no português em vez do idioma da empresa.
+  it("um idioma gravado que o produto não serve aparece como está e pode ser limpo", async () => {
+    const user = userEvent.setup();
+    pintar({ ...base, locale: "en" } as unknown as Contact);
+
+    const gatilho = await screen.findByRole("combobox", { name: "Idioma" });
+    expect(gatilho).toHaveTextContent("en");
+    await user.click(gatilho);
+    await user.click(await screen.findByRole("option", { name: "Detectar automaticamente" }));
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mutateAsync.mock.calls[0]?.[0]).toHaveProperty("locale", null);
   });
 });
