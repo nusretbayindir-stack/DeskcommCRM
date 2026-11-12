@@ -103,6 +103,24 @@ const TR_PEDIDO =
   `(?:mem|mam|memiz|mamiz)\\s+(?:${TR_PRECISO})|tur\\w*)`;
 
 /**
+ * O alvo humano em holandês: a equipe, não um terceiro. Sem adjetivo entre o
+ * artigo e o alvo — "een financieel adviseur" é o contador do cliente.
+ */
+const NL_ALVO =
+  '(?:(?:een|de|uw|jullie|een\\s+van\\s+jullie)\\s+)?(?:echte\\s+)?' +
+  '(?:medewerker|medewerkster|mens|persoon|verkoper|verkoopster|adviseur|consulent|verantwoordelijke|zaakvoerder|collega)\\b|iemand\\b';
+
+/**
+ * O alvo humano em francês. `personne` só com artigo: "je ne veux parler à
+ * personne" é "a ninguém". E o "conseiller fiscal/financier/juridique" é o
+ * contador ou o advogado do cliente, não a equipe.
+ */
+const FR_ALVO =
+  "(?:quelqu['’ ]?un\\b|(?:un|une|le|la|l['’ ]|votre|vos)\\s*(?:vrai(?:e)?\\s+)?" +
+  '(?:conseiller|conseillere|agent|humain|personne|vendeur|vendeuse|responsable|operateur|operatrice|collaborateur|collaboratrice|gerant|gerante)s?\\b' +
+  '(?!\\s+(?:fiscal|fiscale|financier|financiere|juridique|bancaire|patrimonial|pension)\\b))';
+
+/**
  * Padrões PT-BR e turcos CONSERVADORES de pedido explícito de atendimento humano (evita
  * falso positivo: exige o verbo de contato + o alvo humano, ou expressões inequívocas).
  * Rodam sobre o texto normalizado (sem acento).
@@ -139,6 +157,29 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   // escritura ("faturayı gerçek kişi adına mı keseceksiniz?"), nem "gerçek bir
   // kişi adına", a mesma pessoa física com o artigo.
   /\bgercek\s+(?:bir\s+(?:insan|kisi(?!\s+adin))|insan)\b/,
+  // ── holandês ────────────────────────────────────────────────────────────
+  // O QUERER/PODER + "met <alvo>" + o infinitivo no fim, que é a ordem do
+  // holandês: "ik wil met een medewerker spreken", "kan ik met iemand
+  // spreken?". O relato ("ik heb met een medewerker gesproken") não tem o
+  // infinitivo, e "een medewerker heeft me gebeld" não tem o pedido.
+  new RegExp(
+    `\\b(?:wil|wens|zou|kan|kunnen|mag|graag)\\b(?:\\s+\\w+){0,3}?\\s+met\\s+(?:${NL_ALVO})(?:\\s+\\w+){0,2}?\\s+(?:spreken|praten)\\b`,
+  ),
+  // "verbind me door met een medewerker", "zet me door naar een medewerker".
+  new RegExp(`\\b(?:verbind|verbindt|zet|schakel)\\s+(?:me|mij|ons)\\s+door\\s+(?:met|naar)\\s+(?:${NL_ALVO})`),
+  // "ik wil een echte persoon" — o espelho de "pessoa de verdade".
+  /\becht(?:e)?\s+(?:persoon|mens|medewerker)\b/,
+  // ── francês ─────────────────────────────────────────────────────────────
+  // O INFINITIVO "parler à/avec <alvo>": "je veux parler à un conseiller",
+  // "puis-je parler à quelqu'un ?". O relato é o particípio ("j'ai parlé" →
+  // `parle`), que não casa.
+  new RegExp(`\\bparler\\s+(?:a|avec)\\s+${FR_ALVO}`),
+  // "passez-moi un conseiller", "mettez-moi en contact avec un conseiller".
+  new RegExp(
+    `\\b(?:passez|passe|transferez|transfere|mettez|mets)[-\\s]?(?:moi|nous)\\s+(?:en\\s+contact\\s+avec\\s+|a\\s+)?${FR_ALVO}`,
+  ),
+  // "une vraie personne", "un vrai humain".
+  /\b(?:vraie\s+personne|vrai\s+humain|etre\s+humain)\b/,
 ];
 
 /** True se a mensagem do lead é um pedido explícito de atendimento humano (determinístico). */
