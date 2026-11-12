@@ -14791,6 +14791,10 @@ export const DICIONARIO: Traducoes = {
   "próximo do limite": { es: "cerca del límite" },
   "acima do limite": { es: "por encima del límite" },
   // ─── fim do bloco da Task 7b ───
+  // ─── O idioma na ficha do contato (S2a Task 10). Bloco do fork. ───
+  // A opção vazia do seletor "Idioma": a primeira mensagem do contato decide.
+  "Detectar automaticamente": { es: "Detectar automáticamente" },
+  // ─── fim do bloco da Task 10 ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {

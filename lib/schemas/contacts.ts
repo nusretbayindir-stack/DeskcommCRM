@@ -15,6 +15,7 @@ import {
   MODOS_DE_ETIQUETA,
 } from "@/lib/inbox/marcador-da-conversa";
 import { isValidCpf, PAIS_PADRAO, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
+import { IDIOMAS } from "@/lib/i18n/idiomas";
 
 export const PHONE_REGEX = /^\+\d{8,15}$/;
 
@@ -84,6 +85,14 @@ export const contactCreateSchema = z.object({
   // e por isso `contactPatchSchema` também o deixa opcional — um PATCH que só
   // troca o nome não reescreve o tipo de um fornecedor.
   contact_type: contactTypeSchema.optional(),
+  // O idioma do contato (S2a, Task 10): a língua das mensagens fixas que vão a
+  // ele. Só os idiomas que o produto serve; `null` limpa, e a detecção da
+  // entrada (`lib/channels/pos-entrada.ts`) pode preencher de novo.
+  locale: z
+    .string()
+    .refine((v) => (IDIOMAS as readonly string[]).includes(v), "Idioma não suportado")
+    .nullable()
+    .optional(),
   // O marcador nasce em caixa baixa, pela MESMA regra da tag de conversa: o
   // "VIP" gravado verbatim não casava com o filtro `?tag=vip` (issue #1224).
   tags: z.array(z.string()).transform(normalizarTags).optional(),

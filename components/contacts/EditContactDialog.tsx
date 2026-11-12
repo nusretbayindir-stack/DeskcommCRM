@@ -44,6 +44,7 @@ import { CamposDeEndereco } from "@/components/contacts/CamposDeEndereco";
 import { EtiquetasDoContato } from "@/components/contacts/EtiquetasDoContato";
 import { useDefinirCorDaEtiqueta } from "@/hooks/tags/useDefinirCorDaEtiqueta";
 import type { Contact } from "@/lib/types/contacts";
+import { IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 
 interface FormShape {
@@ -65,9 +66,33 @@ interface FormShape {
    * no PATCH como `contact_type` — é o único caminho de escrita do tipo pela ficha.
    */
   contact_type?: ContactType;
+  /**
+   * S2a, Task 10: o idioma das mensagens fixas ao contato. `IDIOMA_AUTOMATICO`
+   * é o vazio ("Detectar automaticamente"): o `Select` do Radix não aceita
+   * valor vazio num item.
+   */
+  locale?: string;
   /** As etiquetas do contato — o seletor com autocompletar grava esta lista. */
   tags?: string[];
   custom_fields?: Record<string, unknown>;
+}
+
+/** O valor do `Select` para "sem idioma": a coluna fica `null` e a detecção da entrada decide. */
+const IDIOMA_AUTOMATICO = "auto";
+
+/**
+ * O que o seletor mostra ao abrir: o idioma gravado, ou a opção automática
+ * quando está vazio. Um valor antigo que o produto não serve (`en`) aparece
+ * COMO ESTÁ (ver `idiomaAntigo`): mostrá-lo como automático escondia que ele
+ * existe e tornava impossível limpá-lo — escolher "automático" não mudava nada.
+ */
+function idiomaDoSeletor(locale: string | null | undefined): string {
+  return locale ? locale : IDIOMA_AUTOMATICO;
+}
+
+/** O valor gravado que não é um idioma servido — vira uma opção à parte, só para poder sair dele. */
+function idiomaAntigo(locale: string | null | undefined): string | null {
+  return locale && !IDIOMAS_VISIVEIS.some((idioma) => idioma.codigo === locale) ? locale : null;
 }
 
 /** O rótulo de cada tipo, na língua da tela — a chave é o valor da coluna. */
@@ -124,6 +149,7 @@ export function EditContactDialog({
       // O tipo vem da COLUNA; ausente (cache antigo) cai no default do banco,
       // que é 'cliente' — a mesma leitura do selo do painel.
       contact_type: contact.contact_type ?? "cliente",
+      locale: idiomaDoSeletor(contact.locale),
       tags: contact.tags,
       custom_fields: contact.custom_fields ?? {},
     },
@@ -134,6 +160,7 @@ export function EditContactDialog({
   // O valor do `Select` de tipo. `useWatch` (e não `form.watch`) para o
   // componente re-renderizar quando o tipo muda — o gatilho do Radix lê daqui.
   const tipoDeContato = useWatch({ control: form.control, name: "contact_type" }) ?? "cliente";
+  const idiomaEscolhido = useWatch({ control: form.control, name: "locale" }) ?? IDIOMA_AUTOMATICO;
   // Os sete campos do endereço como UM objeto — é o que `CamposDeEndereco` lê.
   // `useWatch` com a lista (e não `form.watch`) para o componente re-renderizar
   // quando o CEP preenche: `setValue` não redesenha sozinho quem lê o formulário
@@ -187,6 +214,7 @@ export function EditContactDialog({
         city: contact.city ?? "",
         state: contact.state ?? "",
         contact_type: contact.contact_type ?? "cliente",
+        locale: idiomaDoSeletor(contact.locale),
         tags: contact.tags,
         custom_fields: contact.custom_fields ?? {},
       });
@@ -266,6 +294,14 @@ export function EditContactDialog({
     // acabou de mostrar — quem abriu a ficha como cliente e salvou continua
     // cliente; quem trocou para fornecedor grava fornecedor.
     payload.contact_type = values.contact_type ?? "cliente";
+    // O IDIOMA (S2a, Task 10): só quando a pessoa MUDOU o seletor. Salvar sem
+    // tocar não reescreve o que a detecção gravou, nem leva ao servidor um valor
+    // antigo que ele recusaria (`en`, que o seletor mostra como está).
+    const idiomaAoAbrir = idiomaDoSeletor(contact.locale);
+    const idiomaAgora = values.locale ?? IDIOMA_AUTOMATICO;
+    if (idiomaAgora !== idiomaAoAbrir) {
+      payload.locale = idiomaAgora === IDIOMA_AUTOMATICO ? null : idiomaAgora;
+    }
     payload.tags = tags;
     // Sempre no payload, mesmo vazio: o PATCH SUBSTITUI, e é assim que apagar um
     // campo pela tela chega ao banco.
@@ -354,6 +390,36 @@ export function EditContactDialog({
             <p className="text-xs text-muted-foreground">
               {t("Fornecedor conversa normalmente — o tipo muda o painel, não o envio.")}
             </p>
+          </div>
+          {/*
+            O IDIOMA (S2a, Task 10). A língua das mensagens fixas a este contato;
+            "Detectar automaticamente" deixa a primeira mensagem dele decidir.
+            Cada idioma no nome dele próprio, como no seletor de idioma da conta.
+          */}
+          <div className="space-y-2">
+            <Label htmlFor="ec-locale">{t("Idioma")}</Label>
+            <Select
+              value={idiomaEscolhido}
+              onValueChange={(proximo) => form.setValue("locale", proximo, { shouldDirty: true })}
+              disabled={update.isPending}
+            >
+              <SelectTrigger id="ec-locale" aria-label={t("Idioma")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={IDIOMA_AUTOMATICO}>{t("Detectar automaticamente")}</SelectItem>
+                {idiomaAntigo(contact.locale) !== null && (
+                  <SelectItem value={idiomaAntigo(contact.locale) as string}>
+                    {idiomaAntigo(contact.locale)}
+                  </SelectItem>
+                )}
+                {IDIOMAS_VISIVEIS.map((idioma) => (
+                  <SelectItem key={idioma.codigo} value={idioma.codigo}>
+                    {idioma.nomeNativo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="ec-tags">{t("Tags")}</Label>

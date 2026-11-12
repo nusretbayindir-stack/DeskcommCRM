@@ -64,6 +64,12 @@ export interface Contact {
    */
   contact_type?: ContactType;
   /**
+   * S2a, Task 10: o idioma das mensagens fixas a este contato (`contacts.locale`).
+   * `null` = ainda não detectado nem escolhido: vale o idioma da empresa.
+   * Opcional pelo mesmo motivo de `contact_type`.
+   */
+  locale?: string | null;
+  /**
    * Issue 2379: marca PERMANENTE "sempre atendimento humano". A IA nunca
    * responde este contato e a devolução (manual ou automática) não a desfaz.
    * Separada de `force_human`, que é a trava de handoff e continua temporária.
