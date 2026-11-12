@@ -14791,6 +14791,12 @@ export const DICIONARIO: Traducoes = {
   "próximo do limite": { es: "cerca del límite" },
   "acima do limite": { es: "por encima del límite" },
   // ─── fim do bloco da Task 7b ───
+  // ─── Os comandos da equipe no idioma (S2a, decisão do dono 2026-11-12). Bloco do fork. ───
+  // A explicação entre `< >` no aviso do caso (lib/escalacao/texto-do-aviso.ts).
+  // A palavra do comando em espanhol segue RESPONDER/PERGUNTAR.
+  "resposta ou decisão": { es: "respuesta o decisión" },
+  "pergunta ao cliente": { es: "pregunta al cliente" },
+  // ─── fim do bloco dos comandos da equipe ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {

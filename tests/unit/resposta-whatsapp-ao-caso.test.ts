@@ -253,3 +253,33 @@ describe("confirmações de comando pelo WhatsApp", () => {
     }
   });
 });
+
+// S2a, decisão do dono (2026-11-12): as palavras de cada idioma valem no
+// caminho inteiro — a RPC recebe a ação certa e o formato errado ganha ajuda.
+describe("comandos no idioma de quem atende", () => {
+  it("VRAAG chega à RPC como pedido de pergunta ao cliente", async () => {
+    const { db: client, rpc } = db();
+    const result = await consumirComResultado(client, entry(`VRAAG ${CASE} Welke maat?`));
+    expect(result).toEqual({ consumed: true, result: "accepted" });
+    expect(rpc).toHaveBeenCalledWith(
+      "fn_responder_caso_por_whatsapp",
+      expect.objectContaining({ p_action: "need_lead_info", p_body: "Welke maat?" }),
+    );
+  });
+
+  it("Répondre chega à RPC como decisão", async () => {
+    const { db: client, rpc } = db();
+    await consumirComResultado(client, entry(`Répondre ${CASE} Oui, 10%.`));
+    expect(rpc).toHaveBeenCalledWith(
+      "fn_responder_caso_por_whatsapp",
+      expect.objectContaining({ p_action: "resolved", p_body: "Oui, 10%." }),
+    );
+  });
+
+  it("yanıtla sem o ID ganha a ajuda do formato", async () => {
+    const { db: client } = db();
+    const result = await consumirComResultado(client, entry("yanıtla tamam"));
+    expect(result).toEqual({ consumed: true, result: "malformed" });
+    expect(mocks.send).toHaveBeenCalledWith(ORG, expect.objectContaining({ id: SESSION }), { to: PHONE }, expect.stringContaining("Formato:"));
+  });
+});
