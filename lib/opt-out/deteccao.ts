@@ -115,6 +115,21 @@ export const PALAVRAS_DE_OPT_OUT: ReadonlySet<string> = new Set([
   // `ret` é a palavra que todo SMS comercial turco ensina (İYS: "RET yazıp …
   // gönderin"): o STOP do turco, e o cliente a digita por reflexo.
   "ret",
+  // ── holandês ───────────────────────────────────────────────────────────────
+  //
+  // A palavra SOZINHA, como as de cima. `afmelden` NÃO está aqui: a leitura
+  // belga (decisão do dono, 2026-11-12) a moveu para o ambíguo — sozinha ela é
+  // também "cancelar a minha presença" (a consulta, a aula). Ver
+  // `FRASES_AMBIGUAS_DE_OPT_OUT`.
+  "uitschrijven",
+  "uitschrijving",
+  // ── francês ────────────────────────────────────────────────────────────────
+  //
+  // Texto já normalizado: "Désabonner" chega como `desabonner`.
+  "desabonner",
+  "desabonnement",
+  "desinscrire",
+  "desinscription",
 ]);
 
 /**
@@ -343,6 +358,90 @@ const TR_SEM_OUTRO_CANAL =
  * mesmo cuidado de "sair da lista de espera" (#1806) no português.
  */
 const TR_SEM_OUTRA_LISTA = `^(?![\\s\\S]*\\b(?:bekleme|sira|randevu|fiyat|urun|siparis|davetli|alisveris)\\s+listes)[\\s\\S]*?`;
+
+// ── holandês e francês: as peças das frases abaixo ──────────────────────────
+//
+// Corpus em tests/unit/opt-out-em-holandes-e-frances.test.ts. A régua é a do
+// cabeçalho: o verbo só bloqueia com o OBJETO de comunicação. "stuur me geen
+// factuur meer" e "ne m'envoyez plus de factures papier" são de quem segue
+// comprando, e por isso a fatura não está nestas listas.
+//
+// O E-MAIL e o PAPEL também não estão (revisão do PR): "mail me niet meer,
+// stuur liever een whatsapp" e "ik wil geen reclame meer in mijn brievenbus"
+// (o adesivo "geen reclame" da caixa de correio belga) falam de OUTRO canal —
+// bloquear o WhatsApp de quem pediu WhatsApp é o oposto do pedido. O mesmo
+// cuidado de `TR_SEM_OUTRO_CANAL` no turco.
+
+/**
+ * A MENSAGEM em holandês. "meldingen" fica de fora: é também o lembrete da
+ * consulta. O canal na frente da mensagem — "whatsapp berichten" em duas
+ * palavras ou colado, "whatsappberichten" — é a forma comum (revisão do dono).
+ */
+const NL_OBJETOS_DE_COMUNICACAO =
+  "(?:whatsapp|sms)\\s?(?:berichten|berichtjes|bericht)|" +
+  "berichten|bericht|berichtjes|sms|smsjes|sms'jes|whatsapps|whatsappjes|reclame|promoties|aanbiedingen";
+
+/** O resto da frase não fala da caixa de correio nem do papel. */
+const NL_SEM_PAPEL = "(?![^.!?]*\\b(?:brievenbus|bus|post|folder|folders|papier)\\b)";
+
+/**
+ * "me uitschrijven" sem complemento é sair das mensagens; "me uitschrijven
+ * voor de yogales" ou "uit de cursus" é desistir da AULA. Se vem complemento,
+ * ele tem de ser de envio.
+ */
+const NL_FREIO_DE_INSCRICAO =
+  "(?!\\s+(?:voor|uit|bij|van|in|op)\\s+(?!(?:de\\s+|het\\s+|jullie\\s+|uw\\s+|deze\\s+)?" +
+  "(?:lijst|mailinglijst|verzendlijst|berichten|whatsapp|nieuwsbrief|sms)\\b))";
+
+/**
+ * O apóstrofo francês, nas três formas em que chega do telefone: reto ('),
+ * curvo (’) ou nenhum ("menvoyez"). `normalizarTexto` não o unifica; os
+ * padrões o aceitam por conta própria — `m['’ ]?envoyez`.
+ */
+const FR_APOSTROFO = "['’ ]?";
+
+/**
+ * O "d'" elidido. Sem apóstrofo, só antes de vogal que NÃO seja `e`: senão o
+ * `d` de "de", "des" e "dès" passa por elisão e todo freio que o usa vira do
+ * avesso (medido na revisão: "retirez-moi de la liste de diffusion" deixava
+ * de bloquear).
+ */
+const FR_D = "d(?:['’ ]|(?=[aiouhy]))";
+
+/** A MENSAGEM em francês. "notifications" fica de fora pelo mesmo motivo de "meldingen". */
+const FR_OBJETOS_DE_COMUNICACAO = "messages?|sms|textos?|whatsapp|publicites?|promotions?|offres|relances?";
+
+/** Determinantes entre o verbo e o objeto francês: "plus DE messages", "plus VOS messages". */
+const FR_DETERMINANTES = `(?:de\\s+|des\\s+|les\\s+|vos\\s+|ces\\s+|aucune?\\s+|${FR_D})`;
+
+/** O resto da frase não fala da caixa de correio nem do papel. */
+const FR_SEM_PAPEL = "(?![^.!?]*\\b(?:boite|courrier|papier|postale?)\\b)";
+
+/**
+ * O que pode vir DEPOIS de "ne m'envoyez plus" para a frase ser o pedido:
+ * nada, a cortesia, ou o objeto de comunicação. Uma lista FECHADA do que não é
+ * comunicação deixava passar "ne m'envoyez plus le technicien" e "ne m'écrivez
+ * plus avant 9h" (revisão do PR); aqui o que não está nomeado não bloqueia.
+ */
+const FR_FIM_DO_PEDIDO =
+  `(?=\\s*(?:$|[.!?,;:]|(?:merci|svp|stp|s${FR_APOSTROFO}il|jamais|rien|du\\s+tout|par\\s+(?:ici|whatsapp|message|sms))\\b|` +
+  `${FR_DETERMINANTES}(?:${FR_OBJETOS_DE_COMUNICACAO})\\b))`;
+
+/** O pronome de quem pede: "m'", "me", "nous". Sem ele, "arrêtez de harceler ma mère" seria o pedido. */
+const FR_PRONOME = `(?:m${FR_APOSTROFO}|me\\s+|nous\\s+)`;
+
+/**
+ * O freio da lista em francês: "la liste" sozinha é a de envio; "la liste
+ * d'attente" é paciente querendo ser chamado — o mesmo cuidado de "sair da
+ * lista de espera" (#1806). Se vem "de X"/"d'X", X tem de ser de envio.
+ */
+const FR_FREIO_DE_LISTA =
+  `(?!\\s*(?:de\\s+|${FR_D})(?!(?:diffusion|contacts?|envois?|messages|messagerie|whatsapp|prospection)\\b))`;
+
+/** O mesmo raciocínio de `NL_FREIO_DE_INSCRICAO`: "me désinscrire du cours de yoga" é a aula. */
+const FR_FREIO_DE_INSCRICAO =
+  `(?!\\s+(?:du\\s+|des\\s+|de\\s+|${FR_D}|a\\s+|au\\s+|aux\\s+)(?!(?:la\\s+|l${FR_APOSTROFO}|vos\\s+|votre\\s+|ces\\s+|cette\\s+)?` +
+  "(?:liste|listes|newsletter|messages|messagerie|whatsapp|diffusion|envois|sms)\\b))";
 
 /**
  * Pedidos INEQUÍVOCOS de descadastro escritos por extenso. Todos exigem o objeto
@@ -616,6 +715,104 @@ const FRASES_DE_OPT_OUT: readonly RegExp[] = [
     "u",
   ),
   /\bmesaj\w*\s+(?:ile\s+)?rahatsiz\s+etmeyin(?:iz)?\b/u,
+  // ── holandês ──────────────────────────────────────────────────────────────
+  //
+  // "stuur me geen berichten meer" — a mensagem nomeada E o "meer" (mais), que
+  // diz que é para sempre e não "hoje não". "stuur me geen factuur meer" não
+  // casa: a fatura não é comunicação.
+  new RegExp(
+    `\\b(?:stuur|stuurt|zend|zendt|stuurt\\s+u)\\s+(?:me|mij|ons)\\s+geen\\s+(?:${NL_OBJETOS_DE_COMUNICACAO})\\s+meer\\b${NL_SEM_PAPEL}`,
+    "u",
+  ),
+  // "ik wil geen berichten meer (ontvangen)" — o QUERER. "ik heb geen berichten
+  // meer ontvangen" é relato de quem não recebeu, e não tem "wil".
+  new RegExp(
+    `\\b(?:wil|wens|willen|wensen)\\s+geen\\s+(?:${NL_OBJETOS_DE_COMUNICACAO})\\s+meer\\b${NL_SEM_PAPEL}`,
+    "u",
+  ),
+  // "geen berichten meer aub" — só quando é a mensagem INTEIRA.
+  new RegExp(
+    `^[^a-z]*geen\\s+(?:${NL_OBJETOS_DE_COMUNICACAO})\\s+meer` +
+      "(?:\\s+(?:aub|a\\.u\\.b|alstublieft|alsjeblieft|graag|bedankt|dank\\s+u|dank\\s+je))?[^a-z]*$",
+    "u",
+  ),
+  // "ik wil me uitschrijven", "schrijf me uit". O pronome é obrigatório: é quem
+  // escreve que sai. `afmelden` NÃO entra com pronome — "ik wil me afmelden
+  // voor de les" é a aula; sozinha, ela segue a lista de palavras acima.
+  new RegExp(`\\b(?:me|mij|ons)\\s+(?:uitschrijven|uit\\s+te\\s+schrijven)\\b${NL_FREIO_DE_INSCRICAO}`, "u"),
+  new RegExp(`\\bschrijf\\s+(?:me|mij|ons)\\s+uit\\b${NL_FREIO_DE_INSCRICAO}`, "u"),
+  // "haal me van de lijst", "verwijder mij uit jullie lijst" — e NÃO "haal me
+  // van de wachtlijst" (outra palavra, `lijst` com fronteira não a alcança) nem
+  // "de lijst van genodigden": um complemento depois de `lijst` é outra lista.
+  /\b(?:haal|haalt|verwijder|verwijdert|schrap|schrapt)\s+(?:me|mij|ons)\s+(?:van|uit)\s+(?:de|jullie|uw|je|deze|die|het)\s+(?:verzend|mailing|contact)?lijst\b(?!\s+(?:van|voor|met)\b)/u,
+  // "contacteer me niet meer" — e NÃO "stuur me niet meer dan twee dozen" nem
+  // "contacteer me niet meer na 18u": `stuur` saiu (sem objeto ele é a
+  // encomenda) e um complemento de quantidade ou de hora é outra conversa. `bel`
+  // e `mail` ficam de fora: "mail me niet meer, stuur liever een whatsapp" é
+  // quem prefere ESTE canal.
+  /\b(?:contacteer|contacteert|benader|benadert|app|sms)\s+(?:me|mij|ons)\s+(?:niet|nooit)\s+meer\b(?!\s+(?:dan|op|na|voor|tot|tussen|om|in)\b)/u,
+  // A forma formal belga: "gelieve mij niet meer te contacteren".
+  /\b(?:me|mij|ons)\s+niet\s+meer\s+te\s+(?:contacteren|benaderen|appen)\b/u,
+  /\bniet\s+meer\s+(?:gecontacteerd|benaderd)\s+(?:te\s+)?(?:worden|word)\b/u,
+  // "stop met berichten sturen", "stop met die berichten" — e NÃO "ik wil
+  // stoppen met roken" nem "stop met die onzin".
+  new RegExp(
+    "\\bstop\\s+(?:nu\\s+)?met\\s+(?:het\\s+)?(?:(?:sturen|versturen)\\s+van\\s+)?(?:al\\s+)?(?:die\\s+|deze\\s+|de\\s+|uw\\s+|jullie\\s+)?" +
+      `(?:${NL_OBJETOS_DE_COMUNICACAO}|whatsapp)\\b`,
+    "u",
+  ),
+  // ── francês ───────────────────────────────────────────────────────────────
+  //
+  // "ne m'envoyez plus (de messages)", "NE M’ENVOYEZ PLUS", "ne menvoyez plus",
+  // "ne me contactez plus" — e NÃO "ne m'envoyez plus de factures papier" nem
+  // "ne m'envoyez plus le technicien": o que vem depois tem de ser nada, a
+  // cortesia ou a mensagem (`FR_FIM_DO_PEDIDO`).
+  new RegExp(
+    `\\bne\\s+${FR_PRONOME}(?:envoyez|envoie|envoyer|ecrivez|ecris|ecrire|contactez|contacte|contacter|relancez)\\s+plus\\b` +
+      FR_FIM_DO_PEDIDO,
+    "u",
+  ),
+  // A ordem do infinitivo: "merci de ne plus m'envoyer de messages", "veuillez
+  // ne plus me contacter" — a forma formal mais comum.
+  new RegExp(`\\bne\\s+plus\\s+${FR_PRONOME}(?:envoyer|ecrire|contacter|relancer)\\b${FR_FIM_DO_PEDIDO}`, "u"),
+  // "arrêtez de m'écrire" — o pronome é obrigatório: "arrêtez de harceler ma
+  // mère" e "arrêter de contacter mon assurance" são de outra pessoa.
+  new RegExp(
+    `\\b(?:arretez|arrete|arreter|cessez|cesse|cesser)\\s+de\\s+${FR_PRONOME}` +
+      `(?:ecrire|envoyer|contacter|spammer|harceler|relancer)\\b${FR_FIM_DO_PEDIDO}`,
+    "u",
+  ),
+  // Sem pronome, só com a mensagem nomeada: "arrêtez d'envoyer des messages".
+  new RegExp(
+    `\\b(?:arretez|arrete|cessez|cesse)\\s+(?:de\\s+|${FR_D})(?:ecrire|envoyer)\\s+${FR_DETERMINANTES}(?:${FR_OBJETOS_DE_COMUNICACAO})\\b`,
+    "u",
+  ),
+  /\b(?:arretez|stoppez|cessez)\s+(?:les|vos|ces)\s+(?:messages|sms|envois|relances)\b/u,
+  // "je ne veux plus recevoir de messages", "je ne veux plus de SMS" — o QUERER
+  // com o objeto. "je ne reçois plus vos messages" é relato, e não casa.
+  new RegExp(
+    `\\bne\\s+(?:veux|voulons|souhaite|souhaitons|desire|desirons)\\s+plus\\s+(?:recevoir\\s+|avoir\\s+)?` +
+      `${FR_DETERMINANTES}?(?:${FR_OBJETOS_DE_COMUNICACAO})\\b${FR_SEM_PAPEL}`,
+    "u",
+  ),
+  /\bne\s+(?:veux|voulons|souhaite|souhaitons|desire|desirons)\s+plus\s+etre\s+(?:contacte|sollicite|relance)e?s?\b/u,
+  // "plus de messages svp" — só quando é a mensagem INTEIRA.
+  new RegExp(
+    `^[^a-z]*plus\\s+de\\s+(?:messages|sms|relances)(?:\\s+(?:svp|stp|merci|s${FR_APOSTROFO}il\\s+vous\\s+plait))?[^a-z]*$`,
+    "u",
+  ),
+  // "je veux me désabonner", "désinscrivez-moi". O pronome é quem sai; "me
+  // désinscrire du cours de yoga" é a aula (`FR_FREIO_DE_INSCRICAO`).
+  new RegExp(`\\b(?:me|nous)\\s+(?:desabonner|desinscrire)\\b${FR_FREIO_DE_INSCRICAO}`, "u"),
+  new RegExp(`\\b(?:desabonnez|desinscrivez|desabonne|desinscris)[-\\s]?(?:moi|nous)\\b${FR_FREIO_DE_INSCRICAO}`, "u"),
+  // "retirez-moi de la liste", "me retirer de votre liste" — e NÃO "retirez-moi
+  // de la liste d'attente" (FR_FREIO_DE_LISTA).
+  new RegExp(
+    `\\b(?:(?:retirez|retire|enlevez|enleve|supprimez|supprime|effacez|efface|sortez|sors)[-\\s]?(?:moi|nous)|` +
+      `(?:me|nous)\\s+(?:retirer|enlever|supprimer|effacer|sortir))\\s+(?:de\\s+(?:la|votre|ta|cette|vos)|des)\\s+listes?\\b` +
+      FR_FREIO_DE_LISTA,
+    "u",
+  ),
 ];
 
 /**
@@ -722,6 +919,40 @@ const FRASES_AMBIGUAS_DE_OPT_OUT: readonly RegExp[] = [
   /\b(?:biktim\s+(?:artik\s+)?mesaj\w*|mesaj\w*\s+biktim)\b/u,
   /\bmesaj\w*\s+(?:atip|gonderip)\s+rahatsiz\s+ediyor\w*/u,
   /\bengelleyecegim\b/u,
+  // ── holandês ──────────────────────────────────────────────────────────────
+  //
+  // `afmelden` SOZINHA (a mensagem inteira, como `ehPalavraIsolada`): é a
+  // palavra de sair, mas em Flandres é também "cancelar a minha presença" — a
+  // resposta ao lembrete "bevestigen of afmelden?". Bloquear para sempre o
+  // paciente que desmarcou é o erro caro; aqui o agente para e uma pessoa
+  // decide (decisão do dono, 2026-11-12). Dentro de frase ("me afmelden voor
+  // de les") ela não conta: é a aula.
+  /^[^a-z]*afmelden[^a-z]*$/u,
+  // O espelho de "me deixa em paz". `gerust` só no FIM da frase: "laat me
+  // gerust iets weten" é o "fique à vontade para me avisar" de todo dia em
+  // Flandres, e casaria se a palavra bastasse.
+  /\blaat\s+(?:me|mij|ons)\s+(?:met\s+rust\b|gerust\s*(?:$|[.!?,;:]))/u,
+  /\b(?:al|reeds)\s+(?:gezegd|geschreven|laten\s+weten)\s+dat\s+(?:ik|we|wij)\s+geen\s+interesse\b/u,
+  // A marca de REPETIÇÃO, como no espanhol e no turco: "geen interesse" sozinho
+  // é a objeção ("geen interesse in die wagen, wel in de andere").
+  /\bgeen\s+interesse\s+meer\b/u,
+  /\bniet\s+meer\s+geinteresseerd\b/u,
+  // Apagar os dados (GDPR): um humano atende — o espelho do turco.
+  /\b(?:verwijder|schrap|wis)\s+(?:me|mij|ons|mijn\s+gegevens)\s+uit\s+(?:uw|jullie|het|je)\s+(?:bestand|databank|database|klantenbestand|systeem)\b/u,
+  // ── francês ───────────────────────────────────────────────────────────────
+  /\b(?:laissez|laisse)[-\s]?(?:moi|nous)\s+(?:tranquilles?|en\s+paix)\b/u,
+  /\b(?:fichez|fiche|foutez|fous)[-\s]?(?:moi|nous)\s+la\s+paix\b/u,
+  // "ça suffit" só quando é a mensagem INTEIRA e não é pergunta: "ça suffit
+  // pour moi, merci" e "ça suffit ?" são sobre a quantidade.
+  /^[^a-z]*(?:ca|cela)\s+suffit(?:\s+maintenant)?[^a-z?]*$/u,
+  // "ne m'intéresse PLUS" — a repetição; "ça ne m'intéresse pas, merci" é a objeção.
+  new RegExp(`\\bne\\s+(?:m|nous)${FR_APOSTROFO}interesse\\s+plus\\b`, "u"),
+  // "je vous ai déjà dit que ça ne m'intéresse pas" — e só o desinteresse:
+  // "déjà dit que je ne suis pas disponible lundi" é a agenda.
+  new RegExp(
+    `\\bdeja\\s+(?:dit|ecrit)\\s+que\\s+(?:(?:ca|cela)\\s+ne\\s+(?:m|nous)${FR_APOSTROFO}interess|je\\s+ne\\s+suis\\s+pas\\s+interess)`,
+    "u",
+  ),
 ];
 
 /** A mensagem inteira é a palavra-chave (ignorando pontuação e emoji de borda). */
