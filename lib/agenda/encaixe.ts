@@ -31,7 +31,7 @@ import type {
   VagaAberta,
 } from "./lista-de-espera";
 import { candidatosAoEncaixe, prazoDaOferta, textoDaOferta } from "./lista-de-espera";
-import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
+import type { Idioma } from "@/lib/i18n/idiomas";
 
 /** A oferta que está de pé: quem está com a vaga segurada e até quando. */
 export interface OfertaCorrente {
@@ -89,10 +89,11 @@ export interface PortaDoEncaixe {
   avisar(organizationId: string, contatoId: string, texto: string): Promise<boolean>;
   /**
    * O idioma da oferta para este contato: o dele ou, sem ele, o da empresa
-   * (`idiomaDoContatoPeloSupabase`, S2a Task 11). Nunca lança. Opcional para as
-   * portas de teste que não o declaram: sem ele, a frase de sempre (português).
+   * (`idiomaDoContatoPeloSupabase`, S2a Task 11). Nunca lança. Obrigatório de
+   * propósito: uma porta nova que o esquecesse mandaria português a uma
+   * empresa belga sem que nada falhasse.
    */
-  idioma?(organizationId: string, contatoId: string): Promise<Idioma>;
+  idioma(organizationId: string, contatoId: string): Promise<Idioma>;
   oferta(organizationId: string, esperaId: string): Promise<OfertaCorrente | null>;
   ofertasVencidas(organizationId: string, agora: Date): Promise<OfertaCorrente[]>;
   /** Cancela o compromisso segurado, devolvendo o horário. */
@@ -169,7 +170,7 @@ export async function oferecerVagaQueAbriu(
       continue;
     }
 
-    const idioma = (await porta.idioma?.(organizationId, inscricao.contactId)) ?? IDIOMA_PADRAO;
+    const idioma = await porta.idioma(organizationId, inscricao.contactId);
     const texto = textoDaOferta(vaga, servico, expiraEm, idioma);
     if (await porta.avisar(organizationId, inscricao.contactId, texto)) {
       return {

@@ -18,6 +18,9 @@
  * foi escrito, o da empresa. E o que vai à EQUIPE continua no idioma da
  * empresa (os testes de `human-handoff`, `events-bridge` e `reactivation`).
  */
+import fs from "node:fs";
+import path from "node:path";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as EntregaDaAgenda from "@/lib/agenda/meet-delivery";
@@ -28,6 +31,10 @@ const m = vi.hoisted(() => ({
   contato: null as string | null,
   org: "nl" as string | null,
   molde: null as string | null,
+  /** O corpo da resposta rápida que o tipo aponta (`reminder_template_name`); `null` = nenhuma. */
+  respostaRapida: null as string | null,
+  /** Os `.eq(coluna, valor)` da leitura de `organizations` (CRM e porta da oferta). */
+  filtros: [] as Array<[string, unknown]>,
 }));
 
 // ── O que sai pela cadeia do motor (aviso de passagem, entrega da agenda) ──
@@ -73,6 +80,7 @@ import { createMeetDeliveryHandler } from "@/lib/agent-engine/agent/meet-deliver
 import { avisarLeadDaEscalacao } from "@/lib/agent-engine/agent/aviso-de-escalacao";
 import { GET as rodadaDoLembrete, montarLembrete } from "@/app/api/v1/cron/agenda-reminder/route";
 import { oferecerVagaQueAbriu, type PortaDoEncaixe } from "@/lib/agenda/encaixe";
+import { portaSupabase } from "@/lib/agenda/encaixe-supabase";
 import { textoDaOferta, type ServicoDaEspera, type VagaAberta } from "@/lib/agenda/lista-de-espera";
 import { textoDoCompromisso } from "@/lib/agenda/texto-do-compromisso";
 import { avisarLeadDoCrm } from "@/lib/ai/handoff/aviso-ao-lead";
@@ -100,6 +108,8 @@ beforeEach(() => {
   m.contato = null;
   m.org = "nl";
   m.molde = null;
+  m.respostaRapida = null;
+  m.filtros.length = 0;
   m.enviar.mockReset();
   m.enviar.mockResolvedValue({ id: "msg-1", status: "sent", error_code: null });
 });
@@ -128,8 +138,9 @@ describe("aviso de passagem, motor (`avisarLeadDaEscalacao`)", () => {
   for (const [contato, esperado] of CASOS) {
     it(`contato ${contato ?? "sem idioma"}, empresa nl → ${esperado}`, async () => {
       m.contato = contato;
+      const pool = poolDoMotor();
       const desfecho = await avisarLeadDaEscalacao(
-        poolDoMotor() as never,
+        pool as never,
         { tenantId: ORG, leadId: LEAD, conversationId: CONVERSA, channelSessionId: "sessao", jobId: "job" },
         {
           motivo: "pediu_humano",
@@ -141,6 +152,9 @@ describe("aviso de passagem, motor (`avisarLeadDaEscalacao`)", () => {
       );
       expect(desfecho).toEqual({ avisado: true });
       expect(m.corpoDoMotor).toBe(textoDoAviso("pediu_humano", null, LEAD, esperado));
+      // O dublê responde o mesmo idioma a qualquer id: sem isto, passar o id
+      // da CONVERSA no lugar do contato seguiria verde (revisão do PR).
+      expect(pool.query).toHaveBeenCalledWith(expect.stringMatching(/from organizations/), [ORG, LEAD]);
     });
   }
 });
@@ -163,11 +177,28 @@ function adminDoCrm() {
         return cadeia;
       }
       if (tabela !== "organizations") throw new Error(`tabela inesperada: ${tabela}`);
-      const linha = { locale: m.org, contacts: m.contato === null ? [] : [{ locale: m.contato }] };
-      const cadeia = { select: () => cadeia, eq: () => cadeia, maybeSingle: async () => ({ data: linha, error: null }) };
-      return cadeia;
+      return organizacaoComContato();
     },
   };
+}
+
+/**
+ * A leitura de `idiomaDoContatoPeloSupabase`: a organização com o contato
+ * embutido. Os filtros vão para `m.filtros` — o dublê devolve o mesmo idioma a
+ * qualquer id, então é o filtro registrado que prova que o chamador passou a
+ * organização e o CONTATO certos (revisão do PR).
+ */
+function organizacaoComContato() {
+  const linha = { locale: m.org, contacts: m.contato === null ? [] : [{ locale: m.contato }] };
+  const cadeia = {
+    select: () => cadeia,
+    eq: (coluna: string, valor: unknown) => {
+      m.filtros.push([coluna, valor]);
+      return cadeia;
+    },
+    maybeSingle: async () => ({ data: linha, error: null }),
+  };
+  return cadeia;
 }
 
 describe("aviso de passagem, CRM (`avisarLeadDoCrm`)", () => {
@@ -183,6 +214,7 @@ describe("aviso de passagem, CRM (`avisarLeadDoCrm`)", () => {
       });
       expect(desfecho).toEqual({ avisado: true });
       expect(corpoDoCrm()).toBe(textoDoAviso(motivoDoAviso("requested_human"), SEM_EQUIPE, LEAD, esperado));
+      expect(m.filtros).toEqual(expect.arrayContaining([["id", ORG], ["contacts.id", LEAD]]));
     });
   }
 });
@@ -200,7 +232,8 @@ function compromisso() {
     reminder_sent_offsets_minutes: null, organizations: { status: "active" },
     calendar_event_types: {
       name: "Consulta", reminder_enabled: true, reminder_minutes_before: 60, reminder_extra_offsets_minutes: null,
-      reminder_template_name: null, reminder_body: m.molde, reminder_bodies: null, location_details: null,
+      reminder_template_name: m.respostaRapida === null ? null : "lembrete",
+      reminder_body: m.molde, reminder_bodies: null, location_details: null,
     },
   };
 }
@@ -210,21 +243,31 @@ function adminDoLembrete() {
   return {
     rpc: async () => ({ data: 0, error: null }),
     from: (tabela: string) => {
-      const unico: Record<string, unknown> = {
-        contacts: {
-          id: LEAD, name: "Ana", display_name: null, phone_number: "+32470000000", is_blocked: false, locale: m.contato,
-        },
-        channel_sessions: { id: "canal-1", provider: "waha", status: "WORKING", archived_at: null },
-        organizations: { timezone: FUSO, locale: m.org },
+      // As colunas pedidas: o contato só traz `locale` se o select o pedir.
+      // Sem isto, tirar `locale` do select da rota seguiria verde e o cliente
+      // receberia o idioma da empresa (revisão do PR).
+      let colunas = "";
+      const contato: Record<string, unknown> = {
+        id: LEAD, name: "Ana", display_name: null, phone_number: "+32470000000", is_blocked: false,
       };
       let ehCarimbo = false;
       const c: Record<string, unknown> = {};
-      for (const f of ["select", "eq", "not", "gt", "lte", "order", "limit", "is", "or"]) c[f] = () => c;
+      for (const f of ["eq", "not", "gt", "lte", "order", "limit", "is", "or"]) c[f] = () => c;
+      c.select = (pedidas?: string) => {
+        colunas = pedidas ?? "";
+        return c;
+      };
+      const unico = (): Record<string, unknown> => ({
+        contacts: /\blocale\b/.test(colunas) ? { ...contato, locale: m.contato } : contato,
+        channel_sessions: { id: "canal-1", provider: "waha", status: "WORKING", archived_at: null },
+        organizations: { timezone: FUSO, locale: m.org },
+        message_templates: m.respostaRapida === null ? null : { body: m.respostaRapida },
+      });
       c.update = () => {
         if (tabela === "calendar_appointments") ehCarimbo = true;
         return c;
       };
-      c.maybeSingle = async () => ({ data: unico[tabela] ?? null, error: null });
+      c.maybeSingle = async () => ({ data: unico()[tabela] ?? null, error: null });
       c.then = (r: (v: unknown) => unknown) =>
         Promise.resolve(
           ehCarimbo
@@ -234,7 +277,7 @@ function adminDoLembrete() {
                   tabela === "calendar_appointments"
                     ? [compromisso()]
                     : tabela === "channel_sessions"
-                      ? [unico.channel_sessions]
+                      ? [unico().channel_sessions]
                       : null,
                 error: null,
               },
@@ -285,6 +328,21 @@ describe("lembrete da agenda (`agenda-reminder`)", () => {
     const corpo = await rodarLembrete();
     expect(corpo).toBe(lembreteEsperado("nl", m.molde));
     expect(corpo).not.toBe(lembreteEsperado("fr", m.molde));
+  });
+
+  // `montarLembrete` trata molde só de espaços como vazio; a rota tem de usar a
+  // mesma régua, senão a frase padrão sai no idioma da empresa (revisão do PR).
+  // O caminho é a resposta rápida: o corpo do próprio tipo já chega aparado.
+  it("resposta rápida só de espaços: é a frase padrão, no idioma do cliente", async () => {
+    m.contato = "fr";
+    m.respostaRapida = "   ";
+    expect(await rodarLembrete()).toBe(lembreteEsperado("fr"));
+  });
+
+  it("resposta rápida da empresa: a data segue o idioma da empresa", async () => {
+    m.contato = "fr";
+    m.respostaRapida = "Hallo {{nome}}, tot {{quando}}.";
+    expect(await rodarLembrete()).toBe(lembreteEsperado("nl", m.respostaRapida));
   });
 });
 
@@ -401,6 +459,11 @@ describe("o texto da oferta no idioma do cliente (`textoDaOferta`)", () => {
   it("fr: o dia da semana sai em francês", () => {
     expect(textoDaOferta(VAGA, SERVICO, EXPIRA, "fr")).toContain("mardi 17/11");
   });
+  it("es: sem a vírgula que o `Intl` põe depois do dia da semana", () => {
+    const texto = textoDaOferta(VAGA, SERVICO, EXPIRA, "es");
+    expect(texto).toContain("el martes 17/11 a las 10:00");
+    expect(texto).not.toContain("martes,");
+  });
 });
 
 /** Uma porta mínima: uma pessoa na fila, a vaga livre e o aviso registrado. */
@@ -457,12 +520,26 @@ describe("a oferta sai no idioma que a porta devolve para o contato (`oferecerVa
     });
   }
 
-  it("porta sem idioma (as portas de teste antigas): a frase de sempre", async () => {
-    const { porta, avisos } = portaDaOferta();
-    delete (porta as { idioma?: unknown }).idioma;
-    const r = await oferecerVagaQueAbriu(porta, { organizationId: ORG, appointmentId: "vaga-1", agora: AGORA });
-    expect(avisos[0]).toBe(textoDaOferta(VAGA, SERVICO, (r as { expiraEm: Date }).expiraEm));
-  });
+});
+
+// A porta de verdade (`portaSupabase`): a de cima é um dublê que ignora os ids.
+describe("a porta Supabase lê o idioma do contato certo (`portaSupabase(admin).idioma`)", () => {
+  for (const [contato, esperado] of CASOS) {
+    it(`contato ${contato ?? "sem idioma"}, empresa nl → ${esperado}`, async () => {
+      m.contato = contato;
+      const admin = {
+        from: (tabela: string) => {
+          if (tabela !== "organizations") throw new Error(`tabela inesperada: ${tabela}`);
+          return organizacaoComContato();
+        },
+      };
+      expect(await portaSupabase(admin as never).idioma(ORG, LEAD)).toBe(esperado);
+      expect(m.filtros).toEqual([
+        ["id", ORG],
+        ["contacts.id", LEAD],
+      ]);
+    });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -504,5 +581,28 @@ describe("`{{contact_locale}}` no prompt", () => {
 
   it("contato sem idioma: o da empresa, não pt-BR", () => {
     expect(renderSystemPrompt("{{contact_locale}}", contexto(null, "fr"))).toBe("fr");
+  });
+});
+
+/**
+ * O worker de verdade monta o contexto a partir do select da conversa, e o
+ * dado da empresa chega por um embed. Um erro de digitação no alias
+ * (`organization:organization_id(...)`) ou no mapeamento compila — a linha é
+ * convertida com `as unknown as ConvRow` — e devolveria `null` sempre: o
+ * `{{contact_locale}}` voltaria a cair em pt-BR. Rodar o worker inteiro até o
+ * prompt pede o modelo de linguagem; a leitura do fonte, no estilo de
+ * `contato-pessoal-selects.test.ts`, prende as duas pontas (revisão do PR).
+ */
+describe("o worker legado leva o idioma da empresa até o contexto", () => {
+  const fonte = fs.readFileSync(path.join(process.cwd(), "workers", "ai-response-worker.ts"), "utf8");
+
+  it("o select da conversa embute `organizations:organization_id(locale)`", () => {
+    const m = /\.from\("conversations"\)\s*\.select\(\s*(?:\/\/[^\n]*\n\s*)*"([^"]*)"/.exec(fonte);
+    if (!m) throw new Error("não achei o select da conversa no worker — a guarda ficou cega");
+    expect(m[1]).toContain("organizations:organization_id(locale)");
+  });
+
+  it("o contexto recebe `organization_locale` desse embed", () => {
+    expect(fonte).toMatch(/organization_locale:\s*c\.organizations\?\.locale \?\? null/);
   });
 });

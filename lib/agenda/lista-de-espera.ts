@@ -309,22 +309,24 @@ interface PecasDaOferta {
  * "tú" no espanhol, "siz" no turco, "u" no holandês, "vous" no francês.
  */
 const OFERTA_NO_IDIOMA: Readonly<Record<Exclude<Idioma, "pt-BR">, (p: PecasDaOferta) => string>> = {
+  // O `Intl` do espanhol põe vírgula depois do dia da semana ("martes, 17/11");
+  // no meio da frase ela sobra ("el martes 17/11 a las 10:00").
   es: (p) =>
-    `Se liberó un horario el ${p.dia} a las ${p.hora} para ${p.servico} (${p.minutos} min). ` +
+    `Se liberó un horario el ${p.dia.replace(",", "")} a las ${p.hora} para ${p.servico} (${p.minutos} min). ` +
     `¿Te sirve? Respóndeme SÍ antes de las ${p.ate}; si no tengo respuesta para entonces, ` +
-    `pasará a la siguiente persona de la lista.`,
+    `el horario pasará a la siguiente persona de la lista.`,
   tr: (p) =>
-    `${p.servico} (${p.minutos} dk) için yer açıldı: ${p.dia}, saat ${p.hora}. ` +
+    `${p.servico} (${p.minutos} dk) için boş bir randevu saati açıldı: ${p.dia}, saat ${p.hora}. ` +
     `Bu saat size uygun mu? Uygunsa ${p.ate} saatine kadar EVET yazın; o saate kadar yanıt ` +
-    `gelmezse yer listedeki bir sonraki kişiye geçer.`,
+    `gelmezse bu saat listedeki bir sonraki kişiye verilir.`,
   nl: (p) =>
-    `Er is een plek vrijgekomen op ${p.dia} om ${p.hora} voor ${p.servico} (${p.minutos} min). ` +
-    `Komt dit tijdstip u uit? Antwoord dan JA vóór ${p.ate}. Heb ik tegen dan geen antwoord, ` +
-    `dan gaat de plek naar de volgende persoon op de lijst.`,
+    `Er is een plaats vrijgekomen op ${p.dia} om ${p.hora} voor ${p.servico} (${p.minutos} min). ` +
+    `Past dit tijdstip voor u? Antwoord dan JA vóór ${p.ate}. Krijg ik vóór dat uur geen antwoord, ` +
+    `dan gaat de plaats naar de volgende persoon op de lijst.`,
   fr: (p) =>
     `Un créneau s'est libéré le ${p.dia} à ${p.hora} pour ${p.servico} (${p.minutos}\u00a0min). ` +
-    `Ce créneau vous convient\u00a0? Répondez OUI avant ${p.ate}\u00a0; sans réponse d'ici là, ` +
-    `il passera à la personne suivante sur la liste.`,
+    `Cet horaire vous convient-il\u00a0? Répondez OUI avant ${p.ate}\u00a0; sans réponse d'ici là, ` +
+    `il sera proposé à la personne suivante de la liste.`,
 };
 
 /** Dia da semana + data, e a hora, no idioma e no fuso da agenda. */

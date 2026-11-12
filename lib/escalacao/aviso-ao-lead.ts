@@ -167,8 +167,9 @@ const FECHOS = {
 } as const;
 
 /**
- * OS MESMOS avisos em espanhol. O cliente lê a frase no idioma da ORGANIZAÇÃO
- * (`organizations.locale`) — a conversa com ele acontece nesse idioma, e um
+ * OS MESMOS avisos em espanhol. O cliente lê a frase no idioma DELE — o do
+ * contato, senão o da organização (`idiomaDoDestinatario`, S2a Task 11; antes
+ * era sempre o da organização) —, a língua em que a conversa acontece; e um
  * aviso em português no meio de uma venda em espanhol é a própria prova de que
  * ali tem um robô. Medido numa loja em espanhol (26/09/2026): o cliente irritado
  * recebeu "Esse caso é melhor resolvido por uma pessoa…" no meio do pedido.
@@ -395,7 +396,8 @@ const TEXTOS: Record<"pt" | "es" | "tr" | "nl" | "fr", TextosDoAviso> = {
 };
 
 /**
- * `organizations.locale` → o conjunto de frases. Idioma sem frases próprias (ou
+ * O idioma do destinatário (o do contato, senão o da organização — quem chama
+ * resolve com `idiomaDoDestinatario`) → o conjunto de frases. Idioma sem frases próprias (ou
  * ausente) segue em português, que é o comportamento de antes desta tabela.
  */
 function textosDoIdioma(idioma: string | null | undefined): TextosDoAviso {

@@ -300,7 +300,10 @@ export function montarLembrete(input: {
   timezone: string;
   local: string | null;
   /**
-   * O idioma da ORGANIZAÇÃO (`organizations.locale`), e não um literal.
+   * O idioma de quem LÊ, e não um literal. A rota passa o do cliente
+   * (`idiomaDoDestinatario`: o do contato, senão o da empresa) para a frase
+   * padrão, e o da empresa quando há molde — o texto dela, escrito no idioma
+   * dela (S2a, Task 11).
    *
    * `tests/unit/i18n-a-data-segue-o-idioma.test.ts` proíbe `"pt-BR"` escrito à
    * mão em formatação de data fora de `lib/i18n/datas.ts` — e o motivo não é
@@ -817,7 +820,15 @@ async function handle(req: NextRequest): Promise<Response> {
 
     // Com molde, o texto é da empresa e a data segue o idioma dela; sem molde,
     // a frase padrão sai no idioma do cliente (ver `idiomaDoCliente` acima).
-    const corpo = montarLembrete({ ...dadosDoLembrete, molde, ...(molde ? {} : { idioma: idiomaDoCliente }) });
+    // A MESMA régua de vazio que `montarLembrete` usa (`trim`): um corpo só de
+    // espaços contaria como molde aqui e como vazio lá, e a frase padrão sairia
+    // no idioma da empresa.
+    const moldeDeVerdade = molde?.trim() || null;
+    const corpo = montarLembrete({
+      ...dadosDoLembrete,
+      molde: moldeDeVerdade,
+      ...(moldeDeVerdade ? {} : { idioma: idiomaDoCliente }),
+    });
 
     // ─── O CARIMBO ANTES DO ENVIO (issue #2223) ────────────────────────────
     //
