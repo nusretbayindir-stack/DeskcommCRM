@@ -45,7 +45,10 @@ const LETRAS_TURCAS = /[şğı]/u;
 
 export function algilarIdioma(texto: string | null | undefined): IdiomaAlgilado | null {
   if (!texto) return null;
-  const minusculo = texto.toLowerCase();
+  // NFC junta o acento que chegou separado ("plaît" decomposto); o ponto
+  // combinante U+0307 sai porque "İ".toLowerCase() é "i" + U+0307, que não é
+  // letra e partiria "İstiyorum" em dois.
+  const minusculo = texto.toLowerCase().normalize("NFC").replace(/\u0307/gu, "");
   const palavras = new Set(minusculo.split(/[^\p{L}]+/u).filter((p) => p !== ""));
 
   const pontos: Record<IdiomaAlgilado, number> = { nl: 0, fr: 0, tr: 0 };
@@ -57,7 +60,8 @@ export function algilarIdioma(texto: string | null | undefined): IdiomaAlgilado 
   if (LETRAS_TURCAS.test(minusculo)) pontos.tr += 2;
 
   const ordenados = (Object.entries(pontos) as Array<[IdiomaAlgilado, number]>).sort((a, b) => b[1] - a[1]);
-  const [primeiro, segundo] = ordenados;
-  if (primeiro[1] >= 2 && primeiro[1] - segundo[1] >= 2) return primeiro[0];
+  const [idioma, maior] = ordenados[0] ?? ["nl", 0];
+  const segundo = ordenados[1]?.[1] ?? 0;
+  if (maior >= 2 && maior - segundo >= 2) return idioma;
   return null;
 }

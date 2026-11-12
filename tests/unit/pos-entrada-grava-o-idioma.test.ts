@@ -147,8 +147,8 @@ describe("pos-entrada grava o idioma do contato", () => {
     await rodar();
     const gravadas = escritasDeIdioma();
     expect(gravadas).toHaveLength(1);
-    expect(gravadas[0].payload).toEqual({ locale: "fr" });
-    expect(gravadas[0].filtros).toEqual(
+    expect(gravadas[0]!.payload).toEqual({ locale: "fr" });
+    expect(gravadas[0]!.filtros).toEqual(
       expect.arrayContaining([
         ["eq", "organization_id", "org-1"],
         ["eq", "id", "contato-1"],
@@ -168,7 +168,7 @@ describe("pos-entrada grava o idioma do contato", () => {
     await expect(rodar({ texto: "Artık mesaj istemiyorum" })).resolves.toBeUndefined();
 
     expect(escritasDeIdioma()).toHaveLength(1);
-    expect(escritasDeIdioma()[0].payload).toEqual({ locale: "tr" });
+    expect(escritasDeIdioma()[0]!.payload).toEqual({ locale: "tr" });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("idioma"), expect.anything());
     // a regra de saída gravou o bloqueio
     expect(escritas.some((e) => e.tabela === "contacts" && e.payload.is_blocked === true)).toBe(true);
@@ -187,7 +187,7 @@ describe("pos-entrada grava o idioma do contato", () => {
     await rodarRecuperacao();
     const gravadas = escritasDeIdioma();
     expect(gravadas).toHaveLength(1);
-    expect(gravadas[0].filtros).toEqual(expect.arrayContaining([["is", "locale", null]]));
+    expect(gravadas[0]!.filtros).toEqual(expect.arrayContaining([["is", "locale", null]]));
   });
 
   it("na recuperação, contato pessoal: nada é gravado", async () => {

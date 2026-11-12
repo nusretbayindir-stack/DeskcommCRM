@@ -53,6 +53,13 @@ describe("algilarIdioma", () => {
     });
   }
 
+  // Controle da revisão: "İ".toLowerCase() é "i" + ponto combinante (U+0307),
+  // que não é letra e partia a palavra — a maiúscula turca sumia da conta.
+  it("a maiúscula turca İ não parte a palavra", () => {
+    expect(algilarIdioma("İstiyorum randevu")).toBe("tr");
+    expect(algilarIdioma("RANDEVU ALMAK İSTİYORUM")).toBe("tr");
+  });
+
   it("null e undefined não decidem nada", () => {
     expect(algilarIdioma(null)).toBeNull();
     expect(algilarIdioma(undefined)).toBeNull();
