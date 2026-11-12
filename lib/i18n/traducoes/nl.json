@@ -5387,6 +5387,7 @@
   "Identificação que aparecerá para o cliente e na lista de propostas.": "Identificatie die voor de klant en in de lijst met offertes verschijnt.",
   "Idioma": "Taal",
   "Idioma da organização": "Taal van het bedrijf",
+  "Idioma do contato; sem ele, o da empresa (ex: nl)": "Taal van het contact; anders die van het bedrijf (bv. nl)",
   "Ignorada": "Genegeerd",
   "Ignorar": "Negeren",
   "Ignorar aviso": "Melding negeren",

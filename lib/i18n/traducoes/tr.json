@@ -5402,6 +5402,7 @@
   "Identificação que aparecerá para o cliente e na lista de propostas.": "Müşteriye ve teklif listesinde görünecek tanım.",
   "Idioma": "Dil",
   "Idioma da organização": "Şirketin dili",
+  "Idioma do contato; sem ele, o da empresa (ex: nl)": "Kişinin dili; boşsa şirketin dili (örn: nl)",
   "Ignorada": "Yoksayıldı",
   "Ignorar": "Yoksay",
   "Ignorar aviso": "Uyarıyı yoksay",
