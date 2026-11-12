@@ -33,7 +33,9 @@ import { findContactByExternalId, findLgpdRequest } from "@/lib/lgpd/repository"
 import { evidenciaDoPedido, exclusaoForaDoBrasil, type DadosDoAtestado } from "@/lib/lgpd/atestado-de-anonimizacao";
 import { avisarTitularAposApagamento } from "@/lib/lgpd/aviso-apos-apagar";
 import { emitirAtestadoDeAnonimizacao, type AtestadoEmitido } from "@/lib/lgpd/emitir-atestado";
+import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
 import { cascadeRedactContact } from "@/lib/lgpd/redact-cascade";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_ATTEMPTS = 3;
@@ -246,7 +248,11 @@ export async function processLgpdRedact(event: EventRow): Promise<HandlerResult>
       const avisaTitular = exclusaoForaDoBrasil(req.request_type, perfil.codigo);
 
       let emailTitular: string | null = null;
+      // O idioma do aviso e do atestado (S2a Task 13, D10): o do titular, senão
+      // o da empresa. Lido AQUI, antes da cascata, como o endereço.
+      let idioma: Idioma | undefined;
       if (avisaTitular) {
+        idioma = await idiomaDoTitular(admin, { organizationId: orgId, contactId, pais: perfil.codigo });
         // Só o ENDEREÇO: era o único campo do contato que o aviso consome, e o
         // atestado deixou de ler identidade (item 1 do CR) — trazer nome,
         // telefone e `custom_fields` "por via das dúvidas" seria carregar PII do
@@ -318,6 +324,7 @@ export async function processLgpdRedact(event: EventRow): Promise<HandlerResult>
             requestId,
             emailTitular,
             recebidoEm: new Date(req.received_at),
+            idioma,
           })
         : null;
       // `null` = o aviso não é do país: a chave `art12_notice` não entra nem no
@@ -372,7 +379,7 @@ export async function processLgpdRedact(event: EventRow): Promise<HandlerResult>
             escopo: req.scope === "tenant" ? "tenant" : "contact",
             fuso: org?.timezone ?? "America/Sao_Paulo",
           };
-          const emitido = await emitirAtestadoDeAnonimizacao(admin, dadosDoAtestado);
+          const emitido = await emitirAtestadoDeAnonimizacao(admin, dadosDoAtestado, idioma);
           atestadoDoPedido = emitido;
           await audit({
             action: "lgpd.atestado_emitido",

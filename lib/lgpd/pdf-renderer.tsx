@@ -29,12 +29,30 @@
  * (`scripts/bootstrap-owner.ts`, os dois recebem `ORG_NAME`), então o caso ruim
  * aqui não é o campo vazio — é o nome fantasia impresso como razão social. Uma
  * guarda "se vazio, use X" nunca dispararia; o que resolve é preencher a tela.
+ *
+ * ── O IDIOMA é o do titular (S2a Task 13, D10) ─────────────────────────────
+ *
+ * Cada texto fixo passa por `t()` de `documentoNoIdioma`: a chave é o texto de
+ * hoje, e sem `idioma` (Brasil, Portugal, quem não passou nenhum) `t` devolve a
+ * própria chave — os pedaços de texto saem os MESMOS, um a um, e é isso que os
+ * fixtures do doc 88 comparam. Por isso cada `t()` cobre exatamente o pedaço
+ * que já existia (`" · Total de mensagens:"` vira `` ` · ${t("Total de mensagens:")}` ``):
+ * juntar dois pedaços mudaria o texto extraído do Brasil sem mudar uma letra.
  */
 
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 
 import { env } from "@/lib/env";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { fonteDoDocumentoTraduzido } from "@/lib/lgpd/fonte-do-documento";
+import {
+  DATA_E_HORA_DO_DOCUMENTO,
+  autoridadeNoIdioma,
+  decisoesNoIdioma,
+  documentoNoIdioma,
+  type DocumentoNoIdioma,
+} from "@/lib/lgpd/idioma-do-documento";
 import { mascaraCpf } from "@/lib/lgpd/mask";
 import {
   COPIA_DO_NUMERO_3,
@@ -134,27 +152,44 @@ interface Props {
   data: ExportPayload;
   /** When true, appends an unsigned-PADES warning banner. */
   unsignedWarning?: boolean;
+  /**
+   * O idioma do titular (`idiomaDoTitular`, S2a Task 13). Ausente = o texto de
+   * sempre. O payload brasileiro não traduz nem quando recebe um.
+   */
+  idioma?: Idioma;
 }
 
 /**
  * Sem `fuso` (Brasil) a data sai como sempre saiu. Com `fuso` (organização
  * fora do Brasil) sai no fuso DELA e com o nome do fuso escrito: um horário de
- * São Paulo apresentado como local erra 3 a 4 h em Lisboa (doc 88).
+ * São Paulo apresentado como local erra 3 a 4 h em Lisboa (doc 88). A
+ * `etiqueta` é a do idioma do titular; sem ela, a de sempre.
  */
-function formatarData(s: string | null | undefined, fuso?: string): string {
+function formatarData(s: string | null | undefined, fuso?: string, etiqueta?: string): string {
   if (!s) return "—";
   try {
     if (!fuso) return new Date(s).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    if (etiqueta) {
+      return new Date(s).toLocaleString(etiqueta, { ...DATA_E_HORA_DO_DOCUMENTO, timeZone: fuso, timeZoneName: "short" });
+    }
     return new Date(s).toLocaleString("pt-PT", { timeZone: fuso, timeZoneName: "short" });
   } catch {
     return s;
   }
 }
 
-function fmtMoney(cents: number | null | undefined, currency: string | null | undefined): string {
+function fmtMoney(
+  cents: number | null | undefined,
+  currency: string | null | undefined,
+  etiqueta?: string,
+): string {
   if (cents == null) return "—";
   const v = cents / 100;
-  return `${currency ?? "BRL"} ${v.toFixed(2)}`;
+  // No idioma do titular o número sai como ele escreve (12,50 em nl-BE); sem idioma, como sempre.
+  const numero = etiqueta
+    ? v.toLocaleString(etiqueta, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : v.toFixed(2);
+  return `${currency ?? "BRL"} ${numero}`;
 }
 
 /**
@@ -166,14 +201,14 @@ function fmtMoney(cents: number | null | undefined, currency: string | null | un
  * O texto anterior era `DPO: contato via canal oficial do controlador` — um
  * não-resposta num campo cuja função é dizer a quem o titular reclama.
  */
-function encarregado(data: ExportPayload): string {
+function encarregado(data: ExportPayload, d: DocumentoNoIdioma): string {
   // O renderizador não consulta configuração: ele desenha o que recebeu. Quem
   // resolve o encarregado (organização acima, instalação abaixo) é o coletor,
   // que é assíncrono e já busca `dpo_email` da organização. Deixar a busca aqui
   // obrigaria um componente de PDF a falar com o banco no meio do desenho.
   // Sem DPO, o rodapé diz quem não informou com o nome que a lei do país dá
   // ao papel — a mesma frase das alíneas do art. 15.º (`naoInformado`).
-  return data.dpo_email || naoInformado(data);
+  return data.dpo_email || d.t(naoInformado(data));
 }
 
 // Concluir o processamento do job não comprova envio: ele também pode terminar
@@ -225,31 +260,41 @@ function cpfMascarado(contact: ExportPayload["contact"]): string {
   return (candidatos.size === 1 ? mascaraCpf(unico) : null) ?? "valor não disponível neste relatório";
 }
 
-export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElement {
+export function LgpdExportPdf({ data, unsignedWarning, idioma }: Props): React.ReactElement {
   const shortId = data.request_id.slice(0, 8);
-  // ponytail: o nome antigo, já preso ao fuso deste documento — as ~25 chamadas abaixo não mudam.
-  const fmtDate = (s: string | null | undefined) => formatarData(s, data.fuso);
+  // O payload brasileiro não declara o papel do responsável (`foraDoBrasil` no
+  // coletor): ele segue a LGPD e não traduz, nem quando alguém passa idioma.
+  const d = documentoNoIdioma(data.papel_controlador === undefined ? undefined : idioma);
+  const { t } = d;
+  // O documento traduzido leva uma fonte com as letras do turco (`fonte-do-documento.ts`).
+  const fonte = d.idioma ? fonteDoDocumentoTraduzido() : undefined;
+  // ponytail: o nome antigo, já preso ao fuso e ao idioma deste documento — as ~25 chamadas abaixo não mudam.
+  const fmtDate = (s: string | null | undefined) => formatarData(s, data.fuso, d.etiqueta);
+  const naoInformadoAqui = t(naoInformado(data));
 
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
+    <Document {...(d.etiqueta ? { language: d.etiqueta } : {})}>
+      <Page size="A4" style={fonte ? [styles.page, { fontFamily: fonte }] : styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Relatório de Acesso aos Dados</Text>
+          <Text style={styles.title}>{t("Relatório de Acesso aos Dados")}</Text>
           <Text style={styles.subtitle}>
             {/* A lei vem do PERFIL do país da organização (issue #1033): país
                 sem citação revisada não cita lei nenhuma — citar a errada é
-                pior do que não citar artigo nenhum. */}
-            {`${data.lei_rotulo ?? PADRAO.lei?.rotuloNoDocumento ?? "Base legal"}: `}{data.lei_citada ?? "não declarada (país sem citação revisada)"} ·
-            Solicitação #{shortId}
+                pior do que não citar artigo nenhum. O catálogo traduz a
+                citação inteira, sem montar outra. */}
+            {`${t(data.lei_rotulo ?? PADRAO.lei?.rotuloNoDocumento ?? "Base legal")}${d.doisPontos} `}
+            {data.lei_citada ? d.daLei(data.lei_citada) : t("não declarada (país sem citação revisada)")}
+            {` · ${t("Solicitação #")}`}
+            {shortId}
           </Text>
         </View>
 
         {/* Metadata */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Metadados da Solicitação</Text>
+          <Text style={styles.sectionTitle}>{t("Metadados da Solicitação")}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>ID:</Text>
+            <Text style={styles.label}>{t("ID:")}</Text>
             <Text style={styles.value}>{data.request_id}</Text>
           </View>
           {/* A razão social vem primeiro e o uuid vira "ID interno": o campo
@@ -257,22 +302,22 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
               não responde isso a ninguém. O id continua no documento porque é
               o que o suporte pede quando alguém liga citando o relatório. */}
           <View style={styles.row}>
-            <Text style={styles.label}>Organização:</Text>
+            <Text style={styles.label}>{t("Organização:")}</Text>
             <Text style={styles.value}>{data.organization_legal_name || "—"}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>ID interno:</Text>
+            <Text style={styles.label}>{t("ID interno:")}</Text>
             <Text style={styles.value}>{data.organization_id}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Gerado em:</Text>
+            <Text style={styles.label}>{t("Gerado em:")}</Text>
             <Text style={styles.value}>{fmtDate(data.generated_at)}</Text>
           </View>
           {data.no_local_footprint ? (
             <View style={styles.row}>
-              <Text style={styles.label}>Status:</Text>
+              <Text style={styles.label}>{t("Status:")}</Text>
               <Text style={styles.value}>
-                Nenhum dado pessoal localizado nos sistemas internos.
+                {t("Nenhum dado pessoal localizado nos sistemas internos.")}
               </Text>
             </View>
           ) : null}
@@ -286,95 +331,99 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {data.art15 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              Informações exigidas pelo art. 15.º, n.º 1
+              {t("Informações exigidas pelo art. 15.º, n.º 1")}
             </Text>
             <View style={styles.row}>
-              <Text style={styles.label}>a) Finalidades:</Text>
+              <Text style={styles.label}>{t("a) Finalidades:")}</Text>
               <Text style={styles.value}>
-                {data.art15.finalidades ?? naoInformado(data)}
+                {data.art15.finalidades ?? naoInformadoAqui}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>c) Destinatários:</Text>
+              <Text style={styles.label}>{t("c) Destinatários:")}</Text>
               <Text style={styles.value}>
-                {data.art15.destinatarios ?? naoInformado(data)}
+                {data.art15.destinatarios ?? naoInformadoAqui}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>d) Conservação:</Text>
+              <Text style={styles.label}>{t("d) Conservação:")}</Text>
               <Text style={styles.value}>
-                {data.art15.prazo_conservacao ?? naoInformado(data)}
+                {data.art15.prazo_conservacao ?? naoInformadoAqui}
               </Text>
             </View>
             <View style={styles.itemBlock}>
-              <Text style={styles.small}>e) Direitos</Text>
-              <Text>{DIREITOS_DA_ALINEA_E}</Text>
+              <Text style={styles.small}>{t("e) Direitos")}</Text>
+              <Text>{d.daLei(DIREITOS_DA_ALINEA_E)}</Text>
             </View>
             <View style={styles.itemBlock}>
-              <Text style={styles.small}>f) Reclamação a uma autoridade de controlo</Text>
+              <Text style={styles.small}>{t("f) Reclamação a uma autoridade de controlo")}</Text>
               <Text>
-                {data.art15.autoridade.nome} · {data.art15.autoridade.site}
+                {autoridadeNoIdioma(data.art15.autoridade, d.idioma).nome}
+                {" · "}
+                {autoridadeNoIdioma(data.art15.autoridade, d.idioma).site}
               </Text>
             </View>
             <View style={styles.itemBlock}>
-              <Text style={styles.small}>h) Decisões automatizadas</Text>
-              <Text>{data.art15.decisoes_automatizadas}</Text>
+              <Text style={styles.small}>{t("h) Decisões automatizadas")}</Text>
+              <Text>{decisoesNoIdioma(data.art15.decisoes_automatizadas, d)}</Text>
             </View>
-            <Text style={styles.small}>{COPIA_DO_NUMERO_3}</Text>
+            <Text style={styles.small}>{d.daLei(COPIA_DO_NUMERO_3)}</Text>
           </View>
         ) : null}
 
         {/* Contact */}
         {data.contact ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Dados Pessoais (Contato)</Text>
+            <Text style={styles.sectionTitle}>{t("Dados Pessoais (Contato)")}</Text>
             <View style={styles.row}>
-              <Text style={styles.label}>Nome:</Text>
+              <Text style={styles.label}>{t("Nome:")}</Text>
               <Text style={styles.value}>{data.contact.name ?? "—"}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Email:</Text>
+              <Text style={styles.label}>{t("Email:")}</Text>
               <Text style={styles.value}>{data.contact.email ?? "—"}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Telefone:</Text>
+              <Text style={styles.label}>{t("Telefone:")}</Text>
               <Text style={styles.value}>{data.contact.phone_number ?? "—"}</Text>
             </View>
             {/* Endereço da pessoa física (issue #3494): só aparece quando há, como na ficha. */}
             {enderecoDoContato(data.contact) ? (
               <View style={styles.row}>
-                <Text style={styles.label}>Endereço:</Text>
+                <Text style={styles.label}>{t("Endereço:")}</Text>
                 <Text style={styles.value}>{enderecoDoContato(data.contact)}</Text>
               </View>
             ) : null}
             <View style={styles.row}>
               {/* O valor "informado na conversa" vem só da pergunta de roteiro
                   do tipo `cpf`, validada como CPF (`lib/lgpd/campos-personalizados.ts`):
-                  é sempre CPF, mesmo numa organização de fora do Brasil. */}
+                  é sempre CPF, mesmo numa organização de fora do Brasil — e o
+                  nome do documento brasileiro não se traduz. */}
               <Text style={styles.label}>
                 {data.contact.cpf_present || !data.contact.cpf_informado_na_conversa
-                  ? data.documento_rotulo
-                  : "CPF"}:
+                  ? t(data.documento_rotulo)
+                  : "CPF"}
+                {d.doisPontos}
               </Text>
               <Text style={styles.value}>
                 {data.contact.cpf_present
-                  ? "Armazenado (criptografado)"
+                  ? t("Armazenado (criptografado)")
                   : data.contact.cpf_informado_na_conversa
-                    ? `Informado na conversa (${cpfMascarado(data.contact)})`
+                    ? t("Informado na conversa ({cpf})", { cpf: t(cpfMascarado(data.contact)) })
                     : "—"}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Origem:</Text>
+              <Text style={styles.label}>{t("Origem:")}</Text>
               <Text style={styles.value}>{data.contact.source ?? "—"}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Criado em:</Text>
+              <Text style={styles.label}>{t("Criado em:")}</Text>
               <Text style={styles.value}>{fmtDate(data.contact.created_at)}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Anonimizado:</Text>
-              <Text style={styles.value}>{data.contact.is_anonymized ? "Sim" : "Não"}</Text>
+              <Text style={styles.label}>{t("Anonimizado:")}</Text>
+              <Text style={styles.value}>{data.contact.is_anonymized ? t("Sim") : t("Não")}</Text>
             </View>
           </View>
         ) : null}
@@ -382,7 +431,7 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Respostas e campos personalizados (roteiros de atendimento, etc.) */}
         {data.contact && (data.contact.campos_legiveis ?? []).length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Respostas e campos personalizados</Text>
+            <Text style={styles.sectionTitle}>{t("Respostas e campos personalizados")}</Text>
             {/* A pergunta em linha própria: rótulo de roteiro é frase, e na coluna
                 de 110pt dos dados fixos ele quebrava no meio da palavra. */}
             {data.contact.campos_legiveis.map((campo, i) => (
@@ -396,16 +445,19 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
 
         {/* Consents */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Consentimentos</Text>
+          <Text style={styles.sectionTitle}>{t("Consentimentos")}</Text>
           {data.consents.length === 0 ? (
-            <Text style={styles.small}>Nenhum consentimento registrado.</Text>
+            <Text style={styles.small}>{t("Nenhum consentimento registrado.")}</Text>
           ) : (
             data.consents.map((c, i) => (
               <View key={i} style={styles.row}>
-                <Text style={styles.label}>{c.scope}:</Text>
+                <Text style={styles.label}>
+                  {c.scope}
+                  {d.doisPontos}
+                </Text>
                 <Text style={styles.value}>
-                  {c.granted ? "concedido" : "negado"}
-                  {c.granted_at ? ` em ${fmtDate(c.granted_at)}` : ""}
+                  {c.granted ? t("concedido") : t("negado")}
+                  {c.granted_at ? ` ${t("em {data}", { data: fmtDate(c.granted_at) })}` : ""}
                 </Text>
               </View>
             ))
@@ -414,19 +466,28 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
 
         {/* Conversations */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Histórico de Atendimento</Text>
+          <Text style={styles.sectionTitle}>{t("Histórico de Atendimento")}</Text>
           <Text style={styles.small}>
-            Total de conversas: {data.conversations.length} · Total de mensagens:{" "}
-            {data.messages_count_total} · Amostra incluída neste relatório:{" "}
+            {`${t("Total de conversas:")} `}
+            {data.conversations.length}
+            {` · ${t("Total de mensagens:")}`}
+            {" "}
+            {data.messages_count_total}
+            {` · ${t("Amostra incluída neste relatório:")}`}
+            {" "}
             {data.messages_recent.length}
           </Text>
           {data.conversations.slice(0, 10).map((c) => (
             <View key={c.id} style={styles.itemBlock}>
               <Text>
-                Conversa #{c.id.slice(0, 8)} · {c.channel} · {c.status}
+                {t("Conversa #")}
+                {c.id.slice(0, 8)} · {c.channel} · {c.status}
               </Text>
               <Text style={styles.small}>
-                Última mensagem: {fmtDate(c.last_message_at)} · Criada em{" "}
+                {`${t("Última mensagem:")} `}
+                {fmtDate(c.last_message_at)}
+                {` · ${t("Criada em")}`}
+                {" "}
                 {fmtDate(c.created_at)}
               </Text>
             </View>
@@ -436,16 +497,17 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Recent messages preview */}
         {data.messages_recent.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mensagens Recentes (amostra)</Text>
+            <Text style={styles.sectionTitle}>{t("Mensagens Recentes (amostra)")}</Text>
             {data.messages_recent.slice(0, 25).map((m) => (
               <View key={m.id} style={styles.itemBlock}>
                 <Text style={styles.small}>
                   {fmtDate(m.created_at)} · {m.direction} · {m.type} · {m.status}
                 </Text>
-                <Text>{m.body ? m.body.slice(0, 280) : m.has_media ? "[mídia]" : "—"}</Text>
+                <Text>{m.body ? m.body.slice(0, 280) : m.has_media ? t("[mídia]") : "—"}</Text>
                 {m.media_derived_text ? (
                   <Text style={styles.small}>
-                    transcrição/texto extraído da mídia: {m.media_derived_text.slice(0, 280)}
+                    {`${t("transcrição/texto extraído da mídia:")} `}
+                    {m.media_derived_text.slice(0, 280)}
                   </Text>
                 ) : null}
               </View>
@@ -456,16 +518,17 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Mensagens em grupos de WhatsApp escritas pelo titular (migration 0482) */}
         {data.group_messages_authored.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mensagens em Grupos de WhatsApp</Text>
+            <Text style={styles.sectionTitle}>{t("Mensagens em Grupos de WhatsApp")}</Text>
             {data.group_messages_authored.slice(0, 25).map((m) => (
               <View key={m.id} style={styles.itemBlock}>
                 <Text style={styles.small}>
                   {fmtDate(m.created_at)} · {m.type}
                 </Text>
-                <Text>{m.body ? m.body.slice(0, 280) : m.has_media ? "[mídia]" : "—"}</Text>
+                <Text>{m.body ? m.body.slice(0, 280) : m.has_media ? t("[mídia]") : "—"}</Text>
                 {m.media_derived_text ? (
                   <Text style={styles.small}>
-                    transcrição/texto extraído da mídia: {m.media_derived_text.slice(0, 280)}
+                    {`${t("transcrição/texto extraído da mídia:")} `}
+                    {m.media_derived_text.slice(0, 280)}
                   </Text>
                 ) : null}
               </View>
@@ -476,14 +539,17 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Leads */}
         {data.leads.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Atividade Comercial — Leads</Text>
+            <Text style={styles.sectionTitle}>{t("Atividade Comercial — Leads")}</Text>
             {data.leads.map((l) => (
               <View key={l.id} style={styles.itemBlock}>
                 <Text>
-                  {l.title ?? "(sem título)"} · {l.status} ·{" "}
-                  {fmtMoney(l.value_cents, l.currency)}
+                  {l.title ?? t("(sem título)")} · {l.status} ·{" "}
+                  {fmtMoney(l.value_cents, l.currency, d.etiqueta)}
                 </Text>
-                <Text style={styles.small}>Criado em {fmtDate(l.created_at)}</Text>
+                <Text style={styles.small}>
+                  {`${t("Criado em")} `}
+                  {fmtDate(l.created_at)}
+                </Text>
               </View>
             ))}
           </View>
@@ -492,14 +558,17 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Orders */}
         {data.orders.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pedidos</Text>
+            <Text style={styles.sectionTitle}>{t("Pedidos")}</Text>
             {data.orders.map((o) => (
               <View key={o.id} style={styles.itemBlock}>
                 <Text>
                   {o.external_provider ?? "—"} #{o.external_id ?? o.id.slice(0, 8)} ·{" "}
-                  {o.status} · {fmtMoney(o.total_cents, o.currency)}
+                  {o.status} · {fmtMoney(o.total_cents, o.currency, d.etiqueta)}
                 </Text>
-                <Text style={styles.small}>Pedido em {fmtDate(o.ordered_at)}</Text>
+                <Text style={styles.small}>
+                  {`${t("Pedido em")} `}
+                  {fmtDate(o.ordered_at)}
+                </Text>
               </View>
             ))}
           </View>
@@ -509,17 +578,20 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
             seção o relatório não mencionava proposta nenhuma. */}
         {data.proposals?.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Propostas comerciais</Text>
+            <Text style={styles.sectionTitle}>{t("Propostas comerciais")}</Text>
             {data.proposals.map((p) => (
               <View key={p.id} style={styles.itemBlock}>
                 <Text>
-                  {p.numero != null && p.ano != null ? `Nº ${p.numero}/${p.ano} · ` : ""}
-                  {p.titulo} · {p.status} · {fmtMoney(p.total_cents, p.moeda)}
+                  {p.numero != null && p.ano != null
+                    ? `${t("Nº {numero}/{ano}", { numero: p.numero, ano: p.ano })} · `
+                    : ""}
+                  {p.titulo} · {p.status} · {fmtMoney(p.total_cents, p.moeda, d.etiqueta)}
                 </Text>
                 <Text style={styles.small}>
-                  Criada em {fmtDate(p.created_at)}
-                  {p.sent_at ? ` · enviada em ${fmtDate(p.sent_at)}` : ""}
-                  {p.tem_pdf ? " · documento em PDF enviado" : ""}
+                  {`${t("Criada em")} `}
+                  {fmtDate(p.created_at)}
+                  {p.sent_at ? ` · ${t("enviada em {data}", { data: fmtDate(p.sent_at) })}` : ""}
+                  {p.tem_pdf ? ` · ${t("documento em PDF enviado")}` : ""}
                 </Text>
               </View>
             ))}
@@ -532,21 +604,37 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
             compromisso, não. */}
         {data.appointments.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Agenda — Compromissos</Text>
+            <Text style={styles.sectionTitle}>{t("Agenda — Compromissos")}</Text>
             {data.appointments.map((c) => (
               <View key={c.id} style={styles.itemBlock}>
                 <Text>
-                  {c.title ?? "(sem título)"} · {c.status}
+                  {c.title ?? t("(sem título)")} · {c.status}
                   {c.location_details ? ` · ${c.location_details}` : ""}
                 </Text>
                 <Text style={styles.small}>
-                  {fmtDate(c.starts_at)} até {fmtDate(c.ends_at)} ({c.time_zone})
+                  {fmtDate(c.starts_at)}
+                  {/* "até" de intervalo: noutras línguas não é o "até" de quantidade ("no máximo"). */}
+                  {` ${t("até@@intervalo")} `}
+                  {fmtDate(c.ends_at)} ({c.time_zone})
                 </Text>
                 {c.description ? <Text style={styles.small}>{c.description}</Text> : null}
-                {c.notes ? <Text style={styles.small}>Anotação: {c.notes}</Text> : null}
-                {c.meeting_url ? <Text style={styles.small}>Link da reunião: {c.meeting_url}</Text> : null}
+                {c.notes ? (
+                  <Text style={styles.small}>
+                    {`${t("Anotação:")} `}
+                    {c.notes}
+                  </Text>
+                ) : null}
+                {c.meeting_url ? (
+                  <Text style={styles.small}>
+                    {`${t("Link da reunião:")} `}
+                    {c.meeting_url}
+                  </Text>
+                ) : null}
                 {c.cancellation_reason ? (
-                  <Text style={styles.small}>Cancelado: {c.cancellation_reason}</Text>
+                  <Text style={styles.small}>
+                    {`${t("Cancelado:")} `}
+                    {c.cancellation_reason}
+                  </Text>
                 ) : null}
               </View>
             ))}
@@ -557,31 +645,38 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
             as disponibiliza ao titular. Consumir apenas a projeção do coletor. */}
         {data.reply_drafts?.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Sugestões e respostas revisadas</Text>
+            <Text style={styles.sectionTitle}>{t("Sugestões e respostas revisadas")}</Text>
             {data.reply_drafts.map(reply=><View key={reply.id} style={styles.itemBlock}>
-              <Text>Estado: {reply.status}</Text>
-              {reply.original_body?<Text>Sugestão: {reply.original_body}</Text>:null}
-              {reply.edited_body&&reply.edited_body!==reply.original_body?<Text>Edição: {reply.edited_body}</Text>:null}
-              {reply.approved_body?<Text>Texto aprovado: {reply.approved_body}</Text>:null}
-              {reply.feedback?<Text>Revisão: {JSON.stringify(reply.feedback)}</Text>:null}
-              {Array.isArray(reply.proposals)&&reply.proposals.length?<Text>Propostas: {JSON.stringify(reply.proposals)}</Text>:null}
-              <Text style={styles.small}>Criado em {fmtDate(reply.created_at)}</Text>
+              <Text>{`${t("Estado:")} `}{reply.status}</Text>
+              {reply.original_body?<Text>{`${t("Sugestão:")} `}{reply.original_body}</Text>:null}
+              {reply.edited_body&&reply.edited_body!==reply.original_body?<Text>{`${t("Edição:")} `}{reply.edited_body}</Text>:null}
+              {reply.approved_body?<Text>{`${t("Texto aprovado:")} `}{reply.approved_body}</Text>:null}
+              {reply.feedback?<Text>{`${t("Revisão:")} `}{JSON.stringify(reply.feedback)}</Text>:null}
+              {Array.isArray(reply.proposals)&&reply.proposals.length?<Text>{`${t("Propostas:")} `}{JSON.stringify(reply.proposals)}</Text>:null}
+              <Text style={styles.small}>{`${t("Criado em")} `}{fmtDate(reply.created_at)}</Text>
             </View>)}
           </View>
         ):null}
 
         {data.meeting_deliveries?.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Entregas de links de reunião</Text>
+            <Text style={styles.sectionTitle}>{t("Entregas de links de reunião")}</Text>
             {data.meeting_deliveries.map((delivery) => (
               <View key={delivery.id} style={styles.itemBlock}>
-                <Text>{deliveryStatus[delivery.status] ?? delivery.status}</Text>
-                <Text style={styles.small}>Registro: {delivery.id}</Text>
+                <Text>{t(deliveryStatus[delivery.status] ?? delivery.status)}</Text>
                 <Text style={styles.small}>
-                  Compromisso: {delivery.appointment_id ?? "referência indisponível"}
+                  {`${t("Registro:")} `}
+                  {delivery.id}
                 </Text>
                 <Text style={styles.small}>
-                  Criado em {fmtDate(delivery.created_at)} · Programado para {fmtDate(delivery.run_after)}
+                  {`${t("Compromisso:")} `}
+                  {delivery.appointment_id ?? t("referência indisponível")}
+                </Text>
+                <Text style={styles.small}>
+                  {`${t("Criado em")} `}
+                  {fmtDate(delivery.created_at)}
+                  {` · ${t("Programado para")} `}
+                  {fmtDate(delivery.run_after)}
                 </Text>
               </View>
             ))}
@@ -590,18 +685,23 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
 
         {data.appointment_notices?.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Avisos sobre compromissos</Text>
+            <Text style={styles.sectionTitle}>{t("Avisos sobre compromissos")}</Text>
             {data.appointment_notices.map((notice) => (
               <View key={notice.id} style={styles.itemBlock}>
-                <Text>{notice.title} · {noticeStatus[notice.status] ?? notice.status}</Text>
+                <Text>{notice.title} · {t(noticeStatus[notice.status] ?? notice.status)}</Text>
                 {notice.body ? <Text>{notice.body}</Text> : null}
-                <Text style={styles.small}>Registro: {notice.id}</Text>
                 <Text style={styles.small}>
-                  Compromisso: {notice.ref_id ?? "referência indisponível"}
+                  {`${t("Registro:")} `}
+                  {notice.id}
                 </Text>
                 <Text style={styles.small}>
-                  Criado em {fmtDate(notice.created_at)}
-                  {notice.resolved_at ? ` · Resolvido em ${fmtDate(notice.resolved_at)}` : ""}
+                  {`${t("Compromisso:")} `}
+                  {notice.ref_id ?? t("referência indisponível")}
+                </Text>
+                <Text style={styles.small}>
+                  {`${t("Criado em")} `}
+                  {fmtDate(notice.created_at)}
+                  {notice.resolved_at ? ` · ${t("Resolvido em {data}", { data: fmtDate(notice.resolved_at) })}` : ""}
                 </Text>
               </View>
             ))}
@@ -613,18 +713,22 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
             dela e que ela raramente imagina que existem. */}
         {data.webhook_captures.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Como seus dados chegaram até nós</Text>
+            <Text style={styles.sectionTitle}>{t("Como seus dados chegaram até nós")}</Text>
             {data.webhook_captures.map((c) => (
               <View key={c.id} style={styles.itemBlock}>
                 <Text>
-                  {c.source_name ?? "(origem não identificada)"} · {c.outcome}
+                  {c.source_name ?? t("(origem não identificada)")} · {c.outcome}
                 </Text>
                 <Text style={styles.small}>
-                  Recebido em {fmtDate(c.received_at)}
+                  {`${t("Recebido em")} `}
+                  {fmtDate(c.received_at)}
                   {c.remote_ip ? ` · IP ${c.remote_ip}` : ""}
                 </Text>
                 {c.user_agent ? (
-                  <Text style={styles.small}>Navegador: {c.user_agent.slice(0, 160)}</Text>
+                  <Text style={styles.small}>
+                    {`${t("Navegador:")} `}
+                    {c.user_agent.slice(0, 160)}
+                  </Text>
                 ) : null}
               </View>
             ))}
@@ -634,7 +738,7 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
         {/* Audit */}
         {data.audit_log_extract.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Atividades de Auditoria</Text>
+            <Text style={styles.sectionTitle}>{t("Atividades de Auditoria")}</Text>
             {data.audit_log_extract.slice(0, 50).map((a) => (
               <View key={a.id} style={styles.row}>
                 <Text style={styles.label}>{fmtDate(a.created_at)}</Text>
@@ -659,9 +763,9 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
               </Text>
             ) : (
               <Text>
-                ASSINATURA DIGITAL PAdES PENDENTE — a chave de assinatura não está
-                configurada. A integridade do documento é garantida por hash SHA-256
-                registrado em log auditável.
+                {t(
+                  "ASSINATURA DIGITAL PAdES PENDENTE — a chave de assinatura não está configurada. A integridade do documento é garantida por hash SHA-256 registrado em log auditável.",
+                )}
               </Text>
             )}
           </View>
@@ -674,9 +778,9 @@ export function LgpdExportPdf({ data, unsignedWarning }: Props): React.ReactElem
             dados". Ver o cabeçalho deste arquivo sobre a marca. */}
         <View style={styles.footer} fixed>
           <Text>
-            {`${papelControlador(data)}: ${data.organization_legal_name || "—"} · Relatório de Acesso aos Dados${
-              data.lei_citada ? ` — ${data.lei_citada}` : ""
-            } · ${papelEncarregado(data)}: ${encarregado(data)} · Validade do link de download conforme e-mail recebido`}
+            {`${t(papelControlador(data))}${d.doisPontos} ${data.organization_legal_name || "—"} · ${t("Relatório de Acesso aos Dados")}${
+              data.lei_citada ? ` — ${d.daLei(data.lei_citada)}` : ""
+            } · ${t(papelEncarregado(data))}${d.doisPontos} ${encarregado(data, d)} · ${t("Validade do link de download conforme e-mail recebido")}`}
           </Text>
         </View>
       </Page>
@@ -690,9 +794,11 @@ function enderecoDoContato(c: NonNullable<ExportPayload["contact"]>): string {
 
 export async function renderLgpdPdf(
   data: ExportPayload,
-  options: { unsignedWarning?: boolean } = {},
+  options: { unsignedWarning?: boolean; idioma?: Idioma } = {},
 ): Promise<Buffer> {
-  const element = <LgpdExportPdf data={data} unsignedWarning={options.unsignedWarning} />;
+  const element = (
+    <LgpdExportPdf data={data} unsignedWarning={options.unsignedWarning} idioma={options.idioma} />
+  );
   const buf = await renderToBuffer(element);
   return buf as Buffer;
 }

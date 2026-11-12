@@ -35,11 +35,12 @@ export const IDIOMAS_DA_POLITICA_BELGA: readonly { codigo: EscolhaDeIdioma; nome
 
 export const VOLTAR_NA_POLITICA_BELGA: Record<IdiomaBelga, string> = { nl: "Terug", fr: "Retour" };
 
-/** O perfil do país traz o nome holandês da autoridade; a página em francês usa este. */
-export const AUTORIDADE_EM_FRANCES = {
-  nome: "Autorité de protection des données (APD)",
-  site: "https://www.autoriteprotectiondonnees.be",
-};
+/**
+ * O perfil do país traz o nome holandês da autoridade; a página em francês usa este.
+ * Mora em `autoridade-belga.ts` porque o relatório de acesso em francês também o usa
+ * (S2a Task 13), e o worker não pode importar este arquivo (`next/headers`).
+ */
+export { AUTORIDADE_EM_FRANCES } from "@/lib/legal/autoridade-belga";
 
 export const POLITICA_BELGA: Record<IdiomaBelga, Record<string, string>> = {
   nl: {

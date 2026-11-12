@@ -65,8 +65,9 @@
 import { createHash, createHmac } from "node:crypto";
 
 import { tagDeIdioma } from "@/lib/i18n/datas";
-import { IDIOMA_PADRAO } from "@/lib/i18n/idiomas";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
 import { PAIS_PADRAO } from "@/lib/legal/perfil-do-pais";
+import { documentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 
 /** Versão do FORMATO. Entra na linha canônica: mudar o layout muda o código. */
 export const VERSAO_DO_ATESTADO = "atestado-de-anonimizacao.v1";
@@ -91,8 +92,12 @@ export function exclusaoForaDoBrasil(requestType: string, codigoDoPais: string):
  * (é o que um auditor reproduz); impresso, ele faria o titular de Lisboa ler uma
  * hora que não é a dele. Fuso inválido no cadastro cai para UTC — e o rótulo diz
  * UTC, em vez de pôr o nome do fuso ao lado de uma hora que não é dele.
+ *
+ * O documento é gerado no worker, sem leitor de interface: a `etiqueta` é a do
+ * idioma do titular (S2a Task 13) e, sem ela, a do padrão do produto, resolvida
+ * pela camada de data (nunca escrita à mão).
  */
-export function dataHoraNoFuso(iso: string, fuso: string): string {
+export function dataHoraNoFuso(iso: string, fuso: string, etiqueta: string = tagDeIdioma(IDIOMA_PADRAO)): string {
   const opcoes: Intl.DateTimeFormatOptions = {
     day: "2-digit",
     month: "2-digit",
@@ -103,9 +108,6 @@ export function dataHoraNoFuso(iso: string, fuso: string): string {
     hourCycle: "h23",
   };
   const instante = new Date(iso);
-  // O documento é gerado no worker, sem leitor de interface: o idioma é o
-  // padrão do produto, resolvido pela camada de data (nunca escrito à mão).
-  const etiqueta = tagDeIdioma(IDIOMA_PADRAO);
   try {
     return `${new Intl.DateTimeFormat(etiqueta, { ...opcoes, timeZone: fuso }).format(instante)} (${fuso})`;
   } catch {
@@ -225,23 +227,40 @@ export function codigoCurto(codigo: string): string {
  * que foi feito, quando, por quem e de onde. O nome do titular não entra —
  * imprimi-lo seria guardar no papel o dado que o papel atesta apagado —, e a
  * frase diz isso em vez de deixar a leitura ambígua.
+ *
+ * No idioma do titular (S2a Task 13) cada FRASE é uma chave do catálogo, com o
+ * protocolo, o escopo, a data e o executor nas `{marcas}`; sem `idioma`, as
+ * frases preenchidas e unidas por espaço são, letra a letra, o texto de antes.
  */
-export function textoDaDeclaracao(d: DadosDoAtestado): string {
+export function textoDaDeclaracao(d: DadosDoAtestado, idioma?: Idioma): string {
+  const doc = documentoNoIdioma(idioma);
+  const { t } = doc;
   const escopo =
     d.escopo === "tenant"
-      ? "os dados pessoais de todos os titulares da base desta organização"
-      : "os dados pessoais do titular deste pedido";
+      ? t("os dados pessoais de todos os titulares da base desta organização")
+      : t("os dados pessoais do titular deste pedido");
   const executor = d.evidencia.executor
     ? `${d.evidencia.executor.nome}${d.evidencia.executor.email ? ` (${d.evidencia.executor.email})` : ""}`
-    : "execução automática do sistema";
-  const origem = d.evidencia.ip ? `, a partir do IP ${d.evidencia.ip}` : ", sem ato humano de origem (execução automática)";
+    : t("execução automática do sistema");
+  const origem = d.evidencia.ip
+    ? t(", a partir do IP {ip}", { ip: d.evidencia.ip })
+    : t(", sem ato humano de origem (execução automática)");
   return [
-    `Declaramos, na condição de controlador, que em cumprimento ao pedido de exclusão protocolado sob o número ${d.request_id},`,
-    `${escopo} foram ANONIMIZADOS nos sistemas desta organização,`,
-    `com a eliminação dos campos identificáveis, em ${dataHoraNoFuso(d.evidencia.em, d.fuso)}, por ${executor}${origem}.`,
-    "Este documento não reproduz nome, documento nem contato do titular — o vínculo com o pedido é o protocolo acima.",
-    "O registro desta execução é mantido em trilha de auditoria imutável para demonstração, e este documento é a prova",
-    "que o requerente pode guardar. O código de autenticidade abaixo amarra este conjunto de informações ao registro.",
+    t(
+      "Declaramos, na condição de controlador, que em cumprimento ao pedido de exclusão protocolado sob o número {protocolo}, {escopo} foram ANONIMIZADOS nos sistemas desta organização, com a eliminação dos campos identificáveis, em {quando}, por {executor}{origem}.",
+      {
+        protocolo: d.request_id,
+        escopo,
+        quando: dataHoraNoFuso(d.evidencia.em, d.fuso, doc.etiqueta),
+        executor,
+        origem,
+      },
+    ),
+    t("Este documento não reproduz nome, documento nem contato do titular — o vínculo com o pedido é o protocolo acima."),
+    t(
+      "O registro desta execução é mantido em trilha de auditoria imutável para demonstração, e este documento é a prova que o requerente pode guardar.",
+    ),
+    t("O código de autenticidade abaixo amarra este conjunto de informações ao registro."),
   ].join(" ");
 }
 

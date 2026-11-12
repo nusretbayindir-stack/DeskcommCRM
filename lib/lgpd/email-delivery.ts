@@ -28,19 +28,23 @@
  *
  * O Brasil recebe o texto de sempre, byte a byte, mais o link do arquivo de
  * dados (doc 103, A — a única mudança desde o doc 88). Fora do Brasil o e-mail sai
- * em pt-PT, sem LGPD, citando a lei do país só quando o perfil tem citação
- * revisada (`citacaoDaLei`), e com o prazo do link no fuso da organização e o
- * nome do fuso escrito. Antes, com Portugal no seletor, o PDF citaria o RGPD e
- * este e-mail diria "LGPD Lei nº 13.709/2018" ao mesmo titular.
- * ponytail: o ramo não-BR é pt-PT; quando entrar país que não fala português,
- * ele vira ramo por idioma.
+ * sem LGPD, citando a lei do país só quando o perfil tem citação revisada
+ * (`citacaoDaLei`), e com o prazo do link no fuso da organização e o nome do
+ * fuso escrito. Antes, com Portugal no seletor, o PDF citaria o RGPD e este
+ * e-mail diria "LGPD Lei nº 13.709/2018" ao mesmo titular.
+ *
+ * O texto de fora do Brasil é pt-PT e é a CHAVE dos catálogos: no idioma do
+ * titular (`idioma`, S2a Task 13) ele passa por `documentoNoIdioma`; Portugal, e
+ * quem não passa idioma, recebem o pt-PT de sempre.
  */
 
 import { createHash } from "node:crypto";
 
 import { NEUTROS_DE_SAIDA, type MarcaDeSaida } from "@/lib/branding/saida";
 import { sendEmail } from "@/lib/email/roteador";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { citacaoDaLei, PAIS_PADRAO, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
+import { DATA_E_HORA_DO_DOCUMENTO, documentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 
 export class EmailNotConfigured extends Error {
   constructor() {
@@ -81,6 +85,11 @@ interface SendArgs {
    * (o valor pode ser `undefined`) para quem chama não a esquecer calado.
    */
   fuso: string | undefined;
+  /**
+   * O idioma do titular (`idiomaDoTitular`, S2a Task 13). Ausente, Brasil ou
+   * Portugal: o texto de sempre.
+   */
+  idioma?: Idioma;
 }
 
 interface Mensagem {
@@ -167,52 +176,59 @@ ${rotulo}: LGPD Lei nº 13.709/2018, Art. 18, II.`;
 }
 
 /**
- * Fora do Brasil: pt-PT, sem LGPD. A linha do direito exercido só existe com
- * citação revisada — país sem revisão não cita lei nenhuma, nem a brasileira.
+ * Fora do Brasil: sem LGPD. A linha do direito exercido só existe com citação
+ * revisada — país sem revisão não cita lei nenhuma, nem a brasileira. Cada
+ * frase pt-PT é a chave do catálogo; o que vem de fora (marca, ligações, prazo)
+ * entra pelas `{marcas}`, já escapado no HTML.
  */
 function mensagemForaDoBrasil(args: SendArgs, shortId: string): Mensagem {
+  const d = documentoNoIdioma(args.idioma, args.perfil.codigo);
+  const { t } = d;
   const orgName = escapeHtml(args.marca.nome);
   const citacao = citacaoDaLei(args.perfil);
-  const expiresFmt = expiraEm(args.expiresAt, args.fuso);
-  const direito = citacao ? `Direito exercido: acesso aos dados pessoais, ${citacao}.` : null;
+  const expiresFmt = expiraEm(args.expiresAt, args.fuso, d.etiqueta);
+  const direito = citacao
+    ? t("Direito exercido: acesso aos dados pessoais, {citacao}.", { citacao: d.daLei(citacao) })
+    : null;
 
-  const subject = `Pedido de acesso aos seus dados pessoais #${shortId}`;
+  const subject = t("Pedido de acesso aos seus dados pessoais #{pedido}", { pedido: shortId });
+  const ligacaoDosDados = `<a href="${escapeHtml(args.signedUrlDados)}" style="color:inherit;">${escapeHtml(args.signedUrlDados)}</a>`;
 
   const html = `<!doctype html>
-<html lang="pt-PT">
+<html lang="${d.etiqueta ?? "pt-PT"}">
 <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;color:${NEUTROS_DE_SAIDA.texto};line-height:1.5;max-width:560px;margin:0 auto;padding:24px;">
-  <h2 style="margin:0 0 12px;font-size:18px;">Pedido de acesso aos seus dados pessoais #${shortId}</h2>
-  <p>Olá,</p>
-  <p>O seu pedido de acesso aos dados pessoais foi tratado por <strong>${orgName}</strong>.</p>
-  <p>O relatório está disponível na ligação abaixo. Por razões de segurança, a ligação expira em <strong>${expiresFmt}</strong>.</p>
+  <h2 style="margin:0 0 12px;font-size:18px;">${subject}</h2>
+  <p>${t("Olá,")}</p>
+  <p>${t("O seu pedido de acesso aos dados pessoais foi tratado por <strong>{empresa}</strong>.", { empresa: orgName })}</p>
+  <p>${t("O relatório está disponível na ligação abaixo. Por razões de segurança, a ligação expira em <strong>{prazo}</strong>.", { prazo: expiresFmt })}</p>
   <p style="margin:24px 0;">
-    <a href="${escapeHtml(args.signedUrl)}" style="background:${args.marca.accent};color:${args.marca.accentFg};padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block;">Descarregar relatório</a>
+    <a href="${escapeHtml(args.signedUrl)}" style="background:${args.marca.accent};color:${args.marca.accentFg};padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block;">${t("Descarregar relatório")}</a>
   </p>${
     args.signedUrlDados
-      ? `\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">A cópia dos seus dados pessoais (data.json) está em <a href="${escapeHtml(args.signedUrlDados)}" style="color:inherit;">${escapeHtml(args.signedUrlDados)}</a>.</p>`
+      ? `\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${t("A cópia dos seus dados pessoais (data.json) está em {ligacao}.", { ligacao: ligacaoDosDados })}</p>`
       : ""
   }
-  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">Se não fez este pedido, ignore este e-mail.</p>${
+  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${t("Se não fez este pedido, ignore este e-mail.")}</p>${
     direito ? `\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${escapeHtml(direito)}</p>` : ""
   }
 </body>
 </html>`;
 
-  const text = `Pedido de acesso aos seus dados pessoais #${shortId}, tratado por ${args.marca.nome}.
+  const text = `${t("Pedido de acesso aos seus dados pessoais #{pedido}, tratado por {empresa}.", { pedido: shortId, empresa: args.marca.nome })}
 
-O relatório está disponível em:
+${t("O relatório está disponível em:")}
 ${args.signedUrl}${
     args.signedUrlDados
       ? `
 
-A cópia dos seus dados pessoais (data.json) está em:
+${t("A cópia dos seus dados pessoais (data.json) está em:")}
 ${args.signedUrlDados}`
       : ""
   }
 
-A ligação expira em ${expiresFmt}.
+${t("A ligação expira em {prazo}.", { prazo: expiresFmt })}
 
-Se não fez este pedido, ignore este e-mail.${direito ? `\n${direito}` : ""}`;
+${t("Se não fez este pedido, ignore este e-mail.")}${direito ? `\n${direito}` : ""}`;
 
   return { subject, html, text };
 }
@@ -220,11 +236,14 @@ Se não fez este pedido, ignore este e-mail.${direito ? `\n${direito}` : ""}`;
 /**
  * O prazo do link no fuso da organização, com o NOME do fuso escrito. Um fuso
  * que o `Intl` recusa não pode derrubar a entrega ao titular: cai em UTC, que
- * continua verdadeiro porque o nome do fuso vai junto.
+ * continua verdadeiro porque o nome do fuso vai junto. A `etiqueta` é a do
+ * idioma do titular; sem ela, a de sempre.
  */
-function expiraEm(quando: Date, fuso: string | undefined): string {
+function expiraEm(quando: Date, fuso: string | undefined, etiqueta?: string): string {
   const formato = (timeZone: string) =>
-    quando.toLocaleString("pt-PT", { timeZone, timeZoneName: "short" });
+    etiqueta
+      ? quando.toLocaleString(etiqueta, { ...DATA_E_HORA_DO_DOCUMENTO, timeZone, timeZoneName: "short" })
+      : quando.toLocaleString("pt-PT", { timeZone, timeZoneName: "short" });
   try {
     return formato(fuso ?? "UTC");
   } catch {
