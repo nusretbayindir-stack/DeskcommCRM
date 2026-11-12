@@ -1,0 +1,83 @@
+/**
+ * O IDIOMA DE QUEM ESCREVEU — só quando há certeza (S2a, Task 9).
+ *
+ * As frases são as do plano. O lado `null` é tão obrigatório quanto o outro:
+ * um idioma gravado por engano só sai pela mão de alguém da equipe, e "Merci"
+ * ou "OK" não podem decidir a língua de ninguém.
+ */
+import { describe, expect, it } from "vitest";
+
+import { algilarIdioma } from "@/lib/i18n/algila-idioma";
+
+const CASOS: ReadonlyArray<[string, "nl" | "fr" | "tr"]> = [
+  ["Goedemorgen, ik wil graag een afspraak maken", "nl"],
+  ["Hoeveel kost dat voor mijn wagen?", "nl"],
+  ["Dank u wel", "nl"],
+  ["Bonjour, ik wil een afspraak", "nl"],
+  ["Bonjour, je voudrais un rendez-vous", "fr"],
+  ["Merci beaucoup pour votre aide", "fr"],
+  ["Combien ça coûte s'il vous plaît ?", "fr"],
+  ["Merhaba, randevu almak istiyorum", "tr"],
+  ["Fiyat ne kadar acaba", "tr"],
+  ["Teşekkür ederim", "tr"],
+];
+
+const SEM_CERTEZA = [
+  "OK",
+  "Merci",
+  "Merci voor de info",
+  "Bonjour",
+  "Hallo",
+  "Goedemorgen",
+  "Merhaba",
+  "Stop",
+  "Thanks",
+  "Hello, I want an appointment",
+  "Bom dia, quero marcar uma consulta para amanhã",
+  "Quiero una cita para mañana",
+  "https://example.com",
+  "12345",
+  "",
+];
+
+describe("algilarIdioma", () => {
+  for (const [texto, idioma] of CASOS) {
+    it(`${idioma}: ${texto}`, () => {
+      expect(algilarIdioma(texto)).toBe(idioma);
+    });
+  }
+
+  for (const texto of SEM_CERTEZA) {
+    it(`null: ${JSON.stringify(texto)}`, () => {
+      expect(algilarIdioma(texto)).toBeNull();
+    });
+  }
+
+  // Controle da revisão: "İ".toLowerCase() é "i" + ponto combinante (U+0307),
+  // que não é letra e partia a palavra — a maiúscula turca sumia da conta.
+  it("a maiúscula turca İ não parte a palavra", () => {
+    expect(algilarIdioma("İstiyorum randevu")).toBe("tr");
+    expect(algilarIdioma("RANDEVU ALMAK İSTİYORUM")).toBe("tr");
+  });
+
+  // Decisão do dono (2026-11-12): as letras turcas sozinhas não decidem. Um
+  // NOME ("Ayşe Yılmaz") gravava `tr` para sempre, e um francês assinado
+  // "Şükrü" ficava sem idioma. O bônus só conta com uma palavra turca da lista.
+  it("as letras turcas sem palavra turca não decidem (o nome não é a língua)", () => {
+    expect(algilarIdioma("Ayşe Yılmaz")).toBeNull();
+    expect(algilarIdioma("Kerem Dağ")).toBeNull();
+    expect(algilarIdioma("Teşekkürler")).toBeNull();
+    expect(algilarIdioma("Merhaba, ben Ayşe")).toBeNull();
+  });
+
+  it("o nome turco não rouba a língua de quem escreve em outra", () => {
+    expect(algilarIdioma("Bonjour, je voudrais un rendez-vous. Şükrü")).toBe("fr");
+    expect(algilarIdioma("Ik wil graag een afspraak, groeten Ayşe")).toBe("nl");
+    expect(algilarIdioma("Ayşe Yılmaz, randevu istiyorum")).toBe("tr");
+  });
+
+  it("null e undefined não decidem nada", () => {
+    expect(algilarIdioma(null)).toBeNull();
+    expect(algilarIdioma(undefined)).toBeNull();
+  });
+});

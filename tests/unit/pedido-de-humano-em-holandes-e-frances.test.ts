@@ -1,0 +1,103 @@
+/**
+ * O PEDIDO DE HUMANO EM HOLANDÊS E FRANCÊS (Bélgica).
+ *
+ * A mesma régua de `HUMAN_HANDOFF_PATTERNS` para o português e o turco: verbo
+ * de contato no modo de PEDIDO (infinitivo, imperativo, pergunta) + alvo
+ * humano. O relato ("ik heb met een medewerker gesproken", "j'ai parlé à un
+ * conseiller") não pede ninguém, e o "conseiller fiscal" é o contador do
+ * cliente, não a equipe.
+ *
+ * Cada frase é medida contra as TRÊS funções: pedir uma pessoa não é pedir
+ * para sair, e nenhuma destas pode bloquear nem escalar como opt-out.
+ */
+import { describe, expect, it } from "vitest";
+
+import { detectHumanHandoffRequest } from "@/lib/agent-engine/agent/human-handoff";
+import { ehOptOutProvavel, ehPedidoDeOptOut } from "@/lib/opt-out/deteccao";
+
+const PEDE_HUMANO = [
+  // holandês
+  "ik wil met een medewerker spreken",
+  "kan ik met iemand spreken?",
+  "verbind me door met een medewerker",
+  "ik wil een echte persoon",
+  // francês
+  "je veux parler à un conseiller",
+  "puis-je parler à quelqu'un ?",
+  "passez-moi un conseiller",
+  "je veux parler à une vraie personne",
+];
+
+const NAO_PEDE_HUMANO = [
+  // holandês
+  "ik heb met een medewerker gesproken",
+  "een medewerker heeft me gebeld",
+  // francês
+  "j'ai parlé à un conseiller",
+  "votre conseiller m'a appelé",
+  "je cherche un conseiller fiscal",
+];
+
+describe("holandês e francês — o pedido de humano", () => {
+  for (const texto of PEDE_HUMANO) {
+    it(`pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(true);
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+    });
+  }
+
+  for (const texto of NAO_PEDE_HUMANO) {
+    it(`não pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+    });
+  }
+});
+
+// Controles da revisão independente: falas comuns que a primeira versão lia
+// como pedido de humano.
+describe("holandês e francês — controles da revisão", () => {
+  for (const texto of [
+    "mettez-moi une personne de plus pour samedi",
+    "en tant qu'être humain je trouve ça inacceptable",
+    "il faut être humain avec les patients",
+    "dat is echt mens-onvriendelijk",
+  ]) {
+    it(`não pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});
+
+// Controles da revisão do dono (2026-11-12): a forma mais comum em Flandres é
+// "<alvo> spreken" SEM o "met" — "ik wil een medewerker spreken", "mag ik de
+// zaakvoerder spreken?" — e passava em branco. E "quelqu'un de MA famille" é
+// um terceiro do cliente, não a equipe; "quelqu'un de chez vous" segue
+// pedindo.
+describe("holandês e francês — controles da revisão do dono", () => {
+  for (const texto of [
+    "Ik wil een medewerker spreken",
+    "Mag ik een medewerker spreken?",
+    "kan ik de zaakvoerder spreken?",
+    "ik zou graag iemand van jullie spreken",
+    "je voudrais parler à quelqu'un de chez vous",
+  ]) {
+    it(`pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(true);
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+    });
+  }
+  for (const texto of [
+    "ik heb een medewerker gesproken",
+    "ik wil een verkoper die Frans kan, kan dat?",
+    "je dois en parler à quelqu'un de ma famille avant",
+    "je vais en parler à quelqu'un de mon entourage",
+  ]) {
+    it(`não pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});

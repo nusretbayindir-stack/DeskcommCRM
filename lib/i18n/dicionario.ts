@@ -14791,6 +14791,10 @@ export const DICIONARIO: Traducoes = {
   "próximo do limite": { es: "cerca del límite" },
   "acima do limite": { es: "por encima del límite" },
   // ─── fim do bloco da Task 7b ───
+  // ─── O idioma na ficha do contato (S2a Task 10). Bloco do fork. ───
+  // A opção vazia do seletor "Idioma": a primeira mensagem do contato decide.
+  "Detectar automaticamente": { es: "Detectar automáticamente" },
+  // ─── fim do bloco da Task 10 ───
   // ─── Os comandos da equipe no idioma (S2a, decisão do dono 2026-11-12). Bloco do fork. ───
   // A explicação entre `< >` no aviso do caso (lib/escalacao/texto-do-aviso.ts).
   // A palavra do comando em espanhol segue RESPONDER/PERGUNTAR.
