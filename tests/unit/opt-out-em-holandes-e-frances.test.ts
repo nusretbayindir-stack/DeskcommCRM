@@ -127,3 +127,73 @@ describe("holandês e francês — a fala comum não bloqueia nem escala", () =>
     });
   }
 });
+
+// ── Controles da revisão independente ───────────────────────────────────────
+//
+// Frases genéricas que a revisão do PR mediu contra a primeira versão: pedidos
+// reais que escapavam e falas comuns que bloqueavam (o canal de e-mail e o de
+// papel, o curso, o técnico, a pessoa da família). Não são do plano; ficam à
+// parte para a leitura belga confirmar ou corrigir.
+
+const REVISAO_PEDE_PARA_SAIR = [
+  "retirez-moi de la liste de diffusion",
+  "retirez-moi de la liste définitivement",
+  "enlevez-moi de la liste des destinataires",
+  "merci de ne plus m'envoyer de messages",
+  "veuillez ne plus me contacter",
+  "ne plus me contacter merci",
+  "je ne souhaite plus être contacté",
+  "arrêtez les messages",
+  "gelieve mij niet meer te contacteren",
+  "ik wil niet meer gecontacteerd worden",
+  "stop met berichten sturen",
+  "geen berichten meer aub",
+];
+
+const REVISAO_NADA = [
+  "stuur me niet meer dan twee dozen",
+  "stuur me niets meer op, ik haal het zelf af",
+  "contacteer me niet meer na 18u",
+  "mail me niet meer, stuur liever een whatsapp",
+  "je ne veux plus recevoir de mails, seulement whatsapp",
+  "ik wil geen reclame meer in mijn brievenbus",
+  "je ne veux plus de publicités dans ma boîte aux lettres",
+  "kan ik me uitschrijven voor de yogales van donderdag?",
+  "ik wil me uitschrijven uit de cursus",
+  "je voudrais me désinscrire du cours de yoga",
+  "comment me désinscrire de la formation ?",
+  "ne m'envoyez plus le technicien de lundi",
+  "ne m'envoyez plus de courrier à cette adresse",
+  "ne m'écrivez plus avant 9h",
+  "arrêtez de m'envoyer le catalogue papier",
+  "vous devez arrêter de contacter mon assurance",
+  "arrêtez de harceler ma mère",
+  "je vous ai déjà dit que je ne suis pas disponible lundi",
+  "je vous ai déjà dit que je ne veux pas le modèle rouge",
+  "ça suffit ?",
+];
+
+/** O dado pessoal: um humano decide, ninguém é bloqueado (o espelho do turco). */
+const REVISAO_AMBIGUO = ["verwijder mij uit uw bestand"];
+
+describe("holandês e francês — controles da revisão", () => {
+  for (const texto of REVISAO_PEDE_PARA_SAIR) {
+    it(`bloqueia: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(true);
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+  for (const texto of REVISAO_AMBIGUO) {
+    it(`escala sem bloquear: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(true);
+    });
+  }
+  for (const texto of REVISAO_NADA) {
+    it(`nada: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});

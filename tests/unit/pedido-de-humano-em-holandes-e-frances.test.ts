@@ -55,3 +55,18 @@ describe("holandês e francês — o pedido de humano", () => {
     });
   }
 });
+
+// Controles da revisão independente: falas comuns que a primeira versão lia
+// como pedido de humano.
+describe("holandês e francês — controles da revisão", () => {
+  for (const texto of [
+    "mettez-moi une personne de plus pour samedi",
+    "en tant qu'être humain je trouve ça inacceptable",
+    "il faut être humain avec les patients",
+    "dat is echt mens-onvriendelijk",
+  ]) {
+    it(`não pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});

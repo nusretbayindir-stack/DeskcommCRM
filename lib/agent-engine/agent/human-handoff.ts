@@ -168,18 +168,20 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   // "verbind me door met een medewerker", "zet me door naar een medewerker".
   new RegExp(`\\b(?:verbind|verbindt|zet|schakel)\\s+(?:me|mij|ons)\\s+door\\s+(?:met|naar)\\s+(?:${NL_ALVO})`),
   // "ik wil een echte persoon" — o espelho de "pessoa de verdade".
-  /\becht(?:e)?\s+(?:persoon|mens|medewerker)\b/,
+  /\becht(?:e)?\s+(?:persoon|mens|medewerker)\b(?!-)/,
   // ── francês ─────────────────────────────────────────────────────────────
   // O INFINITIVO "parler à/avec <alvo>": "je veux parler à un conseiller",
   // "puis-je parler à quelqu'un ?". O relato é o particípio ("j'ai parlé" →
   // `parle`), que não casa.
   new RegExp(`\\bparler\\s+(?:a|avec)\\s+${FR_ALVO}`),
-  // "passez-moi un conseiller", "mettez-moi en contact avec un conseiller".
-  new RegExp(
-    `\\b(?:passez|passe|transferez|transfere|mettez|mets)[-\\s]?(?:moi|nous)\\s+(?:en\\s+contact\\s+avec\\s+|a\\s+)?${FR_ALVO}`,
-  ),
-  // "une vraie personne", "un vrai humain".
-  /\b(?:vraie\s+personne|vrai\s+humain|etre\s+humain)\b/,
+  // "passez-moi un conseiller", "mettez-moi en contact avec un conseiller" —
+  // e NÃO "mettez-moi une personne de plus pour samedi" (a reserva): `mettez`
+  // só vale com "en contact avec".
+  new RegExp(`\\b(?:passez|passe|transferez|transfere)[-\\s]?(?:moi|nous)\\s+(?:a\\s+)?${FR_ALVO}`),
+  new RegExp(`\\b(?:mettez|mets)[-\\s]?(?:moi|nous)\\s+en\\s+contact\\s+avec\\s+${FR_ALVO}`),
+  // "une vraie personne", "un vrai humain". NÃO "être humain": é também o
+  // verbo ("il faut être humain avec les patients").
+  /\b(?:vraie\s+personne|vrai\s+humain)\b/,
 ];
 
 /** True se a mensagem do lead é um pedido explícito de atendimento humano (determinístico). */
