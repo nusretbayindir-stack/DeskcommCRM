@@ -52,7 +52,7 @@ import { testaComPrazo } from "@/lib/leads/padrao-do-campo-no-servidor";
 type SB = SupabaseClient;
 
 const SELECT_COLS =
-  "id, organization_id, name, display_name, address_book_name, zip_code, street, number, complement, district, city, state, email, email_normalized, phone_number, cpf_encrypted, birthdate, is_blocked, blocked_reason, is_personal, contact_type, ai_opt_out, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, custom_fields, created_at, updated_at, last_activity_at, first_service_at";
+  "id, organization_id, name, display_name, address_book_name, zip_code, street, number, complement, district, city, state, email, email_normalized, phone_number, cpf_encrypted, birthdate, is_blocked, blocked_reason, is_personal, contact_type, locale, ai_opt_out, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, custom_fields, created_at, updated_at, last_activity_at, first_service_at";
 
 /**
  * A linha como o banco devolve. `cpf_encrypted` é interno a este módulo e só diz
@@ -688,6 +688,9 @@ export async function createContactHandler(
     // ('cliente', migration 0763) — e é isso que o invariante de coluna prova
     // ("contato novo nasce cliente sem ninguém informar").
     ...(input.contact_type !== undefined ? { contact_type: input.contact_type } : {}),
+    // O idioma (S2a, Task 10): só quando informado; ausente fica vazio e a
+    // detecção da primeira mensagem pode preenchê-lo.
+    ...(input.locale !== undefined ? { locale: input.locale } : {}),
     tags: input.tags ?? [],
     source: input.source,
     source_metadata: input.source_metadata ?? {},
@@ -892,6 +895,9 @@ export async function patchContactHandler(
   // NÃO entra no patch — quem não fala de tipo não reescreve a coluna, e é por
   // isso que o schema não tem default aqui (o default 'cliente' é do BANCO).
   if (input.contact_type !== undefined) patch.contact_type = input.contact_type;
+  // O IDIOMA (S2a, Task 10): o mesmo caminho do tipo — ausente não entra; `null`
+  // limpa e deixa a detecção da entrada preencher de novo.
+  if (input.locale !== undefined) patch.locale = input.locale;
   if (input.tags !== undefined) patch.tags = input.tags;
   if (input.source !== undefined) patch.source = input.source;
   if (input.source_metadata !== undefined) patch.source_metadata = input.source_metadata;
