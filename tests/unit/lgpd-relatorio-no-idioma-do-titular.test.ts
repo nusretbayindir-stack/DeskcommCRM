@@ -298,6 +298,18 @@ describe("o relatório de acesso (PDF)", () => {
     expect(lido).toContain("Kişisel Verilere Erişim Raporu");
   }, 60_000);
 
+  it("fr: valor de 1 000 ou mais legível nas BYTES do PDF — o separador de milhar do fr-BE (U+202F) não existe na fonte", async () => {
+    // Revisão do PR #54 (I-1): `toLocaleString("fr-BE")` separa o milhar com
+    // U+202F, que a Liberation Sans não tem; o PDF imprimia "EUR 1/234,50".
+    const p = await payloads("BE", "Europe/Brussels");
+    const lead = p.rico.leads[0];
+    if (!lead) throw new Error("O payload de exemplo perdeu a linha de lead.");
+    const comMilhar = { ...p.rico, leads: [{ ...lead, value_cents: 123450, currency: "EUR" }] };
+    const lido = await extractPdfText(await renderLgpdPdf(comMilhar, { idioma: "fr" }));
+    expect(lido).toMatch(/EUR 1[  ]234,50/);
+    expect(lido).not.toContain("1/234");
+  }, 60_000);
+
   it("sem idioma, Portugal e a Bélgica saem byte a byte como antes da Task 13", async () => {
     expect(pdfs(await payloads("PT", "Europe/Lisbon"))).toBe(ANTES("pdf-pt.txt"));
     expect(pdfs(await payloads("BE", "Europe/Brussels"))).toBe(ANTES("pdf-be.txt"));

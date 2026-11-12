@@ -186,8 +186,10 @@ function fmtMoney(
   if (cents == null) return "—";
   const v = cents / 100;
   // No idioma do titular o número sai como ele escreve (12,50 em nl-BE); sem idioma, como sempre.
+  // O fr-BE separa o milhar com U+202F, que a fonte do documento traduzido não
+  // tem (o PDF imprimia "1/234,50"): vira o espaço inseparável comum, que ela tem.
   const numero = etiqueta
-    ? v.toLocaleString(etiqueta, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    ? v.toLocaleString(etiqueta, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ /g, " ")
     : v.toFixed(2);
   return `${currency ?? "BRL"} ${numero}`;
 }
