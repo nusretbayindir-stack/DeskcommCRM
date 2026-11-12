@@ -14,8 +14,11 @@ import { logger } from "@/lib/logger";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { audit } from "@/lib/audit";
+import { acaoDaPalavraDeComando, comecaComPalavraDeComando } from "./palavras-do-comando";
 
-const RESPOSTA = /^(RESPONDER|PERGUNTAR)\s+([0-9a-f-]{36})\s+([\s\S]+)$/i;
+// A palavra é qualquer uma de `palavras-do-comando.ts` (RESPONDER/PERGUNTAR e as
+// de cada idioma); quem a reconhece é `acaoDaPalavraDeComando`, não esta regex.
+const RESPOSTA = /^(\S+)\s+([0-9a-f-]{36})\s+([\s\S]+)$/i;
 const CasoId = z.string().uuid();
 
 export type ResultadoDeRespostaWhatsApp = "accepted" | "duplicate" | "unavailable" | "malformed" | null;
@@ -34,14 +37,10 @@ export function parseComandoDeRespostaDoSuporte(
   const m = RESPOSTA.exec(texto.trim());
   if (!m) return null;
   const caseId = CasoId.safeParse(m[2]);
-  const action = m[1]?.toUpperCase();
+  const action = m[1] ? acaoDaPalavraDeComando(m[1]) : null;
   const body = m[3]?.trim() ?? "";
   if (!caseId.success || !action || body.length === 0 || body.length > 4000) return null;
-  return {
-    caseId: caseId.data,
-    action: action === "PERGUNTAR" ? "need_lead_info" : "resolved",
-    body,
-  };
+  return { caseId: caseId.data, action, body };
 }
 
 /**
@@ -135,16 +134,13 @@ export async function consumirComResultado(
       direction: entrada.direction,
       sessionId: entrada.channelSessionId,
     });
-    if (entrada.direction === "inbound" && phone && entrada.externalId &&
-        /^(RESPONDER|PERGUNTAR)(?:\s|$)/i.test(entrada.texto?.trim() ?? "")) {
+    // A tentativa de comando (qualquer palavra de `palavras-do-comando.ts`) com o
+    // formato errado ganha a ajuda; mensagem comum segue ignorada em silêncio.
+    const tentouOComando = entrada.direction === "inbound" && comecaComPalavraDeComando(entrada.texto);
+    if (tentouOComando && phone && entrada.externalId) {
       await enviarConfirmacao(admin, entrada, config, "malformed");
     }
-    return {
-      consumed: true,
-      result: entrada.direction === "inbound" && /^(RESPONDER|PERGUNTAR)(?:\s|$)/i.test(entrada.texto?.trim() ?? "")
-        ? "malformed"
-        : null,
-    };
+    return { consumed: true, result: tentouOComando ? "malformed" : null };
   }
 
   let data: unknown;

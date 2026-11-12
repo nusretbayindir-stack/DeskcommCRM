@@ -19,7 +19,9 @@
  *
  * Com a opção «Responder casos por este WhatsApp» ligada, a última linha dá
  * lugar às instruções de `RESPONDER <uuid> <resposta ou decisão>` e
- * `PERGUNTAR <uuid> <pergunta ao cliente>` (ver `montarAvisoDeCaso`).
+ * `PERGUNTAR <uuid> <pergunta ao cliente>` (ver `montarAvisoDeCaso`) — com a
+ * palavra do idioma da empresa (`palavras-do-comando.ts`: ANTWOORD/VRAAG,
+ * RÉPONDRE/DEMANDER, YANITLA/SOR) e a explicação entre `< >` traduzida.
  *
  * ## As decisões, cada uma com o motivo
  *
@@ -60,6 +62,7 @@ import { tipoDeCasoLabel } from "@/lib/ai/case-copy";
 import { traduzir } from "@/lib/i18n/dicionario";
 import type { Idioma } from "@/lib/i18n/idiomas";
 
+import { palavrasDoComando } from "./palavras-do-comando";
 import { TETOS_DO_TEXTO_DO_LEAD, sanitizarTextoDoLead } from "./sanitizar-texto-do-lead";
 
 /** O rótulo que a cascata de LGPD grava no nome do contato anonimizado. */
@@ -137,10 +140,12 @@ export function montarAvisoDeCaso(aviso: AvisoDeCaso): string {
 
   linhas.push("", `${t("Abrir")}: ${aviso.link}`, "");
   if (aviso.respostaWhatsappHabilitada) {
+    // A palavra do idioma da EMPRESA; todas as outras também valem na volta.
+    const palavras = palavrasDoComando(aviso.idioma);
     linhas.push(t("Para orientar a IA sem falar diretamente com o cliente, envie:"));
-    linhas.push(`RESPONDER ${aviso.caseId} <resposta ou decisão>`);
+    linhas.push(`${palavras.responder} ${aviso.caseId} <${t("resposta ou decisão")}>`);
     linhas.push(t("Para pedir que a IA esclareça algo com o cliente, envie:"));
-    linhas.push(`PERGUNTAR ${aviso.caseId} <pergunta ao cliente>`);
+    linhas.push(`${palavras.perguntar} ${aviso.caseId} <${t("pergunta ao cliente")}>`);
     linhas.push(t("A IA usa sua orientação e o histórico para continuar o atendimento."));
   } else {
     linhas.push(t("Responder aqui não chega ao cliente — abra o link para responder."));
