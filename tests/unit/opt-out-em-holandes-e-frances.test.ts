@@ -28,9 +28,8 @@ import { ehOptOutProvavel, ehPedidoDeOptOut } from "@/lib/opt-out/deteccao";
 
 /** Pedidos inequívocos: gravam `is_blocked`. */
 const HOLANDES_PEDE_PARA_SAIR = [
-  // palavra sozinha
+  // palavra sozinha (`afmelden` saiu daqui: ver "a decisão do dono", no fim)
   "Uitschrijven",
-  "afmelden",
   "Uitschrijving",
   // frase com objeto de comunicação
   "stuur me geen berichten meer",
@@ -194,6 +193,66 @@ describe("holandês e francês — controles da revisão", () => {
       expect(ehPedidoDeOptOut(texto)).toBe(false);
       expect(ehOptOutProvavel(texto)).toBe(false);
       expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});
+
+// ── A decisão do dono (leitura de 2026-11-12) ───────────────────────────────
+//
+// O plano punha `afmelden` SOZINHA entre as palavras que bloqueiam, com a
+// ressalva de que a leitura belga podia movê-la. Moveu: em Flandres ela é
+// também "cancelar a minha presença" — o paciente que responde "Afmelden" ao
+// lembrete da consulta ("bevestigen of afmelden?") ficava bloqueado para
+// sempre. Agora a palavra sozinha ESCALA: o agente para e uma pessoa decide.
+// `uitschrijven` continua sendo a palavra que bloqueia.
+
+const DONO_AFMELDEN_AMBIGUO = ["afmelden", "Afmelden", "AFMELDEN!", "afmelden 🙏", "*Ana:*\nAfmelden"];
+
+const DONO_AFMELDEN_NADA = [
+  "ik wil me afmelden voor de les van donderdag",
+  "kan ik me afmelden voor morgen?",
+  "hoe kan ik afmelden voor de vergadering",
+];
+
+describe("holandês — a decisão do dono: `afmelden` sozinha escala", () => {
+  for (const texto of DONO_AFMELDEN_AMBIGUO) {
+    it(`escala sem bloquear: ${JSON.stringify(texto)}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(true);
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+  for (const texto of DONO_AFMELDEN_NADA) {
+    it(`nada: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+  it("`uitschrijven` sozinha segue bloqueando", () => {
+    expect(ehPedidoDeOptOut("Uitschrijven")).toBe(true);
+  });
+});
+
+// Controles da revisão do dono (2026-11-12): pedidos reais que passavam em
+// branco — "whatsapp berichten" em duas palavras ou colado, e o "stop met"
+// com determinante.
+describe("holandês — controles da revisão do dono", () => {
+  for (const texto of [
+    "Ik wil geen whatsapp berichten meer",
+    "stuur me geen whatsappberichten meer",
+    "stop met die berichten",
+    "stop met uw berichten aub",
+  ]) {
+    it(`bloqueia: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(true);
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+  for (const texto of ["stop met die onzin over de prijs", "ik heb geen whatsapp berichten meer ontvangen"]) {
+    it(`nada: ${texto}`, () => {
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
     });
   }
 });

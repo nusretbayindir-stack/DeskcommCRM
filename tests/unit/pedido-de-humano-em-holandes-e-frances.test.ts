@@ -70,3 +70,34 @@ describe("holandês e francês — controles da revisão", () => {
     });
   }
 });
+
+// Controles da revisão do dono (2026-11-12): a forma mais comum em Flandres é
+// "<alvo> spreken" SEM o "met" — "ik wil een medewerker spreken", "mag ik de
+// zaakvoerder spreken?" — e passava em branco. E "quelqu'un de MA famille" é
+// um terceiro do cliente, não a equipe; "quelqu'un de chez vous" segue
+// pedindo.
+describe("holandês e francês — controles da revisão do dono", () => {
+  for (const texto of [
+    "Ik wil een medewerker spreken",
+    "Mag ik een medewerker spreken?",
+    "kan ik de zaakvoerder spreken?",
+    "ik zou graag iemand van jullie spreken",
+    "je voudrais parler à quelqu'un de chez vous",
+  ]) {
+    it(`pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(true);
+      expect(ehPedidoDeOptOut(texto)).toBe(false);
+      expect(ehOptOutProvavel(texto)).toBe(false);
+    });
+  }
+  for (const texto of [
+    "ik heb een medewerker gesproken",
+    "ik wil een verkoper die Frans kan, kan dat?",
+    "je dois en parler à quelqu'un de ma famille avant",
+    "je vais en parler à quelqu'un de mon entourage",
+  ]) {
+    it(`não pede humano: ${texto}`, () => {
+      expect(detectHumanHandoffRequest(texto)).toBe(false);
+    });
+  }
+});

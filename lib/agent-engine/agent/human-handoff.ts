@@ -113,10 +113,12 @@ const NL_ALVO =
 /**
  * O alvo humano em francês. `personne` só com artigo: "je ne veux parler à
  * personne" é "a ninguém". E o "conseiller fiscal/financier/juridique" é o
- * contador ou o advogado do cliente, não a equipe.
+ * contador ou o advogado do cliente, não a equipe. "quelqu'un de ma famille /
+ * de mon entourage" também é do cliente (revisão do dono); "quelqu'un de chez
+ * vous" e "quelqu'un d'autre" seguem sendo a equipe.
  */
 const FR_ALVO =
-  "(?:quelqu['’ ]?un\\b|(?:un|une|le|la|l['’ ]|votre|vos)\\s*(?:vrai(?:e)?\\s+)?" +
+  "(?:quelqu['’ ]?un\\b(?!\\s+(?:de\\s+|d['’ ]?)(?:ma|mon|mes)\\b)|(?:un|une|le|la|l['’ ]|votre|vos)\\s*(?:vrai(?:e)?\\s+)?" +
   '(?:conseiller|conseillere|agent|humain|personne|vendeur|vendeuse|responsable|operateur|operatrice|collaborateur|collaboratrice|gerant|gerante)s?\\b' +
   '(?!\\s+(?:fiscal|fiscale|financier|financiere|juridique|bancaire|patrimonial|pension)\\b))';
 
@@ -164,6 +166,13 @@ const HUMAN_HANDOFF_PATTERNS: readonly RegExp[] = [
   // infinitivo, e "een medewerker heeft me gebeld" não tem o pedido.
   new RegExp(
     `\\b(?:wil|wens|zou|kan|kunnen|mag|graag)\\b(?:\\s+\\w+){0,3}?\\s+met\\s+(?:${NL_ALVO})(?:\\s+\\w+){0,2}?\\s+(?:spreken|praten)\\b`,
+  ),
+  // A mesma ordem SEM o "met": "<alvo> spreken" é transitivo e é a forma mais
+  // comum em Flandres — "ik wil een medewerker spreken", "mag ik de
+  // zaakvoerder spreken?" (revisão do dono). `praten` não entra: sem "met" ele
+  // não pede ninguém. O relato é o particípio ("een medewerker gesproken").
+  new RegExp(
+    `\\b(?:wil|wens|zou|kan|kunnen|mag|graag)\\b(?:\\s+\\w+){0,3}?\\s+(?:${NL_ALVO})(?:\\s+\\w+){0,2}?\\s+spreken\\b`,
   ),
   // "verbind me door met een medewerker", "zet me door naar een medewerker".
   new RegExp(`\\b(?:verbind|verbindt|zet|schakel)\\s+(?:me|mij|ons)\\s+door\\s+(?:met|naar)\\s+(?:${NL_ALVO})`),

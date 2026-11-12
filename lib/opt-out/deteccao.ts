@@ -117,12 +117,12 @@ export const PALAVRAS_DE_OPT_OUT: ReadonlySet<string> = new Set([
   "ret",
   // ── holandês ───────────────────────────────────────────────────────────────
   //
-  // A palavra SOZINHA, como as de cima. `afmelden` fica aqui pela decisão do
-  // plano S2a; a leitura belga pode movê-la para o ambíguo, porque sozinha ela
-  // também pode ser "cancelar a minha presença" (a consulta, a aula).
+  // A palavra SOZINHA, como as de cima. `afmelden` NÃO está aqui: a leitura
+  // belga (decisão do dono, 2026-11-12) a moveu para o ambíguo — sozinha ela é
+  // também "cancelar a minha presença" (a consulta, a aula). Ver
+  // `FRASES_AMBIGUAS_DE_OPT_OUT`.
   "uitschrijven",
   "uitschrijving",
-  "afmelden",
   // ── francês ────────────────────────────────────────────────────────────────
   //
   // Texto já normalizado: "Désabonner" chega como `desabonner`.
@@ -372,8 +372,13 @@ const TR_SEM_OUTRA_LISTA = `^(?![\\s\\S]*\\b(?:bekleme|sira|randevu|fiyat|urun|s
 // bloquear o WhatsApp de quem pediu WhatsApp é o oposto do pedido. O mesmo
 // cuidado de `TR_SEM_OUTRO_CANAL` no turco.
 
-/** A MENSAGEM em holandês. "meldingen" fica de fora: é também o lembrete da consulta. */
+/**
+ * A MENSAGEM em holandês. "meldingen" fica de fora: é também o lembrete da
+ * consulta. O canal na frente da mensagem — "whatsapp berichten" em duas
+ * palavras ou colado, "whatsappberichten" — é a forma comum (revisão do dono).
+ */
 const NL_OBJETOS_DE_COMUNICACAO =
+  "(?:whatsapp|sms)\\s?(?:berichten|berichtjes|bericht)|" +
   "berichten|bericht|berichtjes|sms|smsjes|sms'jes|whatsapps|whatsappjes|reclame|promoties|aanbiedingen";
 
 /** O resto da frase não fala da caixa de correio nem do papel. */
@@ -749,8 +754,13 @@ const FRASES_DE_OPT_OUT: readonly RegExp[] = [
   // A forma formal belga: "gelieve mij niet meer te contacteren".
   /\b(?:me|mij|ons)\s+niet\s+meer\s+te\s+(?:contacteren|benaderen|appen)\b/u,
   /\bniet\s+meer\s+(?:gecontacteerd|benaderd)\s+(?:te\s+)?(?:worden|word)\b/u,
-  // "stop met berichten sturen" — e NÃO "ik wil stoppen met roken".
-  /\bstop\s+(?:nu\s+)?met\s+(?:het\s+)?(?:(?:sturen|versturen)\s+van\s+)?(?:berichten|sms(?:jes)?|whatsapps?)\b/u,
+  // "stop met berichten sturen", "stop met die berichten" — e NÃO "ik wil
+  // stoppen met roken" nem "stop met die onzin".
+  new RegExp(
+    "\\bstop\\s+(?:nu\\s+)?met\\s+(?:het\\s+)?(?:(?:sturen|versturen)\\s+van\\s+)?(?:al\\s+)?(?:die\\s+|deze\\s+|de\\s+|uw\\s+|jullie\\s+)?" +
+      `(?:${NL_OBJETOS_DE_COMUNICACAO}|whatsapp)\\b`,
+    "u",
+  ),
   // ── francês ───────────────────────────────────────────────────────────────
   //
   // "ne m'envoyez plus (de messages)", "NE M’ENVOYEZ PLUS", "ne menvoyez plus",
@@ -911,6 +921,13 @@ const FRASES_AMBIGUAS_DE_OPT_OUT: readonly RegExp[] = [
   /\bengelleyecegim\b/u,
   // ── holandês ──────────────────────────────────────────────────────────────
   //
+  // `afmelden` SOZINHA (a mensagem inteira, como `ehPalavraIsolada`): é a
+  // palavra de sair, mas em Flandres é também "cancelar a minha presença" — a
+  // resposta ao lembrete "bevestigen of afmelden?". Bloquear para sempre o
+  // paciente que desmarcou é o erro caro; aqui o agente para e uma pessoa
+  // decide (decisão do dono, 2026-11-12). Dentro de frase ("me afmelden voor
+  // de les") ela não conta: é a aula.
+  /^[^a-z]*afmelden[^a-z]*$/u,
   // O espelho de "me deixa em paz". `gerust` só no FIM da frase: "laat me
   // gerust iets weten" é o "fique à vontade para me avisar" de todo dia em
   // Flandres, e casaria se a palavra bastasse.
