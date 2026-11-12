@@ -164,8 +164,11 @@ describe("pos-entrada grava o idioma do contato", () => {
 
   it("a escrita falha: logger.warn, os outros efeitos seguem e a regra de saída ainda roda", async () => {
     erroDoIdioma = { message: "falha simulada" };
-    // Turco com certeza (ı) E pedido de saída inequívoco: os dois caminhos na mesma mensagem.
-    await expect(rodar({ texto: "Artık mesaj istemiyorum" })).resolves.toBeUndefined();
+    // Turco com certeza ("lütfen" + ı) E pedido de saída inequívoco: os dois
+    // caminhos na mesma mensagem. Desde a decisão do dono (2026-11-12) a letra
+    // turca só soma com uma palavra turca da lista — "Artık mesaj istemiyorum"
+    // sozinha já não decide o idioma.
+    await expect(rodar({ texto: "Lütfen artık mesaj istemiyorum" })).resolves.toBeUndefined();
 
     expect(escritasDeIdioma()).toHaveLength(1);
     expect(escritasDeIdioma()[0]!.payload).toEqual({ locale: "tr" });

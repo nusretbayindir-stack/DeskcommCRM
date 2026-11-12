@@ -60,6 +60,22 @@ describe("algilarIdioma", () => {
     expect(algilarIdioma("RANDEVU ALMAK İSTİYORUM")).toBe("tr");
   });
 
+  // Decisão do dono (2026-11-12): as letras turcas sozinhas não decidem. Um
+  // NOME ("Ayşe Yılmaz") gravava `tr` para sempre, e um francês assinado
+  // "Şükrü" ficava sem idioma. O bônus só conta com uma palavra turca da lista.
+  it("as letras turcas sem palavra turca não decidem (o nome não é a língua)", () => {
+    expect(algilarIdioma("Ayşe Yılmaz")).toBeNull();
+    expect(algilarIdioma("Kerem Dağ")).toBeNull();
+    expect(algilarIdioma("Teşekkürler")).toBeNull();
+    expect(algilarIdioma("Merhaba, ben Ayşe")).toBeNull();
+  });
+
+  it("o nome turco não rouba a língua de quem escreve em outra", () => {
+    expect(algilarIdioma("Bonjour, je voudrais un rendez-vous. Şükrü")).toBe("fr");
+    expect(algilarIdioma("Ik wil graag een afspraak, groeten Ayşe")).toBe("nl");
+    expect(algilarIdioma("Ayşe Yılmaz, randevu istiyorum")).toBe("tr");
+  });
+
   it("null e undefined não decidem nada", () => {
     expect(algilarIdioma(null)).toBeNull();
     expect(algilarIdioma(undefined)).toBeNull();

@@ -17,7 +17,9 @@
  *   - minúsculas, acentos mantidos; quebra em tudo que não é letra (o apóstrofo
  *     também quebra: "j'aimerais" → `j`, `aimerais`);
  *   - cada palavra DISTINTA da lista de um idioma vale 1 ponto;
- *   - `ş`, `ğ` ou `ı` no texto valem +2 para o turco;
+ *   - `ş`, `ğ` ou `ı` no texto valem +2 para o turco — SÓ se já há uma
+ *     palavra turca da lista (decisão do dono, 2026-11-12): sozinhas elas são
+ *     um NOME ("Ayşe Yılmaz"), e o nome não é a língua de quem escreve;
  *   - saudação e agradecimento sozinhos não contam (não estão nas listas);
  *   - decide só quando o primeiro tem pelo menos 2 pontos E pelo menos 2 a
  *     mais que o segundo. Senão, `null`.
@@ -57,7 +59,7 @@ export function algilarIdioma(texto: string | null | undefined): IdiomaAlgilado 
       if (PALAVRAS[idioma].has(palavra)) pontos[idioma] += 1;
     }
   }
-  if (LETRAS_TURCAS.test(minusculo)) pontos.tr += 2;
+  if (pontos.tr > 0 && LETRAS_TURCAS.test(minusculo)) pontos.tr += 2;
 
   const ordenados = (Object.entries(pontos) as Array<[IdiomaAlgilado, number]>).sort((a, b) => b[1] - a[1]);
   const [idioma, maior] = ordenados[0] ?? ["nl", 0];
