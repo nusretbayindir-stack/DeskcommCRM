@@ -31,6 +31,7 @@ import type {
   VagaAberta,
 } from "./lista-de-espera";
 import { candidatosAoEncaixe, prazoDaOferta, textoDaOferta } from "./lista-de-espera";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
 
 /** A oferta que está de pé: quem está com a vaga segurada e até quando. */
 export interface OfertaCorrente {
@@ -86,6 +87,12 @@ export interface PortaDoEncaixe {
   ofertar(pedido: PedidoDeOferta): Promise<DesfechoDaOferta>;
   /** `false` = a mensagem não saiu. */
   avisar(organizationId: string, contatoId: string, texto: string): Promise<boolean>;
+  /**
+   * O idioma da oferta para este contato: o dele ou, sem ele, o da empresa
+   * (`idiomaDoContatoPeloSupabase`, S2a Task 11). Nunca lança. Opcional para as
+   * portas de teste que não o declaram: sem ele, a frase de sempre (português).
+   */
+  idioma?(organizationId: string, contatoId: string): Promise<Idioma>;
   oferta(organizationId: string, esperaId: string): Promise<OfertaCorrente | null>;
   ofertasVencidas(organizationId: string, agora: Date): Promise<OfertaCorrente[]>;
   /** Cancela o compromisso segurado, devolvendo o horário. */
@@ -162,7 +169,8 @@ export async function oferecerVagaQueAbriu(
       continue;
     }
 
-    const texto = textoDaOferta(vaga, servico, expiraEm);
+    const idioma = (await porta.idioma?.(organizationId, inscricao.contactId)) ?? IDIOMA_PADRAO;
+    const texto = textoDaOferta(vaga, servico, expiraEm, idioma);
     if (await porta.avisar(organizationId, inscricao.contactId, texto)) {
       return {
         ofertada: true,

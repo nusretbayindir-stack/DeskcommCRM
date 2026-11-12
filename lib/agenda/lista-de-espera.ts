@@ -43,8 +43,11 @@
  */
 import { z } from "zod";
 
+import { tagDeIdioma } from "@/lib/i18n/datas";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
 import { scheduleWindowSchema, type ScheduleWindow } from "@/lib/schemas/routing";
 import { rotuloLocal } from "@/lib/tempo/agora";
+import { FUSO_PADRAO, fusoValido } from "@/lib/tempo/fusos";
 
 import { diaDaSemanaLocal, partesNoFuso } from "./fuso";
 
@@ -285,18 +288,82 @@ export function prazoDaOferta(
   return new Date(limite);
 }
 
-/** "terça 03/11 às 14:00, até 15:30" — o texto que o agente manda. */
+/** As peças da oferta, já formatadas no idioma e no fuso da agenda. */
+interface PecasDaOferta {
+  dia: string;
+  hora: string;
+  ate: string;
+  servico: string;
+  minutos: number;
+}
+
+/**
+ * A frase da oferta em cada idioma que o produto serve além do português (que
+ * segue montado com `rotuloLocal`, byte a byte como antes). S2a, Task 11: esta
+ * frase saía em português para toda organização, até numa empresa belga.
+ *
+ * A palavra pedida de volta é a do idioma (JA, OUI, EVET, SÍ): quem lê a
+ * resposta é uma pessoa da equipe — a aceitação passa pela tela
+ * (`app/api/v1/agenda/lista-de-espera/[id]`), não por um analisador de "SIM".
+ * O tratamento é o dos outros textos ao cliente (`lib/escalacao/aviso-ao-lead.ts`):
+ * "tú" no espanhol, "siz" no turco, "u" no holandês, "vous" no francês.
+ */
+const OFERTA_NO_IDIOMA: Readonly<Record<Exclude<Idioma, "pt-BR">, (p: PecasDaOferta) => string>> = {
+  es: (p) =>
+    `Se liberó un horario el ${p.dia} a las ${p.hora} para ${p.servico} (${p.minutos} min). ` +
+    `¿Te sirve? Respóndeme SÍ antes de las ${p.ate}; si no tengo respuesta para entonces, ` +
+    `pasará a la siguiente persona de la lista.`,
+  tr: (p) =>
+    `${p.servico} (${p.minutos} dk) için yer açıldı: ${p.dia}, saat ${p.hora}. ` +
+    `Bu saat size uygun mu? Uygunsa ${p.ate} saatine kadar EVET yazın; o saate kadar yanıt ` +
+    `gelmezse yer listedeki bir sonraki kişiye geçer.`,
+  nl: (p) =>
+    `Er is een plek vrijgekomen op ${p.dia} om ${p.hora} voor ${p.servico} (${p.minutos} min). ` +
+    `Komt dit tijdstip u uit? Antwoord dan JA vóór ${p.ate}. Heb ik tegen dan geen antwoord, ` +
+    `dan gaat de plek naar de volgende persoon op de lijst.`,
+  fr: (p) =>
+    `Un créneau s'est libéré le ${p.dia} à ${p.hora} pour ${p.servico} (${p.minutos}\u00a0min). ` +
+    `Ce créneau vous convient\u00a0? Répondez OUI avant ${p.ate}\u00a0; sans réponse d'ici là, ` +
+    `il passera à la personne suivante sur la liste.`,
+};
+
+/** Dia da semana + data, e a hora, no idioma e no fuso da agenda. */
+function diaEHora(instante: Date, fuso: string, idioma: Idioma): { dia: string; hora: string } {
+  const timeZone = fusoValido(fuso) ? fuso : FUSO_PADRAO;
+  const etiqueta = tagDeIdioma(idioma);
+  return {
+    dia: new Intl.DateTimeFormat(etiqueta, { timeZone, weekday: "long", day: "2-digit", month: "2-digit" }).format(
+      instante,
+    ),
+    hora: new Intl.DateTimeFormat(etiqueta, { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(
+      instante,
+    ),
+  };
+}
+
+/**
+ * "terça 03/11 às 14:00, até 15:30" — o texto que o agente manda.
+ *
+ * `idioma` é o do CLIENTE (`idiomaDoDestinatario`: o dele ou, sem ele, o da
+ * empresa). Ausente = português, a frase de sempre.
+ */
 export function textoDaOferta(
   vaga: VagaAberta,
   servico: ServicoDaEspera,
   expiraEm: Date,
+  idioma: Idioma = IDIOMA_PADRAO,
 ): string {
-  const quando = rotuloLocal(vaga.startsAt, vaga.timeZone);
-  const limite = rotuloLocal(expiraEm, vaga.timeZone);
-  const ate = limite.slice(-5);
-  return (
-    `Abriu ${quando} para ${servico.nome} (${servico.duracaoMinutos} min). ` +
-    `Quer esse horário? Me responde SIM até ${ate} — se eu não tiver resposta até lá, ` +
-    `ele vai para a próxima pessoa da lista.`
-  );
+  if (idioma === "pt-BR") {
+    const quando = rotuloLocal(vaga.startsAt, vaga.timeZone);
+    const limite = rotuloLocal(expiraEm, vaga.timeZone);
+    const ate = limite.slice(-5);
+    return (
+      `Abriu ${quando} para ${servico.nome} (${servico.duracaoMinutos} min). ` +
+      `Quer esse horário? Me responde SIM até ${ate} — se eu não tiver resposta até lá, ` +
+      `ele vai para a próxima pessoa da lista.`
+    );
+  }
+  const { dia, hora } = diaEHora(vaga.startsAt, vaga.timeZone, idioma);
+  const ate = diaEHora(expiraEm, vaga.timeZone, idioma).hora;
+  return OFERTA_NO_IDIOMA[idioma]({ dia, hora, ate, servico: servico.nome, minutos: servico.duracaoMinutos });
 }

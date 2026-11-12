@@ -33,6 +33,7 @@ import { checarGuardasDeContato } from "@/lib/automation/guarda-do-contato";
 import { adiarAteAJanelaAbrir } from "@/lib/automation/janela-do-canal";
 import { espacarEnvio } from "@/lib/automation/throttle";
 import { ehContatoPessoal } from "@/lib/contacts/contato-pessoal";
+import { idiomaDoContatoPeloSupabase } from "@/lib/contacts/idioma-do-contato";
 import { moduloLigado, moduloLigadoComMemo } from "@/lib/instalacao/modulos";
 import { logger } from "@/lib/logger";
 import { ehOperante } from "@/lib/organizacao/operante";
@@ -282,6 +283,10 @@ export function portaSupabase(admin: SB): PortaDoEncaixe {
       }
       return { ok: false, motivo: "servico_indisponivel" };
     },
+
+    // A oferta é texto do SISTEMA ao cliente: sai no idioma dele, ou no da
+    // empresa (S2a, Task 11). A leitura nunca lança — no pior caso, português.
+    idioma: (organizationId, contatoId) => idiomaDoContatoPeloSupabase(admin, organizationId, contatoId),
 
     async avisar(organizationId, contatoId, texto) {
       try {

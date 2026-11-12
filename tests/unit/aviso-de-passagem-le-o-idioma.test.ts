@@ -49,13 +49,18 @@ const CONVERSA = "33333333-3333-4333-8333-333333333333";
 
 const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 
-/** `pg.Pool` de mentira: só a leitura do idioma importa aqui. */
+/**
+ * `pg.Pool` de mentira: só a leitura do idioma importa aqui. A leitura traz o
+ * idioma da organização e o do contato juntos (`idiomaDoContatoPeloPg`, S2a
+ * Task 11); este arquivo mede a organização, então o contato vem sem idioma —
+ * o contato com idioma é `mensagem-fixa-segue-o-idioma-do-contato.test.ts`.
+ */
 function poolComIdioma(locale: string | null | Error) {
   return {
     query: vi.fn(async (sql: string) => {
       if (/from organizations/.test(sql)) {
         if (locale instanceof Error) throw locale;
-        return { rows: [{ locale }] };
+        return { rows: [{ contato: null, org: locale }] };
       }
       return { rows: [] };
     }),
