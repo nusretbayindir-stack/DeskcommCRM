@@ -63,6 +63,18 @@ describe("começa com a palavra do comando (o formato errado ganha a ajuda)", ()
       expect(comecaComPalavraDeComando(texto)).toBe(false);
     }
   });
+  // Revisão do PR: tirar TODO acento fazia "Sör", "Şor" e "Vráag" virarem
+  // comando (e ganharem a ajuda do formato). Vale só a grafia da palavra —
+  // com o acento dela ou sem acento nenhum —, e o acento decomposto do
+  // teclado conta como o composto.
+  it("só a grafia da palavra, com o acento dela ou sem acento", () => {
+    for (const texto of ["Sör bunu sonra konuşalım", "Şor", "Vráag", "RÈPONDRE", "Dêmander"]) {
+      expect(comecaComPalavraDeComando(texto)).toBe(false);
+    }
+    for (const texto of ["Répondre", "RÉPONDRE", "REPONDRE", "repondre", "YANITLA", "yanitla"]) {
+      expect(comecaComPalavraDeComando(texto)).toBe(true);
+    }
+  });
 });
 
 const BASE = {

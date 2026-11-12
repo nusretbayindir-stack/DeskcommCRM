@@ -13,8 +13,9 @@
  * formato: só o número interno é lido, e só com o ID de 36 caracteres logo
  * depois da palavra. Uma palavra curta como "sor" não muda isso.
  *
- * A comparação ignora maiúsculas e acentos: "Répondre", "REPONDRE" e
- * "repondre" são a mesma palavra, e o "ı" do teclado turco ("yanıtla") também.
+ * A comparação ignora maiúsculas e aceita a palavra com o acento dela ou sem
+ * acento: "Répondre", "REPONDRE" e "repondre" são a mesma palavra, e o "ı" do
+ * teclado turco ("yanıtla") também. Outro acento ("Sör", "Vráag") não é ela.
  */
 import type { Idioma } from "@/lib/i18n/idiomas";
 
@@ -40,21 +41,41 @@ export function palavrasDoComando(idioma: Idioma): PalavrasDoComando {
   return POR_IDIOMA[idioma] ?? DE_SEMPRE;
 }
 
-/** Maiúsculas sem acento: "Répondre" → "REPONDRE", "yanıtla" → "YANITLA", "İ" → "I". */
-function chave(palavra: string): string {
-  return palavra.normalize("NFD").replace(/\p{M}/gu, "").toUpperCase();
+/**
+ * Maiúsculas com o acento composto: "Répondre" (acento decomposto do
+ * teclado) → "RÉPONDRE"; "yanıtla" → "YANITLA" (o "ı" sobe para "I").
+ */
+function emMaiusculas(palavra: string): string {
+  return palavra.normalize("NFC").toUpperCase();
 }
 
+/** A mesma palavra sem acento nenhum: "RÉPONDRE" → "REPONDRE". */
+function semAcento(palavra: string): string {
+  return palavra.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC");
+}
+
+/**
+ * Cada palavra vale na grafia DELA ou sem acento nenhum — não com qualquer
+ * acento: tirar todo acento da entrada fazia "Sör" e "Vráag" virarem comando
+ * (revisão do PR).
+ */
 const ACAO_DA_PALAVRA: ReadonlyMap<string, AcaoDoComando> = new Map(
-  [DE_SEMPRE, ...Object.values(POR_IDIOMA)].flatMap((p): Array<[string, AcaoDoComando]> => [
-    [chave(p.responder), "resolved"],
-    [chave(p.perguntar), "need_lead_info"],
-  ]),
+  [DE_SEMPRE, ...Object.values(POR_IDIOMA)].flatMap((p): Array<[string, AcaoDoComando]> =>
+    (
+      [
+        [p.responder, "resolved"],
+        [p.perguntar, "need_lead_info"],
+      ] as const
+    ).flatMap(([palavra, acao]): Array<[string, AcaoDoComando]> => [
+      [emMaiusculas(palavra), acao],
+      [semAcento(emMaiusculas(palavra)), acao],
+    ]),
+  ),
 );
 
 /** A ação de uma palavra de comando, em qualquer idioma; `null` se não é uma. */
 export function acaoDaPalavraDeComando(palavra: string): AcaoDoComando | null {
-  return ACAO_DA_PALAVRA.get(chave(palavra)) ?? null;
+  return ACAO_DA_PALAVRA.get(emMaiusculas(palavra)) ?? null;
 }
 
 /**
