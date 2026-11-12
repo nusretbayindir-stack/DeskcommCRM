@@ -16,7 +16,8 @@ import {
 } from "@/lib/agenda/meet-delivery";
 import { meetVideoUrl } from "@/lib/agenda/google/meet";
 import { textoDoCompromisso, type MotivoDaEntrega } from "@/lib/agenda/texto-do-compromisso";
-import { normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
+import { idiomaDoDestinatario } from "@/lib/i18n/idioma-do-destinatario";
+import type { Idioma } from "@/lib/i18n/idiomas";
 
 export function createMeetDeliveryHandler(deps: {
   crmCfg: CrmEdgeConfig;
@@ -116,7 +117,11 @@ export function createMeetDeliveryHandler(deps: {
             timeZone: row.time_zone,
             // Sem Meet não há link, e o texto não inventa um.
             url: ehMeet ? url : null,
-            idioma: normalizarIdioma(row.contact_locale ?? row.organization_locale),
+            // O idioma do cliente, e não o primeiro valor não nulo: um
+            // `contacts.locale` que o produto não serve (`en`) caía em
+            // português pelo `normalizarIdioma`, mesmo com a empresa em
+            // holandês (S2a, Task 11). `idiomaDoDestinatario` cai na empresa.
+            idioma: idiomaDoDestinatario(row.contact_locale, row.organization_locale),
           }),
           optedOutThisTurn: false,
           now: new Date(),

@@ -38,6 +38,7 @@ import type {JobClaim} from "../queue/claim";
  */
 import type pg from 'pg';
 
+import { idiomaDoContatoPeloPg } from '@/lib/contacts/idioma-do-contato';
 import { expectativaDeAtendimento } from '@/lib/escalacao/disponibilidade';
 import { deriveLgpdFromContact } from '../guardrails/lgpd/legal-basis';
 import { textoDoAviso, type MotivoDoAviso } from '@/lib/escalacao/aviso-ao-lead';
@@ -132,18 +133,12 @@ export async function avisarLeadDaEscalacao(
   opts: AvisoDeEscalacaoOpts,
 ): Promise<DesfechoDoAviso> {
   let body: string;
-  // O aviso sai no idioma da ORGANIZAÇÃO (ver `textoDoAviso`). Leitura que
-  // falha não impede o aviso: cai no português, como antes.
-  let idioma: string | null = null;
-  try {
-    const { rows } = await pool.query<{ locale: string | null }>(
-      'select locale from organizations where id = $1',
-      [ids.tenantId],
-    );
-    idioma = rows[0]?.locale ?? null;
-  } catch {
-    idioma = null;
-  }
+  // O aviso sai no idioma do CLIENTE: o dele (`contacts.locale`) quando o
+  // produto o serve, senão o da organização (S2a, Task 11). Continua sendo UMA
+  // ida ao banco — a mesma de antes, agora com o contato junto. Leitura que
+  // falha não impede o aviso: `idiomaDoContatoPeloPg` nunca lança e cai no
+  // português, como antes.
+  const idioma = await idiomaDoContatoPeloPg(pool, ids.tenantId, ids.leadId);
   try {
     const { quem } = await expectativaDeAtendimento(pool, ids.tenantId, opts.now);
     body = textoDoAviso(opts.motivo, quem, ids.leadId, idioma);

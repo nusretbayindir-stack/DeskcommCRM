@@ -85,6 +85,13 @@ export type SkipReason =
 export interface BotContext {
   serviceBoundary?: ServiceBoundary;
   organization_id: string;
+  /**
+   * `organizations.locale` — o idioma do `{{contact_locale}}` quando o contato
+   * não tem um que o produto sirva (S2a, Task 11). Obrigatório de propósito:
+   * quem monta o contexto e esquece o campo é achado pelo compilador, e não
+   * pelo cliente belga recebendo resposta em português.
+   */
+  organization_locale: string | null;
   conversation_id: string;
   contact_id: string;
   channel_session_id: string;

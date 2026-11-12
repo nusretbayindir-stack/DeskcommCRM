@@ -789,7 +789,10 @@ async function buildContext(input: BuildContextInput): Promise<GuardDecision> {
   const { data: conv, error: convErr } = await admin
     .from("conversations")
     .select(
-      "id, organization_id, contact_id, channel_session_id, last_inbound_at, bot_silenced_until, last_handoff_at, assignee_kind, contacts:contact_id(id, name, display_name, locale, is_blocked, is_personal, force_human, ai_opt_out)",
+      // `organizations:organization_id(locale)`: o idioma da empresa, para o
+      // `{{contact_locale}}` de quem ainda não tem idioma (S2a, Task 11) — no
+      // mesmo round trip, sem consulta a mais.
+      "id, organization_id, contact_id, channel_session_id, last_inbound_at, bot_silenced_until, last_handoff_at, assignee_kind, contacts:contact_id(id, name, display_name, locale, is_blocked, is_personal, force_human, ai_opt_out), organizations:organization_id(locale)",
     )
     .eq("id", input.conversationId)
     .eq("organization_id", input.organizationId)
@@ -819,6 +822,8 @@ async function buildContext(input: BuildContextInput): Promise<GuardDecision> {
       /** A marca permanente "sempre atendimento humano" (issue 2379). */
       ai_opt_out: boolean;
     } | null;
+    /** Opcional: um dublê de teste que não o declara vale "empresa sem idioma". */
+    organizations?: { locale: string | null } | null;
   };
   const c = conv as unknown as ConvRow;
   if (!c.contacts) return skip("conversation_not_found", "contact join missing");
@@ -972,6 +977,7 @@ async function buildContext(input: BuildContextInput): Promise<GuardDecision> {
     kind: "proceed",
     context: {
       organization_id: input.organizationId,
+      organization_locale: c.organizations?.locale ?? null,
       conversation_id: input.conversationId,
       contact_id: c.contact_id,
       channel_session_id: c.channel_session_id,

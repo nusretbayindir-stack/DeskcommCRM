@@ -12,6 +12,7 @@
 
 import type { BotContext } from "@/lib/ai/types";
 import { nomeDoContato } from "@/lib/contacts/rotulo-do-contato";
+import { idiomaDoDestinatario } from "@/lib/i18n/idioma-do-destinatario";
 
 const PLACEHOLDER_RX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 
@@ -64,7 +65,10 @@ export function renderSystemPrompt(template: string, ctx: BotContext): string {
   const scope: Record<string, unknown> = {
     vocabulary,
     contact_name: nomeDoContato(ctx.contact) ?? "cliente",
-    contact_locale: ctx.contact.locale ?? "pt-BR",
+    // O idioma do cliente: o dele quando o produto o serve, senão o da
+    // empresa — nunca um `pt-BR` fixo, que numa empresa belga mandava o
+    // agente responder em português a quem ainda não tem idioma (S2a, Task 11).
+    contact_locale: idiomaDoDestinatario(ctx.contact.locale, ctx.organization_locale),
     recent_messages: formatRecentMessages(ctx),
     retrieved_chunks: formatRetrievedChunks(ctx),
   };

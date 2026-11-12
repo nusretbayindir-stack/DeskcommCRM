@@ -14801,6 +14801,12 @@ export const DICIONARIO: Traducoes = {
   "resposta ou decisão": { es: "respuesta o decisión" },
   "pergunta ao cliente": { es: "pregunta al cliente" },
   // ─── fim do bloco dos comandos da equipe ───
+  // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
+  // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
+  "Idioma do contato; sem ele, o da empresa (ex: nl)": {
+    es: "Idioma del contacto; si no tiene, el de la empresa (ej.: nl)",
+  },
+  // ─── fim do bloco da Task 11 ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {

@@ -5387,6 +5387,7 @@
   "Identificação que aparecerá para o cliente e na lista de propostas.": "Identification affichée au client et dans la liste des offres.",
   "Idioma": "Langue",
   "Idioma da organização": "Langue de l'entreprise",
+  "Idioma do contato; sem ele, o da empresa (ex: nl)": "Langue du contact ; à défaut, celle de l'entreprise (ex. : nl)",
   "Ignorada": "Ignorée",
   "Ignorar": "Ignorer",
   "Ignorar aviso": "Ignorer l'avertissement",

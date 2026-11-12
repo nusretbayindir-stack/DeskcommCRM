@@ -141,6 +141,7 @@ import { adiarAteAJanelaAbrir } from "@/lib/automation/janela-do-canal";
 import { espacarEnvio } from "@/lib/automation/throttle";
 import { tagDeIdioma } from "@/lib/i18n/datas";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { idiomaDoDestinatario } from "@/lib/i18n/idioma-do-destinatario";
 import { IDIOMA_PADRAO, normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
 import { nomeDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { logger } from "@/lib/logger";
@@ -299,7 +300,10 @@ export function montarLembrete(input: {
   timezone: string;
   local: string | null;
   /**
-   * O idioma da ORGANIZAÇÃO (`organizations.locale`), e não um literal.
+   * O idioma de quem LÊ, e não um literal. A rota passa o do cliente
+   * (`idiomaDoDestinatario`: o do contato, senão o da empresa) para a frase
+   * padrão, e o da empresa quando há molde — o texto dela, escrito no idioma
+   * dela (S2a, Task 11).
    *
    * `tests/unit/i18n-a-data-segue-o-idioma.test.ts` proíbe `"pt-BR"` escrito à
    * mão em formatação de data fora de `lib/i18n/datas.ts` — e o motivo não é
@@ -707,7 +711,9 @@ async function handle(req: NextRequest): Promise<Response> {
 
     const { data: contato } = await admin
       .from("contacts")
-      .select("id, name, display_name, phone_number, is_blocked")
+      // `locale`: o idioma da frase padrão do lembrete (S2a, Task 11) — na
+      // mesma leitura do contato, sem ida a mais ao banco.
+      .select("id, name, display_name, phone_number, is_blocked, locale")
       .eq("id", linha.contact_id)
       .eq("organization_id", org)
       .maybeSingle();
@@ -744,13 +750,22 @@ async function handle(req: NextRequest): Promise<Response> {
         : null;
 
     const organizacao = await organizacaoDe(org);
+    // DOIS idiomas, e a diferença é quem escreveu o texto (S2a, Task 11):
+    //   - o da EMPRESA vale para o que ela escreveu — o molde do tipo e o
+    //     modelo aprovado. A data entra no meio de uma frase escrita no idioma
+    //     dela, e um "mardi" no meio de "Hallo Ana, tot …" seria a mensagem
+    //     meio traduzida que o guarda de i18n existe para impedir;
+    //   - o do CLIENTE vale para a frase padrão, que é texto do SISTEMA: a dele
+    //     quando o produto a serve, senão a da empresa (`idiomaDoDestinatario`).
+    const idiomaDaEmpresa = normalizarIdioma(organizacao?.locale);
+    const idiomaDoCliente = idiomaDoDestinatario(contato.locale ?? null, organizacao?.locale ?? null);
     const dadosDoLembrete = {
       nomeDoContato: nomeDoContato(contato),
       titulo: linha.title,
       quando: new Date(linha.starts_at),
       timezone: organizacao?.timezone ?? "America/Sao_Paulo",
       local: linha.location_details ?? tipo.location_details ?? null,
-      idioma: normalizarIdioma(organizacao?.locale),
+      idioma: idiomaDaEmpresa,
       tipoNome: tipo.name,
     };
 
@@ -803,7 +818,17 @@ async function handle(req: NextRequest): Promise<Response> {
       if (modeloDeTexto?.body) molde = modeloDeTexto.body;
     }
 
-    const corpo = montarLembrete({ ...dadosDoLembrete, molde });
+    // Com molde, o texto é da empresa e a data segue o idioma dela; sem molde,
+    // a frase padrão sai no idioma do cliente (ver `idiomaDoCliente` acima).
+    // A MESMA régua de vazio que `montarLembrete` usa (`trim`): um corpo só de
+    // espaços contaria como molde aqui e como vazio lá, e a frase padrão sairia
+    // no idioma da empresa.
+    const moldeDeVerdade = molde?.trim() || null;
+    const corpo = montarLembrete({
+      ...dadosDoLembrete,
+      molde: moldeDeVerdade,
+      ...(moldeDeVerdade ? {} : { idioma: idiomaDoCliente }),
+    });
 
     // ─── O CARIMBO ANTES DO ENVIO (issue #2223) ────────────────────────────
     //

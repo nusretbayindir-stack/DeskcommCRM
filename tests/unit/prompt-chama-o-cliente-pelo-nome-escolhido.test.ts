@@ -11,6 +11,7 @@ import type { BotContext } from "@/lib/ai/types";
 function contexto(contact: BotContext["contact"]): BotContext {
   return {
     organization_id: "org-1",
+    organization_locale: null,
     conversation_id: "conv-1",
     contact_id: contact.id,
     channel_session_id: "sess-1",

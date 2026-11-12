@@ -43,6 +43,7 @@ import type { ServiceBoundary } from "@/lib/atendimento/fronteira";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
+import { idiomaDoContatoPeloSupabase } from "@/lib/contacts/idioma-do-contato";
 import {
   motivoDoAviso,
   textoDoAviso,
@@ -207,19 +208,12 @@ export async function avisarLeadDoCrm(
       };
     }
 
-    // O aviso sai no idioma da ORGANIZAÇÃO (ver `textoDoAviso`). A leitura que
-    // falha não pode derrubar o aviso: sem idioma, sai em português, como antes.
-    let idioma: string | null = null;
-    try {
-      const { data: org } = await admin
-        .from("organizations")
-        .select("locale")
-        .eq("id", input.organizationId)
-        .maybeSingle();
-      idioma = (org as { locale?: string | null } | null)?.locale ?? null;
-    } catch {
-      idioma = null;
-    }
+    // O aviso sai no idioma do CLIENTE: o dele (`contacts.locale`) quando o
+    // produto o serve, senão o da organização (S2a, Task 11). Continua sendo
+    // UMA leitura — a de antes, agora com o contato embutido. A leitura que
+    // falha não pode derrubar o aviso: `idiomaDoContatoPeloSupabase` nunca
+    // lança e cai no português, como antes.
+    const idioma = await idiomaDoContatoPeloSupabase(admin, input.organizationId, input.contactId);
     const body = textoDoAviso(
       await motivoDaFrase(admin, input),
       await quemPodeAssumir(admin, input.organizationId),

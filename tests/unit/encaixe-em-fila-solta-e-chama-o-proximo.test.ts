@@ -190,6 +190,10 @@ function criarPorta(estado: {
       chamadas.push(`avisar:${contatoId}`);
       return !estado.avisoFalha?.includes(contatoId);
     },
+    // O idioma da oferta (S2a Task 11) não é o que este arquivo mede.
+    async idioma() {
+      return "pt-BR";
+    },
     async oferta(_org, esperaId) {
       if (situacoes.get(esperaId) !== "offered") return null;
       return ofertaCorrente(esperaId);

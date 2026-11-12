@@ -269,7 +269,10 @@ export const SYSTEM_PROMPT_PLACEHOLDERS: Array<{ token: string; description: str
     description: "Vocabulário do tenant para 'lost' (ex: cancelado)",
   },
   { token: "{{contact_name}}", description: "Nome do contato em atendimento" },
-  { token: "{{contact_locale}}", description: "Locale do contato (ex: pt-BR)" },
+  // O valor é o do contato quando o produto o serve, senão o da empresa
+  // (`renderSystemPrompt`, S2a Task 11) — o `pt-BR` do exemplo antigo era o
+  // padrão fixo que não existe mais.
+  { token: "{{contact_locale}}", description: "Idioma do contato; sem ele, o da empresa (ex: nl)" },
   { token: "{{recent_messages}}", description: "Últimas N mensagens da conversa" },
   { token: "{{retrieved_chunks}}", description: "Trechos da base de conhecimento (RAG)" },
 ];

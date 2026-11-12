@@ -29,9 +29,13 @@ type LeitorSupabase = {
   };
 };
 
-function avisarLeituraFalha(onde: string, motivo: unknown): void {
+function avisarLeituraFalha(onde: string, motivo: unknown, orgId: string, contactId: string): void {
+  // Os ids entram para a queda ao padrão ser achável: o caso que importa é a
+  // empresa belga recebendo português sem que nada mais falhe.
   logger.warn("[idioma-do-contato] leitura do idioma falhou; usando o padrão", {
     onde,
+    organizationId: orgId,
+    contactId,
     detail: (motivo instanceof Error ? motivo.message : String(motivo)).slice(0, 160),
   });
 }
@@ -49,13 +53,13 @@ export async function idiomaDoContatoPeloSupabase(
       .eq("contacts.id", contactId)
       .maybeSingle();
     if (error) {
-      avisarLeituraFalha("supabase", error.message ?? error);
+      avisarLeituraFalha("supabase", error.message ?? error, orgId, contactId);
       return IDIOMA_PADRAO;
     }
     const linha = data as { locale?: string | null; contacts?: Array<{ locale?: string | null }> | null } | null;
     return idiomaDoDestinatario(linha?.contacts?.[0]?.locale ?? null, linha?.locale ?? null);
   } catch (err) {
-    avisarLeituraFalha("supabase", err);
+    avisarLeituraFalha("supabase", err, orgId, contactId);
     return IDIOMA_PADRAO;
   }
 }
@@ -75,7 +79,7 @@ export async function idiomaDoContatoPeloPg(
     );
     return idiomaDoDestinatario(rows?.[0]?.contato ?? null, rows?.[0]?.org ?? null);
   } catch (err) {
-    avisarLeituraFalha("pg", err);
+    avisarLeituraFalha("pg", err, orgId, contactId);
     return IDIOMA_PADRAO;
   }
 }
