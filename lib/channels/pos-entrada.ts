@@ -58,6 +58,8 @@ import { ehContatoDoNumeroInterno } from "@/lib/escalacao/numero-interno-de-avis
 import { acelerarFollowupDoInbound, drenarEventosDoInbound } from "@/lib/dev/kick-local-pipeline";
 import { origemDoNegocioPeloCanal } from "@/lib/channels/origem-do-negocio";
 import { autorizarContatoParaIA } from "@/lib/ai/elegibilidade/autorizacao";
+import { algilarIdioma } from "@/lib/i18n/algila-idioma";
+import { IDIOMAS } from "@/lib/i18n/idiomas";
 import { casarCampanha, lerCampanhas } from "@/lib/ai/elegibilidade/campanha";
 import { lerPessoalDoContato } from "@/lib/contacts/contato-pessoal";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -175,6 +177,7 @@ export async function aplicarEfeitosPosEntrada(
     });
     return;
   }
+  await registrarIdiomaDoContato(admin, entrada);
   await guardarOrigemDaPagina(admin, entrada);
   await abrirDemanda(admin, entrada);
   await avaliarCampanha(admin, entrada);
@@ -251,6 +254,7 @@ export async function aplicarEfeitosDaRecuperacao(
       });
       return;
     }
+    await passoDaRecuperacao("idioma", () => registrarIdiomaDoContato(admin, entrada), entrada);
     await passoDaRecuperacao("campanha", () => avaliarCampanha(admin, entrada), entrada);
 
     // Só a reatividade e o texto dos follow-ups: a mesma linha que o handler do
@@ -328,6 +332,48 @@ export async function aplicarEfeitosDaRecuperacao(
     );
   } catch (err) {
     logger.warn("pos-entrada: efeitos da recuperação falharam (a mensagem já está gravada)", {
+      organization_id: entrada.organizationId,
+      conversation_id: entrada.conversationId,
+      detail: err instanceof Error ? err.message.slice(0, 160) : "desconhecido",
+    });
+  }
+}
+
+/**
+ * O idioma do contato, quando a mensagem o diz com certeza (S2a, Task 9).
+ *
+ * `contacts.locale` decide a língua das mensagens fixas que vão ao cliente
+ * (`idiomaDoDestinatario`). Grava SÓ quando:
+ *   - `algilarIdioma` tem certeza — "OK", "Merci" e saudações não decidem;
+ *   - o idioma é um que o produto serve (`IDIOMAS`);
+ *   - o campo ainda está vazio (`.is("locale", null)`): o que a equipe pôs à
+ *     mão no cartão nunca é trocado pelo que o cliente escreveu depois;
+ *   - o contato não é pessoal (quem chama já parou antes para esses).
+ *
+ * Filtra organização E contato: o cliente de serviço ignora a RLS.
+ *
+ * Nunca derruba a ingestão: o idioma é enfeite perto do opt-out, do lead e do
+ * despacho. Falha vira `logger.warn` e o passo seguinte roda.
+ */
+async function registrarIdiomaDoContato(admin: Admin, entrada: EntradaDeMensagem): Promise<void> {
+  const idioma = algilarIdioma(entrada.texto);
+  if (idioma === null || !(IDIOMAS as readonly string[]).includes(idioma)) return;
+  try {
+    const { error } = await admin
+      .from("contacts")
+      .update({ locale: idioma })
+      .eq("organization_id", entrada.organizationId)
+      .eq("id", entrada.contactId)
+      .is("locale", null);
+    if (error) {
+      logger.warn("pos-entrada: gravação do idioma do contato falhou (os efeitos seguem)", {
+        organization_id: entrada.organizationId,
+        conversation_id: entrada.conversationId,
+        detail: String(error.message ?? "desconhecido").slice(0, 160),
+      });
+    }
+  } catch (err) {
+    logger.warn("pos-entrada: gravação do idioma do contato falhou (os efeitos seguem)", {
       organization_id: entrada.organizationId,
       conversation_id: entrada.conversationId,
       detail: err instanceof Error ? err.message.slice(0, 160) : "desconhecido",
