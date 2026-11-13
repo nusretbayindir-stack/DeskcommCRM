@@ -5,8 +5,31 @@ import { useEffect, useState } from "react";
 
 import { copyToClipboard } from "@/lib/clipboard";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { IDIOMA_PADRAO, idiomaDelNavegador, type Idioma } from "@/lib/i18n/idiomas";
+import { IDIOMA_PADRAO, idiomaDelNavegador, parseAcceptLanguage, type Idioma } from "@/lib/i18n/idiomas";
 import { useTrocaComCatalogo } from "@/lib/i18n/useTrocaComCatalogo";
+
+/** Marca o `<html>` desta página (`data-erro-global`): o `lang` dele é o nosso, não o do servidor. */
+const MARCA_DA_PAGINA = "data-erro-global";
+
+/**
+ * O idioma que o SERVIDOR escreveu no `<html lang>` da página que caiu (U49) —
+ * `idiomaDaRequisicao()` em `app/layout.tsx`: a preferência salva da pessoa, a
+ * organização, o navegador, o país da instalação. É a melhor pista que esta
+ * página tem, e a única que traz a preferência salva (ela não é legível no
+ * navegador: mora no `user_metadata`).
+ *
+ * Lido ANTES do primeiro commit (no inicializador do `useState`): esta página
+ * desenha o próprio `<html lang={idioma}>`, e depois do commit o atributo já é
+ * o estado inicial dela. Quando o `<html>` já é o desta página (o servidor a
+ * desenhou porque o layout raiz caiu), o `lang` não diz nada: `null`, e vale o
+ * navegador, como antes.
+ */
+function idiomaDoServidor(): Idioma | null {
+  if (typeof document === "undefined") return null;
+  const html = document.documentElement;
+  if (html.hasAttribute(MARCA_DA_PAGINA)) return null;
+  return parseAcceptLanguage(html.lang);
+}
 
 export default function GlobalError({
   error,
@@ -20,14 +43,16 @@ export default function GlobalError({
   // Parte do padrão (igual ao do servidor) e ajusta depois de montar, para não
   // quebrar a hidratação do único componente que não pode falhar.
   const [idioma, pintarIdioma] = useState<Idioma>(IDIOMA_PADRAO);
+  // Capturado uma vez, antes de esta página reescrever o `<html lang>`.
+  const [doServidor] = useState(idiomaDoServidor);
 
   // Sem provider aqui: o catálogo do idioma é baixado à parte no navegador, e
   // a página só troca de idioma com ele na mão (a regra do `IdiomaProvider`).
   const setIdioma = useTrocaComCatalogo(idioma, pintarIdioma);
 
   useEffect(() => {
-    setIdioma(idiomaDelNavegador(navigator.languages ?? [navigator.language]));
-  }, [setIdioma]);
+    setIdioma(doServidor ?? idiomaDelNavegador(navigator.languages ?? [navigator.language]));
+  }, [setIdioma, doServidor]);
 
   useEffect(() => {
     const id = Sentry.captureException(error);
@@ -37,7 +62,7 @@ export default function GlobalError({
   const displayId = eventId ?? error.digest ?? "—";
 
   return (
-    <html lang={idioma}>
+    <html lang={idioma} data-erro-global="">
       <body
         style={{
           margin: 0,
