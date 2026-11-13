@@ -962,6 +962,93 @@ function ehPalavraIsolada(normalizado: string): boolean {
 }
 
 /**
+ * ─── A PALAVRA COM CORTESIA (U44, decisão do dono 2026-11-13) ────────────────
+ *
+ * "STOP svp", "Stop aub", "RET lütfen": a mensagem inteira é a palavra de saída
+ * MAIS uma cortesia. A regra de cima exige a palavra sozinha e não casava; o
+ * cliente que respondeu ao "Antwoord STOP" com "Stop aub" seguia recebendo.
+ *
+ * A mensagem conta como a palavra sozinha quando é feita SÓ da palavra e de uma
+ * ou mais cortesias desta lista FECHADA, em qualquer ordem — pontuação e emoji
+ * ignorados como lá. Mais que cortesia ("stop svp je veux juste l'horaire")
+ * não conta: é conversa, e a regra de sempre a julga.
+ *
+ * As formas estão já normalizadas (`normalizarTexto`, sem acento) e com a
+ * pontuação trocada por espaço: "a.u.b." chega como `a u b`, "s'il vous plaît"
+ * como `s il vous plait`, "teşekkür" como `tesekkur`.
+ */
+const CORTESIAS: readonly (readonly string[])[] = [
+  // holandês
+  "aub", "a u b", "alstublieft", "alsjeblieft", "astublieft", "bedankt", "dank u", "dank je", "dankjewel",
+  // francês
+  "svp", "s v p", "stp", "s il vous plait", "s il te plait", "merci",
+  // inglês
+  "please", "pls", "plz", "thanks", "thank you",
+  // português e espanhol
+  "por favor", "pf", "pfv", "obrigado", "obrigada", "porfa", "gracias",
+  // turco
+  "lutfen", "tesekkurler", "tesekkur ederim", "sagol", "sagolun",
+]
+  .map((forma) => forma.split(" "))
+  // A mais longa primeiro: "dank u" antes de um `u` solto, "a u b" inteira.
+  .sort((a, b) => b.length - a.length);
+
+/** Com cortesia, estas bloqueiam como sozinhas. */
+const PALAVRAS_QUE_BLOQUEIAM_COM_CORTESIA: ReadonlySet<string> = new Set([
+  "stop",
+  "parar",
+  "pare",
+  "baja",
+  "ret",
+  "unsubscribe",
+  "descadastrar",
+  "desuscribir",
+  "desuscribirme",
+  "uitschrijven",
+  "uitschrijving",
+  "desabonner",
+  "desabonnement",
+  "desinscrire",
+  "desinscription",
+]);
+
+/**
+ * Com cortesia, estas vão para o AMBÍGUO (uma pessoa decide): "cancelar por
+ * favor" depois de um lembrete de consulta quase sempre é a consulta. Sozinhas,
+ * seguem como sempre. `afmelden` já é ambígua sozinha.
+ */
+const PALAVRAS_AMBIGUAS_COM_CORTESIA: ReadonlySet<string> = new Set([
+  "cancelar",
+  "sair",
+  "remover",
+  "salir",
+  "bajar",
+  "afmelden",
+]);
+
+/**
+ * A palavra que sobra quando a mensagem é só palavra + cortesia, ou `null`
+ * quando não há cortesia, não há palavra, ou há mais que cortesia.
+ */
+function palavraComCortesia(normalizado: string): string | null {
+  const tokens = normalizado.replace(/[^a-z]+/gu, " ").trim().split(" ").filter((t) => t !== "");
+  const resto: string[] = [];
+  let cortesias = 0;
+  for (let i = 0; i < tokens.length; ) {
+    const forma = CORTESIAS.find((c) => c.every((parte, j) => tokens[i + j] === parte));
+    if (forma) {
+      cortesias += 1;
+      i += forma.length;
+    } else {
+      resto.push(tokens[i] ?? "");
+      i += 1;
+    }
+  }
+  if (cortesias === 0 || resto.length === 0) return null;
+  return resto.join("");
+}
+
+/**
  * ─── A ASSINATURA DA ATENDENTE NA PRIMEIRA LINHA (#3078, ajustada no #3158) ──
  *
  * Num WhatsApp Business com vários atendentes, a assinatura é prefixada ao
@@ -1074,6 +1161,8 @@ function ehPedidoInequivoco(texto: string): boolean {
   const normalizado = normalizarTexto(texto.trim());
   if (normalizado === "") return false;
   if (ehPalavraIsolada(normalizado)) return true;
+  const comCortesia = palavraComCortesia(normalizado);
+  if (comCortesia !== null && PALAVRAS_QUE_BLOQUEIAM_COM_CORTESIA.has(comCortesia)) return true;
   return FRASES_DE_OPT_OUT.some((re) => re.test(normalizado));
 }
 
@@ -1081,6 +1170,8 @@ function ehPedidoInequivoco(texto: string): boolean {
 function ehSinalAmbiguo(texto: string): boolean {
   const normalizado = normalizarTexto(texto.trim());
   if (normalizado === "") return false;
+  const comCortesia = palavraComCortesia(normalizado);
+  if (comCortesia !== null && PALAVRAS_AMBIGUAS_COM_CORTESIA.has(comCortesia)) return true;
   return FRASES_AMBIGUAS_DE_OPT_OUT.some((re) => re.test(normalizado));
 }
 
