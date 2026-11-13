@@ -5,6 +5,7 @@ import { PlatformModeBanner } from "./PlatformModeBanner";
 import { AvisoSemSmtp } from "./AvisoSemSmtp";
 import { AdminSidebar } from "./AdminSidebar";
 import { BuscaDoAdmin } from "./BuscaDoAdmin";
+import { SeletorDeIdioma } from "@/components/shell/SeletorDeIdioma";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -104,7 +105,10 @@ export function AdminShell({
                 abaixo de `lg`, onde a sidebar fixa não está mais no DOM; agora
                 carrega também a BUSCA (⌘K), que é o que o painel não tinha e o
                 app do tenant já tinha. Ela existe nos dois tamanhos: no desktop
-                a busca fica à direita e o hambúrguer some. */}
+                a busca fica à direita e o hambúrguer some. O seletor de
+                idioma mora ao lado da busca (S2a, decisão D7): antes ele só
+                existia no `UserMenu` da casca do tenant, e quem abria o painel
+                num idioma que não lê tinha de ir a `/app`, trocar, e voltar. */}
             <header className="flex h-14 items-center gap-2 border-b bg-background px-3">
               <Button
                 type="button"
@@ -119,8 +123,9 @@ export function AdminShell({
               <span className="text-sm font-semibold tracking-tight lg:hidden">
                 {t("Admin Plataforma")}
               </span>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-1">
                 <BuscaDoAdmin modulosLigados={modulosLigados} />
+                <SeletorDeIdioma />
               </div>
             </header>
             {/* `overflow-x-hidden` como rede de segurança — mesmo motivo do
