@@ -20,6 +20,10 @@ const h = vi.hoisted(() => ({ aceita: null as string | null, perfil: null as str
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(h.aceita ? { "accept-language": h.aceita } : {}),
 }));
+// Sem cabeçalho servido, o idioma consulta o país da instalação (S2a T14): aqui, nenhum declarado.
+vi.mock("@/lib/instalacao/config", async () =>
+  (await import("@/tests/helpers/instalacao-sem-pais-declarado")).instalacaoSemPaisDeclarado(),
+);
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     auth: {

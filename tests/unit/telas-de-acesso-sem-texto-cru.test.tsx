@@ -35,6 +35,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(m.aceita ? { "accept-language": m.aceita } : {}),
 }));
+// Sem cabeçalho servido, o idioma consulta o país da instalação (S2a T14): aqui, nenhum declarado.
+vi.mock("@/lib/instalacao/config", async () =>
+  (await import("@/tests/helpers/instalacao-sem-pais-declarado")).instalacaoSemPaisDeclarado(),
+);
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: m.locale ? { user_metadata: { locale: m.locale } } : null } }) },

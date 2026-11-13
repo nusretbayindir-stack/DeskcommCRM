@@ -5,6 +5,10 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("@/lib/branding/saida", () => ({ marcaDaSaida: mocks.marca }));
 vi.mock("@/lib/branding/instalacao", () => ({ marcaDaInstalacao: mocks.linha }));
+// Sem cabeçalho servido, o idioma consulta o país da instalação (S2a T14): aqui, nenhum declarado.
+vi.mock("@/lib/instalacao/config", async () =>
+  (await import("@/tests/helpers/instalacao-sem-pais-declarado")).instalacaoSemPaisDeclarado(),
+);
 import manifest, { dynamic } from "@/app/manifest";
 beforeEach(() => {
   mocks.lingua.valor = null;

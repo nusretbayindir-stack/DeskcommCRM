@@ -8,6 +8,10 @@ vi.mock("@/lib/branding/instalacao", () => ({
 }));
 // A descrição segue o Accept-Language; fora de uma requisição, cabeçalho vazio.
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+// Sem cabeçalho, o idioma consulta o país da instalação (S2a T14): aqui, nenhum declarado.
+vi.mock("@/lib/instalacao/config", async () =>
+  (await import("@/tests/helpers/instalacao-sem-pais-declarado")).instalacaoSemPaisDeclarado(),
+);
 
 import manifest, { dynamic } from "@/app/manifest";
 
