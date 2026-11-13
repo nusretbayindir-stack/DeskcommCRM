@@ -61,6 +61,8 @@ export function normalizarTexto(texto: string): string {
  * Palavra-chave enviada SOZINHA (mensagem inteira = a palavra) — a convenção
  * universal de descadastro em canais de mensagem. A comparação é feita sobre o
  * texto normalizado e sem pontuação de borda, para "STOP." e "SAIR!" contarem.
+ * Acompanhada só de cortesia ("STOP svp", "Stop aub") ela também conta — ver
+ * `palavraComCortesia` (U44).
  */
 export const PALAVRAS_DE_OPT_OUT: ReadonlySet<string> = new Set([
   "stop",
@@ -1027,10 +1029,13 @@ const PALAVRAS_AMBIGUAS_COM_CORTESIA: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * A palavra que sobra quando a mensagem é só palavra + cortesia, ou `null`
- * quando não há cortesia, não há palavra, ou há mais que cortesia.
+ * A palavra que sobra quando a mensagem é só UMA palavra + cortesia, ou `null`
+ * quando não há cortesia, não há palavra, há mais que cortesia, ou há número.
  */
 function palavraComCortesia(normalizado: string): string | null {
+  // Número ou símbolo de valor é CONTEÚDO, não pontuação: "Baja 10% por favor"
+  // é pedir desconto, e bloquear é para sempre (revisão do U44).
+  if (/[0-9%$#@€£₺]/u.test(normalizado)) return null;
   const tokens = normalizado.replace(/[^a-z]+/gu, " ").trim().split(" ").filter((t) => t !== "");
   const resto: string[] = [];
   let cortesias = 0;
@@ -1044,8 +1049,10 @@ function palavraComCortesia(normalizado: string): string | null {
       i += 1;
     }
   }
-  if (cortesias === 0 || resto.length === 0) return null;
-  return resto.join("");
+  // UMA palavra, inteira: pedaços separados ("pa re por favor", "pa por favor
+  // re") não se colam aqui, como não se colariam entre cortesias.
+  if (cortesias === 0 || resto.length !== 1) return null;
+  return resto[0] ?? null;
 }
 
 /**
@@ -1154,7 +1161,8 @@ export function semAssinaturaDaAtendente(texto: string): string {
 }
 
 /**
- * A régua de UM texto: a palavra sozinha ou uma frase de `FRASES_DE_OPT_OUT`.
+ * A régua de UM texto: a palavra sozinha (ou só com cortesia, U44) ou uma
+ * frase de `FRASES_DE_OPT_OUT`.
  * É a mesma régua de sempre — não sabe nada sobre assinatura.
  */
 function ehPedidoInequivoco(texto: string): boolean {

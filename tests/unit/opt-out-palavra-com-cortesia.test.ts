@@ -110,3 +110,21 @@ describe("cortesia sozinha, ou mais que cortesia: nada", () => {
     expect(ehPedidoDeOptOut("stop asap")).toBe(false);
   });
 });
+
+describe("revisão do U44: a cortesia não abre caminho para falso positivo", () => {
+  // Bloquear é para sempre. Um número na mensagem é conteúdo ("Baja 10% por
+  // favor" é pedir desconto), e pedaços separados por cortesia não se colam.
+  it.each([
+    "Baja 10% por favor",
+    "baja 2 por favor",
+    "Pare 1 por favor",
+    "stop #1 merci",
+    "stop $5 thanks",
+    "pa re por favor",
+    "s top merci",
+    "pa por favor re",
+  ])("%s → não bloqueia", (texto) => {
+    expect(ehPedidoDeOptOut(texto)).toBe(false);
+  });
+
+});
