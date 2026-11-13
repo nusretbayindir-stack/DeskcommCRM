@@ -20,9 +20,11 @@ const MARCA_DA_PAGINA = "data-erro-global";
  *
  * Lido ANTES do primeiro commit (no inicializador do `useState`): esta página
  * desenha o próprio `<html lang={idioma}>`, e depois do commit o atributo já é
- * o estado inicial dela. Quando o `<html>` já é o desta página (o servidor a
- * desenhou porque o layout raiz caiu), o `lang` não diz nada: `null`, e vale o
- * navegador, como antes.
+ * o estado inicial dela. Quando o `<html>` já é o desta página (marcado com
+ * `data-erro-global`), o `lang` não diz nada: `null`, e vale o navegador.
+ * Hoje, quando o layout raiz falha no servidor, o Next manda a casca
+ * `<html id="__next_error__">` sem `lang` — também `null`. A marca fica como
+ * defesa para um `<html>` desta página que sobre de uma montagem anterior.
  */
 function idiomaDoServidor(): Idioma | null {
   if (typeof document === "undefined") return null;
