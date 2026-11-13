@@ -90,18 +90,18 @@ export const ROTULOS_DO_BRIEFING: Record<Idioma, RotulosDoBriefing> = {
   tr: {
     porQue: "AI konuşmayı neden devretti: ",
     quemPassouEscreveu: "Devreden şunu yazdı: ",
-    clienteQuer: "Müşterinin istediği (AI'a göre — kontrol edin): ",
-    jaTentou: "AI'ın zaten denedikleri:",
+    clienteQuer: "Müşterinin istediği (AI'ya göre — kontrol edin): ",
+    jaTentou: "AI'nın zaten denedikleri:",
     ultimasMensagens: "Müşterinin son mesajları (kendi sözleri): ",
     dadosColetados: "Otomatik toplanan bilgiler (kullanmadan önce kontrol edin):",
     tituloDosCampos: "Toplanan bilgiler: ",
-    contextoAcumulado: "Birikmiş bağlam (AI'a göre — kontrol edin):",
+    contextoAcumulado: "Birikmiş bağlam (AI'ya göre — kontrol edin):",
     compromissos: "Verilen sözler: ",
     objecoes: "İtirazlar: ",
     proximaAcao: "Sonraki adım: ",
     caso: "Vaka: ",
     bloqueio: "Engel: ",
-    pessoaQueEscalou: "Vakayı yükselten kişi şunu yazdı: ",
+    pessoaQueEscalou: "Vakayı yükselten ekip üyesi şunu yazdı: ",
     pessoaQuer: "Kişinin istediği: ",
     prometido: "Kişiye verilen söz: ",
     ate: "son tarih ",
@@ -109,7 +109,7 @@ export const ROTULOS_DO_BRIEFING: Record<Idioma, RotulosDoBriefing> = {
   },
   nl: {
     porQue: "Waarom de AI heeft doorgegeven: ",
-    quemPassouEscreveu: "Wie heeft doorgegeven, schreef: ",
+    quemPassouEscreveu: "Toelichting bij de overdracht: ",
     clienteQuer: "Wat de klant wil (volgens de AI — controleer dit): ",
     jaTentou: "Wat de AI al heeft geprobeerd:",
     ultimasMensagens: "Laatste berichten van de klant (eigen woorden): ",
@@ -167,4 +167,24 @@ export function fraseDoMotivoNoIdioma(
   const lingua = idioma ?? IDIOMA_PADRAO;
   const frase = traduzir(FRASE_DO_MOTIVO[codigo], lingua);
   return percebidoPeloJev ? `${frase} ${traduzir(MARCA_DO_JEV, lingua)}` : frase;
+}
+
+/**
+ * O piso ("sem resumo acumulado") em QUALQUER idioma — para quem LÊ a linha
+ * gravada (`cartao-da-passagem.ts`) reconhecer a passagem sem contexto, seja
+ * ela antiga (português) ou nova (no idioma da empresa).
+ */
+export function ehPisoDoBriefing(corpo: string): boolean {
+  const alvo = corpo.trim();
+  return Object.values(ROTULOS_DO_BRIEFING).some((r) => r.piso.trim() === alvo);
+}
+
+/**
+ * O corpo traz a irritação percebida pelo Jev, em qualquer idioma — a mesma
+ * frase que `fraseDoMotivoNoIdioma` grava (em português, `MOTIVO_PERCEBIDO_PELO_JEV`).
+ */
+export function temMarcaDoJev(corpo: string): boolean {
+  return (Object.keys(ROTULOS_DO_BRIEFING) as Idioma[]).some((idioma) =>
+    corpo.includes(fraseDoMotivoNoIdioma("low_sentiment", true, idioma)),
+  );
 }

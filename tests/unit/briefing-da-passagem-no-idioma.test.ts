@@ -89,6 +89,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 import { performHumanHandoff } from "@/lib/agent-engine/agent/human-handoff";
+import { montarCartoesDaPassagem, type PassagemDaConversa } from "@/lib/escalacao/cartao-da-passagem";
 import { triggerHandoff } from "@/lib/ai/handoff/orchestrator";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
@@ -258,5 +259,93 @@ describe("os dois motores gravam no idioma da organização", () => {
     const corpo = String(linha?.linha.body);
     expect(rotulosEmPortugues(corpo)).toEqual([]);
     expect(corpo).toContain("AI konuşmayı neden devretti: ");
+  });
+});
+
+describe("o cartão lê o resumo no idioma da empresa (revisão do U46)", () => {
+  const linha = (over: Partial<PassagemDaConversa>): PassagemDaConversa => ({
+    id: "p1",
+    origem: "sentimento",
+    motivo_codigo: "low_sentiment",
+    title: null,
+    body: "",
+    notes: null,
+    content: null,
+    tentativas: [],
+    cliente_avisado: null,
+    aviso_motivo_codigo: null,
+    caso_id: null,
+    criado_em: "2026-11-13T12:00:00.000Z",
+    reconhecido_em: null,
+    reconhecido_por: null,
+    reconhecido_por_nome: null,
+    ...over,
+  });
+  const QUEM = { usuarioId: "u1", donoId: null, donoNome: null };
+  const cartao = (over: Partial<PassagemDaConversa>) => montarCartoesDaPassagem([linha(over)], QUEM)[0]!;
+
+  it.each(["pt-BR", "tr", "nl", "fr", "es"] as const)("%s: o piso é reconhecido como 'sem contexto'", (idioma) => {
+    const { body } = montarBriefingDaPassagem({ checkpoint: null, idioma });
+    const c = cartao({ body, motivo_codigo: "requested_human" });
+    expect(c.semContexto).toBe(true);
+    expect(c.resumo).toBeNull();
+  });
+
+  it.each(["pt-BR", "tr", "nl", "fr", "es"] as const)("%s: a marca do Jev é reconhecida", (idioma) => {
+    const { body } = montarBriefingDaPassagem({
+      checkpoint: null,
+      motivo: { codigo: "low_sentiment", percebidoPeloJev: true },
+      idioma,
+    });
+    expect(cartao({ body }).percebidoPeloJev).toBe(true);
+  });
+
+  it.each(["pt-BR", "tr", "nl", "fr", "es"] as const)("%s: sem o Jev, nenhuma marca (controle)", (idioma) => {
+    const { body } = montarBriefingDaPassagem({ checkpoint: null, motivo: { codigo: "low_sentiment" }, idioma });
+    expect(cartao({ body }).percebidoPeloJev).toBe(false);
+  });
+
+  it("motor de conversa, só campos coletados: também no idioma da empresa", async () => {
+    const chamadas: Array<{ sql: string; params: unknown[] }> = [];
+    const query = vi.fn(async (sql: string, params: unknown[] = []) => {
+      chamadas.push({ sql, params });
+      if (/select\s+locale\s+from\s+organizations/i.test(sql)) return { rows: [{ locale: "fr" }], rowCount: 1 };
+      return { rows: [], rowCount: 0 };
+    });
+    await performHumanHandoff(
+      { query } as never,
+      { tenantId: ORG, leadId: LEAD, conversationId: CONVERSA },
+      {
+        reason: "verificacao_manual",
+        conversationSummary: "",
+        camposColetados: { CEP: "01000-000" },
+        log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as never,
+      },
+    );
+    const insert = chamadas.find((c) => c.sql.includes("insert into passagens_de_atendimento"));
+    const corpo = insert?.params.find((p) => typeof p === "string" && p.includes("01000-000")) as string;
+    expect(rotulosEmPortugues(corpo)).toEqual([]);
+    expect(corpo).toContain("Données collectées automatiquement");
+  });
+
+  it("o idioma da organização é lido uma vez por passagem", async () => {
+    const chamadas: string[] = [];
+    const query = vi.fn(async (sql: string) => {
+      chamadas.push(sql);
+      if (/select\s+locale\s+from\s+organizations/i.test(sql)) return { rows: [{ locale: "nl" }], rowCount: 1 };
+      return { rows: [], rowCount: 0 };
+    });
+    const briefing = montarBriefingDaPassagem(COMPLETA);
+    await performHumanHandoff(
+      { query } as never,
+      { tenantId: ORG, leadId: LEAD, conversationId: CONVERSA },
+      {
+        reason: "requested_human",
+        conversationSummary: briefing.body,
+        passagem: { origem: "pedido_explicito", motivoCodigo: "requested_human", briefing },
+        log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as never,
+      },
+    );
+    expect(chamadas.filter((sql) => /select\s+locale\s+from\s+organizations/i.test(sql))).toHaveLength(1);
   });
 });
