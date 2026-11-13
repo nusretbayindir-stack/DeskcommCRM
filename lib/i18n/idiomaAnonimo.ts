@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { cache } from "react";
 
 import {
   IDIOMA_PADRAO,
@@ -50,8 +51,17 @@ export async function idiomaDoVisitante(
  * custo sem retorno. `valorDaInstalacao` já degrada sozinha quando o banco
  * falha (cai no `.env`); o `catch` é a rede para o que sobra — uma tela de
  * login nunca quebra por causa do idioma.
+ *
+ * `cache()` por requisição, e é obrigatório: o idioma do visitante é pedido em
+ * leque num mesmo render (metadata e corpo do layout raiz, layout público,
+ * metadata e corpo da página — 5 vezes no /login), e `valorDaInstalacao` NÃO
+ * memoiza de propósito (fica fora da deduplicação de `fetch` do Next; ver
+ * `lerLinha` em `lib/instalacao/config.ts`). Sem o `cache`, cada visitante com
+ * navegador não servido custava 5 leituras de `platform_config` por tela.
+ * O memo é da requisição, não do processo: uma troca do país pelo painel vale
+ * na próxima visita.
  */
-async function idiomaDoPaisDaInstalacao(): Promise<Idioma> {
+const idiomaDoPaisDaInstalacao = cache(async (): Promise<Idioma> => {
   try {
     const { valor } = await valorDaInstalacao("PAIS_DA_INSTALACAO");
     return idiomaDoTexto(perfilDoPais(valor).idioma);
@@ -62,4 +72,4 @@ async function idiomaDoPaisDaInstalacao(): Promise<Idioma> {
     );
     return IDIOMA_PADRAO;
   }
-}
+});

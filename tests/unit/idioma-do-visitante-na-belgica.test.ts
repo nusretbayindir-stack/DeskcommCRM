@@ -20,14 +20,21 @@
  *   - a preferência salva vence sempre, e nela o país nem é consultado;
  *   - o país só é lido quando o navegador não casou: o login é a tela mais
  *     aberta do produto, e uma leitura de banco por visita sem necessidade é
- *     custo sem resposta.
+ *     custo sem resposta;
+ *   - e numa mesma requisição ele é lido UMA vez: o idioma do visitante é
+ *     pedido em leque (metadata e corpo do layout raiz, layout público,
+ *     metadata e corpo da página — até 5 vezes no /login), e `valorDaInstalacao`
+ *     não memoiza de propósito (revisão do PR #55, I-1).
  *
  * O dublê está na leitura da configuração (`valorDaInstalacao`, a fronteira com
- * o banco); `perfilDoPais` e `idiomaDoTexto` rodam de verdade.
+ * o banco); `perfilDoPais` e `idiomaDoTexto` rodam de verdade. O `cache` do
+ * React só memoiza dentro de um render de servidor; aqui ele vira um memo por
+ * CASO (cada caso é uma requisição), zerado no `beforeEach`.
  *
  * Sabotagem que confirma a guarda: tirar o degrau do país deixa vermelhos os
  * dois casos de nl; ler o país antes do navegador deixa vermelhos fr-BE e
- * pt-BR na Bélgica.
+ * pt-BR na Bélgica; tirar o `cache()` do degrau deixa vermelho o caso da
+ * mesma requisição.
  *
  * Confira com: pnpm vitest run tests/unit/idioma-do-visitante-na-belgica.test.ts
  */
@@ -42,6 +49,20 @@ const h = vi.hoisted(() => ({
 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(h.aceita ? { "accept-language": h.aceita } : {}),
+}));
+
+const memoDaRequisicao = vi.hoisted(() => new Map<unknown, Map<string, unknown>>());
+
+vi.mock("react", async (original) => ({
+  ...(await original<Record<string, unknown>>()),
+  cache: <F extends (...args: never[]) => unknown>(fn: F): F =>
+    ((...args: never[]) => {
+      const porArgs = memoDaRequisicao.get(fn) ?? new Map<string, unknown>();
+      memoDaRequisicao.set(fn, porArgs);
+      const chave = JSON.stringify(args);
+      if (!porArgs.has(chave)) porArgs.set(chave, fn(...args));
+      return porArgs.get(chave);
+    }) as F,
 }));
 
 vi.mock("@/lib/instalacao/config", () => ({
@@ -60,6 +81,7 @@ beforeEach(() => {
   h.pais = null;
   h.falha = false;
   h.leituras = 0;
+  memoDaRequisicao.clear();
 });
 
 describe("idiomaDoVisitante — último recurso pelo país da instalação", () => {
@@ -104,6 +126,15 @@ describe("idiomaDoVisitante — último recurso pelo país da instalação", () 
     h.falha = true;
     h.aceita = "en-US";
     expect(await idiomaDoVisitante(null)).toBe("pt-BR");
+  });
+
+  it("numa mesma requisição pedida em leque, o país é lido uma vez só", async () => {
+    h.pais = "BE";
+    h.aceita = "en-US";
+    // layout raiz (metadata + corpo), layout público, página (metadata + corpo)
+    const respostas = await Promise.all([1, 2, 3, 4, 5].map(() => idiomaDoVisitante(null)));
+    expect(respostas).toEqual(["nl", "nl", "nl", "nl", "nl"]);
+    expect(h.leituras).toBe(1);
   });
 
   it("a preferência salva vence sempre — e o país nem é consultado", async () => {

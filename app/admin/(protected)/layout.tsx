@@ -19,10 +19,11 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
   // que o dono do tenant (o install.sh promove o dono a platform admin); ler só
   // o `user_metadata.locale` abria o painel em português para quem nunca
   // escolheu idioma, enquanto o `/app` da mesma conta abria no idioma da
-  // empresa. `loadAuthUser` é `cache()` por requisição: telas do admin que já o
-  // chamam (ex.: `/admin/forbidden`) não pagam a leitura duas vezes. A
-  // preferência crua fica como rede — depois do `requirePlatformAdmin` a cadeia
-  // sempre responde, mas uma tela sem idioma não é desfecho aceitável.
+  // empresa. A chamada não custa leitura nova: `loadAuthUser` é `cache()` por
+  // requisição e o layout raiz (`app/layout.tsx`, `idiomaDaRequisicao`) já o
+  // chama em TODA requisição, inclusive as do `/admin`. A preferência crua fica
+  // como rede — depois do `requirePlatformAdmin` a cadeia sempre responde, mas
+  // uma tela sem idioma não é desfecho aceitável.
   const locale =
     (await loadAuthUser())?.idioma ?? (user.user_metadata?.locale as string | undefined) ?? null;
   // Duas leituras da INSTALAÇÃO, em paralelo, no layout: os
