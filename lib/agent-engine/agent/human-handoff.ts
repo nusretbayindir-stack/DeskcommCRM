@@ -35,6 +35,7 @@ import {
   turnoSemPalavraDoCliente,
 } from '@/lib/escalacao/handoff-tecnico';
 import {
+  briefingNoIdioma,
   montarBriefingDaPassagem,
   type BriefingDaPassagem,
   type CheckpointParaBriefing,
@@ -666,7 +667,12 @@ export async function performHumanHandoff(
       motor: 'engine',
       origem: opts.passagem.origem,
       motivoCodigo: opts.passagem.motivoCodigo,
-      briefing: opts.passagem.briefing,
+      // U46: o resumo é lido pela EQUIPE — sai no idioma da organização, não
+      // no português em que o chamador o montou.
+      briefing: briefingNoIdioma(
+        opts.passagem.briefing,
+        opts.passagem.idioma ?? (await idiomaDaOrganizacao(db, ids.tenantId, opts.log)),
+      ),
       ...(opts.avisoAoLead !== undefined ? { aviso: desfechoDaPassagem(opts.avisoAoLead) } : {}),
     });
     // Falhar fechado na AÇÃO, aberto na INFORMAÇÃO: a passagem já aconteceu
@@ -692,6 +698,7 @@ export async function performHumanHandoff(
       checkpoint: null,
       camposColetados: opts.camposColetados,
       motivo: { codigo: 'verificacao_manual' },
+      idioma: await idiomaDaOrganizacao(db, ids.tenantId, opts.log),
     });
     const gravou = await registrarPassagem(db, {
       organizationId: ids.tenantId,

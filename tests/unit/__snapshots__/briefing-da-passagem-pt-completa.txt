@@ -1,0 +1,22 @@
+Por que a IA passou: O cliente demonstrou irritação na conversa (percebido pelo Jev)
+Quem passou escreveu: "cliente irritado"
+O que o cliente quer (segundo a IA — confira): trocar a data da entrega
+O que a IA já tentou:
+1) ofereci quinta — recusou
+2) ofereci sábado
+Últimas mensagens do cliente (palavras dele): "dá pra mudar pra sexta?"
+Dados coletados automaticamente (confira antes de usar):
+• CEP: 01000-000
+Contexto acumulado (segundo a IA — confira):
+Quer remarcar a entrega.
+O que a pessoa quer: remarcar para sexta
+Prometido a ela: confirmar o horário (até amanhã)
+Compromissos: enviar o orçamento
+Objeções: achou caro
+Próxima ação: ligar amanhã
+Caso: Entrega 123
+Pedido atrasado
+Bloqueio: sem estoque
+A pessoa que escalou escreveu: "precisa de gerente"
+--title--
+trocar a data da entrega
