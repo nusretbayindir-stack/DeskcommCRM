@@ -49,11 +49,20 @@
  *
  * Nenhum texto daqui carrega o nome do produto: o remetente é a marca de quem
  * OPEROU (`marcaDaSaida`), resolvida por quem chama.
+ *
+ * ─── No idioma do titular (S2a Task 13) ─────────────────────────────────────
+ *
+ * Cada frase pt-PT é a chave do catálogo; com `idioma`, o aviso sai no idioma
+ * do titular (`documentoNoIdioma`). Portugal, e quem não passa idioma, recebem o
+ * pt-PT de sempre. O que vem de fora (marca, motivo, datas) entra pelas
+ * `{marcas}`, escapado no HTML.
  */
 import { NEUTROS_DE_SAIDA, type MarcaDeSaida } from "@/lib/branding/saida";
 import { sendEmail } from "@/lib/email/roteador";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { citacaoDaLei, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { EmailNotConfigured, EmailSendFailed } from "@/lib/lgpd/email-delivery";
+import { documentoNoIdioma, type DocumentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 
 export class MotivoObrigatorio extends Error {
   constructor() {
@@ -85,6 +94,8 @@ export interface AvisoArt12 {
   agora?: Date;
   /** Só fora do Brasil; o mesmo contrato do e-mail de exportação. */
   fuso?: string | undefined;
+  /** O idioma do titular (`idiomaDoTitular`, S2a Task 13). Ausente ou Portugal: o pt-PT de sempre. */
+  idioma?: Idioma;
 }
 
 export interface TextoDoAviso {
@@ -130,9 +141,12 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** O prazo escrito no fuso da organização, com o NOME do fuso — mesma borda do e-mail de exportação. */
-function dataComFuso(quando: Date, fuso: string | undefined): string {
-  const formato = (timeZone: string) => quando.toLocaleDateString("pt-PT", { timeZone, timeZoneName: "short" });
+/**
+ * O prazo escrito no fuso da organização, com o NOME do fuso — mesma borda do
+ * e-mail de exportação. A `etiqueta` é a do idioma do titular; sem ela, a de sempre.
+ */
+function dataComFuso(quando: Date, fuso: string | undefined, etiqueta = "pt-PT"): string {
+  const formato = (timeZone: string) => quando.toLocaleDateString(etiqueta, { timeZone, timeZoneName: "short" });
   try {
     return formato(fuso ?? "UTC");
   } catch {
@@ -161,10 +175,13 @@ function rotuloDaBaseLegal(perfil: PerfilDoPais): string {
   return perfil.lei?.rotuloNoDocumento ?? "Base legal";
 }
 
-/** A linha da citação pronta (rótulo do perfil + lei revisada), ou `null` sem lei revisada. */
-function linhaDaBaseLegal(perfil: PerfilDoPais): string | null {
+/**
+ * A linha da citação pronta (rótulo do perfil + lei revisada), ou `null` sem lei
+ * revisada. O catálogo traduz o rótulo e a citação inteira, sem montar outra.
+ */
+function linhaDaBaseLegal(perfil: PerfilDoPais, d: DocumentoNoIdioma): string | null {
   const citacao = citacaoDaLei(perfil);
-  return citacao ? `${rotuloDaBaseLegal(perfil)}: ${citacao}.` : null;
+  return citacao ? `${d.t(rotuloDaBaseLegal(perfil))}${d.doisPontos} ${d.daLei(citacao)}.` : null;
 }
 
 /**
@@ -193,37 +210,41 @@ function mensagem(
   orgName: string,
   motivo: string | null,
 ): TextoDoAviso {
-  const base = linhaDaBaseLegal(aviso.perfil);
-  const prazoFmt = dataComFuso(aviso.prazoDeUmMes, aviso.fuso);
-  const recebidoFmt = dataComFuso(aviso.recebidoEm, aviso.fuso);
+  const d = documentoNoIdioma(aviso.idioma, aviso.perfil.codigo);
+  const { t } = d;
+  const base = linhaDaBaseLegal(aviso.perfil, d);
+  const prazoFmt = dataComFuso(aviso.prazoDeUmMes, aviso.fuso, d.etiqueta);
+  const recebidoFmt = dataComFuso(aviso.recebidoEm, aviso.fuso, d.etiqueta);
+  const novaDataFmt = dataComFuso(aviso.novaData ?? aviso.prazoDeUmMes, aviso.fuso, d.etiqueta);
   // A frase do prazo só afirma cumprimento quando o cumprimento aconteceu.
   const dentro = dentroDoPrazoDeUmMes(aviso.recebidoEm, aviso.agora ?? new Date());
+  const motivoNoHtml = escapeHtml(motivo ?? "");
 
   const linhas: Record<DesfechoDoPedido, { subject: string; bloco: string[] }> = {
     apagamento: {
-      subject: `O seu pedido de dados pessoais foi atendido #${shortId}`,
+      subject: t("O seu pedido de dados pessoais foi atendido #{pedido}", { pedido: shortId }),
       bloco: [
-        `  <p>O seu pedido de eliminação de dados pessoais foi atendido por <strong>${orgName}</strong>: o contacto, a conversação e o histórico de atendimento que tínhamos sobre si foram apagados de forma irreversível.</p>`,
-        "  <p>O que permanece não o identifica: o que ficou é estatístico e operacional, sem nome, telefone, e-mail ou documento.</p>",
+        `  <p>${t("O seu pedido de eliminação de dados pessoais foi atendido por <strong>{empresa}</strong>: o contacto, a conversação e o histórico de atendimento que tínhamos sobre si foram apagados de forma irreversível.", { empresa: orgName })}</p>`,
+        `  <p>${t("O que permanece não o identifica: o que ficou é estatístico e operacional, sem nome, telefone, e-mail ou documento.")}</p>`,
         dentro
-          ? `  <p>Atendido dentro do prazo de um mês a contar do recebimento (até ${prazoFmt}), como a lei exige para a eliminação.</p>`
-          : `  <p>O prazo de um mês a contar do recebimento terminou em ${prazoFmt}; este aviso segue depois do cumprimento do pedido.</p>`,
+          ? `  <p>${t("Atendido dentro do prazo de um mês a contar do recebimento (até {prazo}), como a lei exige para a eliminação.", { prazo: prazoFmt })}</p>`
+          : `  <p>${t("O prazo de um mês a contar do recebimento terminou em {prazo}; este aviso segue depois do cumprimento do pedido.", { prazo: prazoFmt })}</p>`,
       ],
     },
     recusa: {
-      subject: `O seu pedido de dados pessoais não foi atendido #${shortId}`,
+      subject: t("O seu pedido de dados pessoais não foi atendido #{pedido}", { pedido: shortId }),
       bloco: [
-        `  <p>O seu pedido de dados pessoais, recebido em ${recebidoFmt}, <strong>não foi atendido</strong> por <strong>${orgName}</strong>.</p>`,
-        `  <p><strong>Motivo:</strong> ${escapeHtml(motivo ?? "")}</p>`,
-        `  <p>Este aviso segue o prazo de um mês a contar do recebimento (até ${prazoFmt}), como a lei exige para a recusa.</p>`,
+        `  <p>${t("O seu pedido de dados pessoais, recebido em {recebido}, <strong>não foi atendido</strong> por <strong>{empresa}</strong>.", { recebido: recebidoFmt, empresa: orgName })}</p>`,
+        `  <p>${t("<strong>Motivo:</strong> {motivo}", { motivo: motivoNoHtml })}</p>`,
+        `  <p>${t("Este aviso segue o prazo de um mês a contar do recebimento (até {prazo}), como a lei exige para a recusa.", { prazo: prazoFmt })}</p>`,
       ],
     },
     prorrogacao: {
-      subject: `O seu pedido de dados pessoais foi prorrogado #${shortId}`,
+      subject: t("O seu pedido de dados pessoais foi prorrogado #{pedido}", { pedido: shortId }),
       bloco: [
-        `  <p>O seu pedido de dados pessoais, recebido em ${recebidoFmt}, continua em tratamento por <strong>${orgName}</strong> e foi prorrogado.</p>`,
-        `  <p><strong>Motivo da prorrogação:</strong> ${escapeHtml(motivo ?? "")}</p>`,
-        `  <p>A resposta deve sair até ${dataComFuso(aviso.novaData ?? aviso.prazoDeUmMes, aviso.fuso)}. A prorrogação é comunicada dentro do prazo de um mês a contar do recebimento (até ${prazoFmt}).</p>`,
+        `  <p>${t("O seu pedido de dados pessoais, recebido em {recebido}, continua em tratamento por <strong>{empresa}</strong> e foi prorrogado.", { recebido: recebidoFmt, empresa: orgName })}</p>`,
+        `  <p>${t("<strong>Motivo da prorrogação:</strong> {motivo}", { motivo: motivoNoHtml })}</p>`,
+        `  <p>${t("A resposta deve sair até {data}. A prorrogação é comunicada dentro do prazo de um mês a contar do recebimento (até {prazo}).", { data: novaDataFmt, prazo: prazoFmt })}</p>`,
       ],
     },
   };
@@ -231,18 +252,18 @@ function mensagem(
   const escolhido = linhas[aviso.desfecho];
   const extras: string[] = [];
   if (base) extras.push(`  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${escapeHtml(base)}</p>`);
-  const corpo = `${escolhido.bloco.join("\n")}\n${extras.join("\n")}\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">Se não fez este pedido, ignore este e-mail — não é necessária nenhuma ação.</p>\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">PEDIDO:${shortId}</p>`;
+  const corpo = `${escolhido.bloco.join("\n")}\n${extras.join("\n")}\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${t("Se não fez este pedido, ignore este e-mail — não é necessária nenhuma ação.")}</p>\n  <p style="font-size:12px;color:${NEUTROS_DE_SAIDA.suave};">${t("PEDIDO:{pedido}", { pedido: shortId })}</p>`;
 
   return {
     subject: escolhido.subject,
     html: `<!doctype html>
-<html lang="pt-PT">
+<html lang="${d.etiqueta ?? "pt-PT"}">
 <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;color:${NEUTROS_DE_SAIDA.texto};line-height:1.5;max-width:560px;margin:0 auto;padding:24px;">
-  <p>Olá,</p>
+  <p>${t("Olá,")}</p>
 ${corpo}
 </body>
 </html>`,
-    text: textoPuro(aviso, shortId, aviso.marca.nome, motivo, dentro),
+    text: textoPuro(aviso, shortId, aviso.marca.nome, motivo, dentro, d),
   };
 }
 
@@ -253,26 +274,31 @@ function textoPuro(
   marca: string,
   motivo: string | null,
   dentro: boolean,
+  d: DocumentoNoIdioma,
 ): string {
-  const prazoFmt = dataComFuso(aviso.prazoDeUmMes, aviso.fuso);
-  const cabecalho = `Pedido #${shortId} de dados pessoais, tratado por ${marca}.`;
+  const { t } = d;
+  const prazoFmt = dataComFuso(aviso.prazoDeUmMes, aviso.fuso, d.etiqueta);
+  const cabecalho = t("Pedido #{pedido} de dados pessoais, tratado por {empresa}.", { pedido: shortId, empresa: marca });
   const corpo: Record<DesfechoDoPedido, string[]> = {
     apagamento: [
-      "O seu pedido de eliminação de dados pessoais foi atendido: os seus dados foram apagados de forma irreversível — o contacto, a conversação e o histórico de atendimento.",
+      t("O seu pedido de eliminação de dados pessoais foi atendido: os seus dados foram apagados de forma irreversível — o contacto, a conversação e o histórico de atendimento."),
       dentro
-        ? `O seu pedido foi atendido dentro do prazo de um mês a contar do recebimento (até ${prazoFmt}).`
-        : `O prazo de um mês a contar do recebimento terminou em ${prazoFmt}; este aviso segue depois do cumprimento do pedido.`,
+        ? t("O seu pedido foi atendido dentro do prazo de um mês a contar do recebimento (até {prazo}).", { prazo: prazoFmt })
+        : t("O prazo de um mês a contar do recebimento terminou em {prazo}; este aviso segue depois do cumprimento do pedido.", { prazo: prazoFmt }),
     ],
     recusa: [
-      `O seu pedido NÃO foi atendido. Motivo: ${motivo ?? ""}`,
-      `Aviso enviado dentro do prazo de um mês a contar do recebimento (até ${prazoFmt}).`,
+      t("O seu pedido NÃO foi atendido. Motivo: {motivo}", { motivo: motivo ?? "" }),
+      t("Aviso enviado dentro do prazo de um mês a contar do recebimento (até {prazo}).", { prazo: prazoFmt }),
     ],
     prorrogacao: [
-      `O seu pedido continua em tratamento e foi prorrogado. Motivo: ${motivo ?? ""}`,
-      `Resposta prevista até ${dataComFuso(aviso.novaData ?? aviso.prazoDeUmMes, aviso.fuso)}; prorrogação comunicada dentro do prazo de um mês (até ${prazoFmt}).`,
+      t("O seu pedido continua em tratamento e foi prorrogado. Motivo: {motivo}", { motivo: motivo ?? "" }),
+      t("Resposta prevista até {data}; prorrogação comunicada dentro do prazo de um mês (até {prazo}).", {
+        data: dataComFuso(aviso.novaData ?? aviso.prazoDeUmMes, aviso.fuso, d.etiqueta),
+        prazo: prazoFmt,
+      }),
     ],
   };
-  const cit = linhaDaBaseLegal(aviso.perfil);
+  const cit = linhaDaBaseLegal(aviso.perfil, d);
   return [cabecalho, "", ...corpo[aviso.desfecho], "", cit ?? ""].filter(Boolean).join("\n");
 }
 

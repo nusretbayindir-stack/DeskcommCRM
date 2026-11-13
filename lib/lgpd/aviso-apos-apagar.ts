@@ -26,6 +26,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { marcaDaSaida } from "@/lib/branding/saida";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { logger } from "@/lib/logger";
 import { EmailNotConfigured } from "@/lib/lgpd/email-delivery";
@@ -38,6 +39,11 @@ export interface PedidoDeAviso {
   emailTitular: string | null;
   /** Recebimento do pedido — de onde o prazo de um mês é contado. */
   recebidoEm: Date;
+  /**
+   * O idioma do titular, lido pelo chamador ANTES da cascata, como o endereço
+   * (`idiomaDoTitular`, S2a Task 13). Ausente: o pt-PT de sempre.
+   */
+  idioma?: Idioma;
 }
 
 export interface ResultadoDoAviso {
@@ -71,6 +77,7 @@ export async function avisarTitularAposApagamento(
         prazoDeUmMes: prazoDeUmMes(pedido.recebidoEm),
         recebidoEm: pedido.recebidoEm,
         fuso: undefined,
+        idioma: pedido.idioma,
       },
       email,
     );

@@ -26,6 +26,7 @@
  * O `sha256` devolvido é do PDF ASSINADO (o que foi gravado), não do buffer
  * intermediário: quem confere o arquivo no Storage tem de achar o mesmo hash.
  */
+import type { Idioma } from "@/lib/i18n/idiomas";
 import { codigoCurto, codigoDeAutenticidade, type AlgoritmoDoCodigo, type DadosDoAtestado } from "@/lib/lgpd/atestado-de-anonimizacao";
 import { renderAtestadoPdf } from "@/lib/lgpd/atestado-renderer";
 import { signPdfPades } from "@/lib/lgpd/pades-signer";
@@ -77,13 +78,17 @@ type ClienteComStorage = {
  * LANÇA quando o Storage recusa — o chamador decide o que fazer com a falha
  * (no worker: registrar e seguir, porque o pedido do titular não pode cair
  * porque o papel não saiu).
+ *
+ * `idioma` é o do titular (`idiomaDoTitular`, S2a Task 13); ausente, o texto de
+ * sempre. O código não muda com ele: assina a linha canônica, não o texto.
  */
 export async function emitirAtestadoDeAnonimizacao(
   admin: ClienteComStorage,
   dados: DadosDoAtestado,
+  idioma?: Idioma,
 ): Promise<AtestadoEmitido> {
   const { codigo, algoritmo } = codigoDeAutenticidade(dados, chaveDeAssinatura());
-  const pdf = await renderAtestadoPdf({ dados, codigo: codigoCurto(codigo), algoritmo });
+  const pdf = await renderAtestadoPdf({ dados, codigo: codigoCurto(codigo), algoritmo, idioma });
   const assinado = await signPdfPades(pdf);
 
   // A org vem PRIMEIRO no caminho, como no relatório do art. 18, II

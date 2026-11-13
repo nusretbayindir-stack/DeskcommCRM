@@ -17,8 +17,13 @@ const opcoes = {
   idioma: "pt-BR" as const,
 };
 
+// Fork (S2a Task 12): os moldes de acesso falam nl/fr/tr por ramo do GoTrue, então
+// o texto deles muda de propósito; a moldura (fundo, fonte, logo) é conferida contra
+// este mesmo fixture em `tests/unit/acesso-gotrue-no-idioma.test.ts`.
+const CASOS_BYTE_A_BYTE = fixture.casos.filter((caso) => caso.tipo === "convite");
+
 describe("limpeza dos e-mails preserva a identidade distribuída", () => {
-  it.each(fixture.casos)("$tipo, logo $marca.logoUrl: saída byte a byte da main", (caso) => {
+  it.each(CASOS_BYTE_A_BYTE)("$tipo, logo $marca.logoUrl: saída byte a byte da main", (caso) => {
     const marca = caso.marca as MarcaDeSaida;
     const atual =
       caso.tipo === "convite"

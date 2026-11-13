@@ -26,10 +26,19 @@
  * O CONTEÚDO vem pronto de `atestado-de-anonimizacao.ts` (declaração, campos e
  * código): este arquivo só desenha. É o que permite testar o texto sem abrir
  * PDF, e o PDF sem redigitar texto.
+ *
+ * ─── No idioma do titular (S2a Task 13) ─────────────────────────────────────
+ *
+ * Quem guarda o atestado é o titular (a equipe o repassa pelo canal do pedido),
+ * então ele sai no idioma do titular. Cada texto fixo passa por `t()`; sem
+ * `idioma` (Portugal, ou quem não passa nenhum) `t` devolve o texto de sempre.
+ * O código de autenticidade não muda com o idioma: ele assina a linha canônica,
+ * não o texto impresso.
  */
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 
+import type { Idioma } from "@/lib/i18n/idiomas";
 import {
   VERSAO_DO_ATESTADO,
   dataHoraNoFuso,
@@ -37,12 +46,16 @@ import {
   type AlgoritmoDoCodigo,
   type DadosDoAtestado,
 } from "@/lib/lgpd/atestado-de-anonimizacao";
+import { fonteDoDocumentoTraduzido } from "@/lib/lgpd/fonte-do-documento";
+import { documentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 
 export interface PropsDoAtestado {
   dados: DadosDoAtestado;
   /** O código já calculado (16 hex citáveis) e o que de fato o produziu. */
   codigo: string;
   algoritmo: AlgoritmoDoCodigo;
+  /** O idioma do titular (`idiomaDoTitular`). Ausente = o texto de sempre. */
+  idioma?: Idioma;
 }
 
 const styles = StyleSheet.create({
@@ -64,32 +77,43 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", bottom: 22, left: 44, right: 44, fontSize: 7, color: "#666666" },
 });
 
-export function AtestadoDeAnonimizacaoPdf({ dados, codigo, algoritmo }: PropsDoAtestado): React.ReactElement {
+export function AtestadoDeAnonimizacaoPdf({ dados, codigo, algoritmo, idioma }: PropsDoAtestado): React.ReactElement {
+  const d = documentoNoIdioma(idioma);
+  const { t } = d;
+  // O documento traduzido leva uma fonte com as letras do turco (`fonte-do-documento.ts`);
+  // os títulos em negrito trocam a Helvetica-Bold pela mesma família, em negrito.
+  const fonte = d.idioma ? fonteDoDocumentoTraduzido() : undefined;
+  const titulo = fonte ? [styles.title, { fontFamily: fonte, fontWeight: "bold" as const }] : styles.title;
+  const secao = fonte
+    ? [styles.sectionTitle, { fontFamily: fonte, fontWeight: "bold" as const }]
+    : styles.sectionTitle;
+  // `textTransform: uppercase` não conhece o turco (i → I, e não İ): o texto traduzido já vai em caixa alta do idioma.
+  const caixaAlta = (texto: string) => (d.etiqueta ? texto.toLocaleUpperCase(d.etiqueta) : texto);
   const e = dados.evidencia;
   const executor = e.executor
     ? `${e.executor.nome}${e.executor.papel ? ` — ${e.executor.papel}` : ""}${e.executor.email ? ` <${e.executor.email}>` : ""}`
-    : "execução automática do sistema";
+    : t("execução automática do sistema");
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
+    <Document {...(d.etiqueta ? { language: d.etiqueta } : {})}>
+      <Page size="A4" style={fonte ? [styles.page, { fontFamily: fonte }] : styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>Atestado de Anonimização de Dados Pessoais</Text>
-          <Text style={styles.subtitle}>{`Protocolo #${dados.request_id.slice(0, 8)}`}</Text>
+          <Text style={titulo}>{t("Atestado de Anonimização de Dados Pessoais")}</Text>
+          <Text style={styles.subtitle}>{t("Protocolo #{protocolo}", { protocolo: dados.request_id.slice(0, 8) })}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Controlador</Text>
+          <Text style={secao}>{caixaAlta(t("Controlador"))}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Razão social:</Text>
+            <Text style={styles.label}>{t("Razão social:")}</Text>
             <Text style={styles.value}>{dados.organization_name}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>CNPJ:</Text>
-            <Text style={styles.value}>{dados.organization_document ?? "não cadastrado"}</Text>
+            <Text style={styles.label}>{t("CNPJ:")}</Text>
+            <Text style={styles.value}>{dados.organization_document ?? t("não cadastrado")}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Encarregado (DPO):</Text>
-            <Text style={styles.value}>{dados.organization_email ?? "não cadastrado"}</Text>
+            <Text style={styles.label}>{t("Encarregado (DPO):")}</Text>
+            <Text style={styles.value}>{dados.organization_email ?? t("não cadastrado")}</Text>
           </View>
         </View>
 
@@ -99,45 +123,48 @@ export function AtestadoDeAnonimizacaoPdf({ dados, codigo, algoritmo }: PropsDoA
           guardaria numa cópia nova o dado que a cascata acabou de apagar.
         */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Requerente</Text>
+          <Text style={secao}>{caixaAlta(t("Requerente"))}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Protocolo:</Text>
+            <Text style={styles.label}>{t("Protocolo:")}</Text>
             <Text style={styles.value}>{dados.request_id}</Text>
           </View>
           <Text style={styles.notaFina}>
-            O requerente é identificado apenas pelo protocolo do pedido: este documento não reproduz nome,
-            documento nem contato do titular — nem mascarados. É a trilha de auditoria que guarda o vínculo com
-            o pedido.
+            {t(
+              "O requerente é identificado apenas pelo protocolo do pedido: este documento não reproduz nome, documento nem contato do titular — nem mascarados. É a trilha de auditoria que guarda o vínculo com o pedido.",
+            )}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Declaração</Text>
-          <Text style={styles.declaracao}>{textoDaDeclaracao(dados)}</Text>
+          <Text style={secao}>{caixaAlta(t("Declaração"))}</Text>
+          <Text style={styles.declaracao}>{textoDaDeclaracao(dados, d.idioma)}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Execução</Text>
+          {/* A execução do apagamento — o "Execução" da tela é a de um processo ("Çalıştırma"). */}
+          <Text style={secao}>{caixaAlta(t("Execução@@atestado"))}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Data e hora:</Text>
-            <Text style={styles.value}>{dataHoraNoFuso(e.em, dados.fuso)}</Text>
+            <Text style={styles.label}>{t("Data e hora:")}</Text>
+            <Text style={styles.value}>{dataHoraNoFuso(e.em, dados.fuso, d.etiqueta)}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Executado por:</Text>
+            <Text style={styles.label}>{t("Executado por:")}</Text>
             <Text style={styles.value}>{executor}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>IP de origem:</Text>
-            <Text style={styles.value}>{e.ip ?? "sem ato humano (execução automática)"}</Text>
+            <Text style={styles.label}>{t("IP de origem:")}</Text>
+            <Text style={styles.value}>{e.ip ?? t("sem ato humano (execução automática)")}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Origem do pedido:</Text>
-            <Text style={styles.value}>{e.origem === "aprovacao_manual" ? "aprovação no painel" : "automática"}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Escopo:</Text>
+            <Text style={styles.label}>{t("Origem do pedido:")}</Text>
             <Text style={styles.value}>
-              {dados.escopo === "tenant" ? "base completa da organização" : "dados do titular"}
+              {e.origem === "aprovacao_manual" ? t("aprovação no painel") : t("automática")}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>{t("Escopo:")}</Text>
+            <Text style={styles.value}>
+              {dados.escopo === "tenant" ? t("base completa da organização") : t("dados do titular")}
             </Text>
           </View>
         </View>
@@ -145,20 +172,27 @@ export function AtestadoDeAnonimizacaoPdf({ dados, codigo, algoritmo }: PropsDoA
         <View style={styles.caixa}>
           <Text style={styles.caixaTitulo}>
             {algoritmo === "hmac-sha256"
-              ? "Código de autenticidade (HMAC-SHA256)"
-              : "Código de integridade (SHA-256 — instalação sem chave de assinatura)"}
+              ? caixaAlta(t("Código de autenticidade (HMAC-SHA256)"))
+              : caixaAlta(t("Código de integridade (SHA-256 — instalação sem chave de assinatura)"))}
           </Text>
           <Text style={styles.codigo}>{codigo}</Text>
           <Text style={styles.notaFina}>
             {algoritmo === "hmac-sha256"
-              ? "Produzido com a chave de assinatura desta instalação sobre os campos declarados neste documento: só quem tem a chave reproduz o código, e qualquer edição em qualquer campo o invalida."
-              : "Esta instalação não tem chave de assinatura configurada: o código prova que os campos declarados não foram editados, mas não prova a origem do documento."}
-            {` Formato ${VERSAO_DO_ATESTADO}. O código é citável e reconferível pelo controlador.`}
+              ? t(
+                  "Produzido com a chave de assinatura desta instalação sobre os campos declarados neste documento: só quem tem a chave reproduz o código, e qualquer edição em qualquer campo o invalida.",
+                )
+              : t(
+                  "Esta instalação não tem chave de assinatura configurada: o código prova que os campos declarados não foram editados, mas não prova a origem do documento.",
+                )}
+            {` ${t("Formato {versao}. O código é citável e reconferível pelo controlador.", { versao: VERSAO_DO_ATESTADO })}`}
           </Text>
         </View>
 
         <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) =>
-          `Documento gerado automaticamente pelo sistema do controlador · página ${pageNumber} de ${totalPages}`
+          t("Documento gerado automaticamente pelo sistema do controlador · página {pagina} de {total}", {
+            pagina: pageNumber,
+            total: totalPages,
+          })
         } />
       </Page>
     </Document>

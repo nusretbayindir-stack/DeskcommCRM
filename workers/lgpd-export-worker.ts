@@ -62,6 +62,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { partesDoArquivoDoTitular } from "@/lib/lgpd/copia-do-titular";
+import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
 
 const MAX_ATTEMPTS = 3;
 const BUCKET = "lgpd-exports";
@@ -256,10 +257,19 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
       externalCustomerId: req.external_customer_id,
     });
 
+    // O idioma do titular (S2a Task 13, D10): o do contato, senão o da empresa.
+    // Lido UMA vez e dado ao PDF e ao e-mail, pela mesma razão do país. Brasil e
+    // Portugal não vão ao banco: o documento deles é o texto de sempre.
+    const idioma = await idiomaDoTitular(admin, {
+      organizationId: orgId,
+      contactId: data.contact?.id ?? null,
+      pais: perfil.codigo,
+    });
+
     // 4. Render PDF (with warning banner when unsigned).
     const padesConfigured = isPadesConfigured();
     const { renderLgpdPdf } = await import("@/lib/lgpd/pdf-renderer");
-    const pdfBuffer = await renderLgpdPdf(data, { unsignedWarning: !padesConfigured });
+    const pdfBuffer = await renderLgpdPdf(data, { unsignedWarning: !padesConfigured, idioma });
 
     // 5. Sign (stubbed when key missing).
     const signResult = await signPdfPades(pdfBuffer);
@@ -396,9 +406,11 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
         signedUrlDados,
         expiresAt,
         marca,
-        // O país decide a lei e o idioma do e-mail — o MESMO perfil que o coletor
-        // usou; o fuso vem do coletor, que só o põe no payload fora do Brasil.
+        // O país decide a lei do e-mail — o MESMO perfil que o coletor usou; o
+        // fuso vem do coletor, que só o põe no payload fora do Brasil; o idioma é
+        // o mesmo do PDF.
         perfil,
+        idioma,
         fuso: data.fuso,
       });
       messageId = sent.messageId;

@@ -48,6 +48,7 @@ import {
   sendAvisoArt12,
 } from "@/lib/lgpd/avisos-do-artigo-12";
 import { EmailNotConfigured } from "@/lib/lgpd/email-delivery";
+import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
 import { diaDoPrazo } from "@/lib/lgpd/sla";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { perfilDaOrganizacao, PAIS_PADRAO } from "@/lib/legal/perfil-do-pais";
@@ -214,8 +215,14 @@ export async function POST(
   const agora = new Date();
   const prazo = prazoDeUmMes(recebidoEm);
   // O perfil já foi lido na guarda do país, no alto desta rota: UMA leitura só,
-  // e é ela que decide o idioma e a lei do aviso.
+  // e é ela que decide a lei do aviso. O idioma é o do titular (S2a Task 13, D10):
+  // o do contato, senão o da empresa — não o de quem apertou o botão.
   const marca = await marcaDaSaida(orgId, { semMemo: true });
+  const idioma = await idiomaDoTitular(admin, {
+    organizationId: orgId,
+    contactId: pedido.contact_id,
+    pais: perfil.codigo,
+  });
 
   try {
     await sendAvisoArt12(
@@ -228,6 +235,7 @@ export async function POST(
         novaData: prazoDeUmMes(agora),
         prazoDeUmMes: prazo,
         recebidoEm,
+        idioma,
       },
       emailTitular,
     );
