@@ -32,6 +32,16 @@ const PUBLICADA = JSON.parse(
 
 const ROTULO_DO_NUMERO = "Número da empresa (KBO/BCE)";
 
+/**
+ * Segunda exceção, declarada (decisão do dono, 2026-11-14): os três rótulos do
+ * Google também são da tela da Agenda. Em francês o catálogo mantém o espaço
+ * INSEPARÁVEL antes do `:`, como no resto do `fr.json` — o texto publicado tinha
+ * espaço comum, e numa tela estreita o `:` caía sozinho na linha de baixo. Só
+ * esse espaço muda; o resto do rótulo segue o publicado.
+ */
+const ROTULOS_DO_GOOGLE = ["Google Agenda:", "Google Meet:", "Google Ads:"];
+const NBSP = " ";
+
 const lerFonte = (caminho: string) => readFileSync(join(__dirname, "..", "..", caminho), "utf8");
 
 describe("a política belga publicada está no catálogo", () => {
@@ -43,9 +53,16 @@ describe("a política belga publicada está no catálogo", () => {
   it.each(["nl", "fr"] as const)("%s: cada frase publicada está no catálogo, byte a byte", (lingua) => {
     const divergentes = Object.entries(PUBLICADA[lingua])
       .filter(([chave]) => chave !== ROTULO_DO_NUMERO)
+      .filter(([chave]) => !(lingua === "fr" && ROTULOS_DO_GOOGLE.includes(chave)))
       .filter(([chave, texto]) => entradaDoCatalogo(lingua, chave) !== texto)
       .map(([chave]) => chave);
     expect(divergentes, `${divergentes.length} frase(s) da política fora do catálogo`).toEqual([]);
+  });
+
+  it.each(ROTULOS_DO_GOOGLE)("fr: %s é o publicado com espaço inseparável antes do `:`", (chave) => {
+    const publicado = PUBLICADA.fr[chave]!;
+    expect(publicado).toMatch(/ :$/u);
+    expect(entradaDoCatalogo("fr", chave)).toBe(publicado.replace(/ :$/u, `${NBSP}:`));
   });
 
   it("o rótulo do número da empresa fica o do catálogo, com KBO em holandês e BCE em francês", () => {
