@@ -10,6 +10,7 @@ import { respostaDePonte } from "@/lib/auth/ponte-de-volta";
 import { safeNext } from "@/lib/auth/safe-next";
 import { reconhecerDispositivoConfiavel } from "@/lib/auth/dispositivo-confiavel";
 import { invalidarUsuario } from "@/lib/auth/cache-curto";
+import { guardarPistasNaConta } from "@/lib/auth/pistas-na-conta";
 import { audit } from "@/lib/audit";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { env } from "@/lib/env";
@@ -269,7 +270,16 @@ export async function GET(request: NextRequest) {
   // (`recoverOrganization`), não nesta rota.
   // `/get-started` exige sessão (não está em `PUBLIC_PATHS`) — ponte, pela
   // mesma razão de `/app`: o 302 daqui também viria na cadeia do Google.
-  if (modo === "com_aprovacao") return await paraTelaAutenticada("/get-started");
+  if (modo === "com_aprovacao") {
+    // U51: a empresa nasce na aprovação, que lê a conta — as pistas da URL só
+    // chegam lá se ficarem guardadas nela.
+    await guardarPistasNaConta(supabase, usuario, {
+      idioma: url.searchParams.get("idioma"),
+      fuso: url.searchParams.get("fuso"),
+      acceptLanguage: request.headers.get("accept-language"),
+    });
+    return await paraTelaAutenticada("/get-started");
+  }
 
   try {
     // A volta do Google não traz nada nosso além da URL: o idioma da tela e o

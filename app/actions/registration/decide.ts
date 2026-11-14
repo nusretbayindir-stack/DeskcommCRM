@@ -8,6 +8,13 @@ import { audit } from "@/lib/audit";
 import { escritaDeAdminOuRecusa } from "@/lib/auth/escritaDeAdminOuRecusa";
 import type { RecusaDeEscritaDeAdmin } from "@/lib/auth/recusa-de-escrita-de-admin";
 import { ensureTenantForUser } from "@/lib/auth/provision";
+import {
+  acceptLanguageParaGuardar,
+  CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO,
+  CHAVE_FUSO_DO_CADASTRO,
+  CHAVE_IDIOMA_DO_CADASTRO,
+  pistasParaGuardar,
+} from "@/lib/auth/perfil-da-empresa-nova";
 import { ipDoCliente } from "@/lib/http/ip-do-cliente";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -15,6 +22,18 @@ const entradaSchema = z.object({
   requestId: z.string().uuid(),
   decision: z.enum(["approve", "reject"]),
 });
+
+/** As pistas do cadastro guardadas na conta, nas chaves que o provisionamento lê. */
+function pistasDoCadastro(meta: Record<string, unknown> | undefined): Record<string, string> {
+  const limpas = pistasParaGuardar({
+    idioma: meta?.[CHAVE_IDIOMA_DO_CADASTRO],
+    fuso: meta?.[CHAVE_FUSO_DO_CADASTRO],
+  });
+  return {
+    ...(limpas.idioma ? { [CHAVE_IDIOMA_DO_CADASTRO]: limpas.idioma } : {}),
+    ...(limpas.fuso ? { [CHAVE_FUSO_DO_CADASTRO]: limpas.fuso } : {}),
+  };
+}
 
 export type DecideRegistrationResult =
   | { ok: true }
@@ -64,6 +83,9 @@ export async function decideRegistrationRequest(
     if (!conta.user || !conta.user.email_confirmed_at) {
       return { ok: false, error: "account_unavailable" };
     }
+    const acceptLanguageGuardado = acceptLanguageParaGuardar(
+      conta.user.user_metadata?.[CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO],
+    );
     try {
       const provisionado = await ensureTenantForUser(
         {
@@ -76,9 +98,17 @@ export async function decideRegistrationRequest(
             ...(typeof conta.user.user_metadata?.cobranca_plan_id === "string"
               ? { cobranca_plan_id: conta.user.user_metadata.cobranca_plan_id }
               : {}),
+            // U51: o idioma da tela e o fuso do navegador que o `signUp` guardou
+            // na conta. Sem eles a empresa aprovada nascia pt-BR / BRL. Saneados
+            // pela mesma régua do `signUp`.
+            ...pistasDoCadastro(conta.user.user_metadata),
           },
         },
-        { source: "signup" },
+        // U51: o Accept-Language do navegador de QUEM se cadastrou, guardado na
+        // conta; o desta requisição é o do administrador e não serve.
+        acceptLanguageGuardado === undefined
+          ? { source: "signup" }
+          : { source: "signup", pistas: { acceptLanguage: acceptLanguageGuardado } },
       );
       organizationId = provisionado.organizationId ?? null;
     } catch {

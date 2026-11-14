@@ -182,6 +182,20 @@ export function perfilDaEmpresaNova(pistas: PistasDoCadastro): PerfilDaEmpresaNo
  */
 export const CHAVE_IDIOMA_DO_CADASTRO = "idioma_do_cadastro";
 export const CHAVE_FUSO_DO_CADASTRO = "fuso_do_cadastro";
+/**
+ * U51: o `Accept-Language` de quem se cadastra. No cadastro aberto o
+ * `/auth/confirm` lê o cabeçalho do próprio navegador; no `com_aprovacao` a
+ * empresa nasce na aprovação, com o navegador de OUTRA pessoa — então o da
+ * pessoa só existe se ficou guardado na conta.
+ */
+export const CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO = "accept_language_do_cadastro";
+
+/** Saneia o `Accept-Language` antes de ir para o `user_metadata`: só etiqueta de idioma, até 200 caracteres. */
+export function acceptLanguageParaGuardar(bruto: unknown): string | undefined {
+  if (typeof bruto !== "string") return undefined;
+  const limpo = bruto.trim();
+  return limpo !== "" && limpo.length <= 200 && /^[A-Za-z0-9,;=.*\- ]+$/.test(limpo) ? limpo : undefined;
+}
 
 /** Saneia as pistas antes de irem para o `user_metadata` (ou para a URL do Google). */
 export function pistasParaGuardar(bruto: { idioma?: unknown; fuso?: unknown }): {
