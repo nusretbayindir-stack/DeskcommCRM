@@ -454,6 +454,8 @@ export async function triggerHandoff(
           texto: input.motivoTexto ?? null,
           percebidoPeloJev,
         },
+        // U46: o resumo é lido pela EQUIPE — no idioma da organização.
+        idioma: idiomaDaOrg,
       });
       const gravou = await registrarPassagem(admin, {
         organizationId: input.organizationId,

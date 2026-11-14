@@ -1,0 +1,6 @@
+Por que a IA passou: Um fluxo automático coletou dados e passou a conversa para verificação humana
+O que o cliente quer (segundo a IA — confira): Dados coletados: CEP
+Dados coletados automaticamente (confira antes de usar):
+• CEP: 01000-000
+--title--
+Dados coletados: CEP

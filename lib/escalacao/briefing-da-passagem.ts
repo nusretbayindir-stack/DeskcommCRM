@@ -43,13 +43,10 @@
 import { renderDeclaracaoParaHumano, type DeclaracaoDoTurno } from "@/lib/agent-engine/agent/declaracao";
 import { falaDoClienteSemMoldura } from "@/lib/agent-engine/edge/crm/moldura-de-midia";
 
-import {
-  FRASE_DO_MOTIVO,
-  MARCA_DO_JEV,
-  PISO_DO_BRIEFING,
-  type MotivoDaPassagem,
-  type TentativaDaPassagem,
-} from "./passagem";
+import { IDIOMA_PADRAO, type Idioma } from "@/lib/i18n/idiomas";
+
+import { fraseDoMotivoNoIdioma, rotulosDoBriefing, type RotulosDoBriefing } from "./briefing-no-idioma";
+import type { MotivoDaPassagem, TentativaDaPassagem } from "./passagem";
 
 /**
  * O texto que sai quando não há contexto nenhum.
@@ -160,6 +157,13 @@ export interface EntradaDoBriefing {
    * passagem de hoje não mudam de forma com ele ausente.
    */
   camposColetados?: Readonly<Record<string, string>> | null;
+  /**
+   * O idioma da EMPRESA (`organizations.locale`), em que os RÓTULOS saem (U46).
+   * Ausente, o português de sempre, byte a byte. O que é dado (fala do cliente,
+   * texto de quem passou, resumo da IA) não é traduzido. Quem grava a linha e
+   * não montou o briefing usa `briefingNoIdioma`.
+   */
+  idioma?: Idioma | null;
 }
 
 /** Tetos do bloco de campos — um cartão não vira página de texto. */
@@ -178,6 +182,12 @@ export interface BriefingDaPassagem {
   content: string | null;
   /** O que a IA já tentou, na ordem, já normalizado. */
   tentativas: TentativaDaPassagem[];
+  /**
+   * A entrada de que este briefing saiu, para quem GRAVA a linha remontá-lo no
+   * idioma da empresa (`briefingNoIdioma`) sem que cada um dos chamadores tenha
+   * de ler o idioma antes. Só em memória: a linha da passagem não a grava.
+   */
+  entrada?: EntradaDoBriefing;
 }
 
 /** Texto útil, ou `null`. Espaço em branco não é conteúdo. */
@@ -232,10 +242,13 @@ function normalizarCamposColetados(
  * coleta é determinística (sem modelo no meio), o que muda a confiabilidade do
  * valor, não a necessidade de conferir o preenchimento.
  */
-function blocoDeCamposColetados(campos: ReadonlyArray<{ rotulo: string; valor: string }>): string {
+function blocoDeCamposColetados(
+  campos: ReadonlyArray<{ rotulo: string; valor: string }>,
+  r: RotulosDoBriefing,
+): string {
   if (campos.length === 0) return "";
   return [
-    "Dados coletados automaticamente (confira antes de usar):",
+    r.dadosColetados,
     ...campos.map((c) => `• ${c.rotulo}: ${c.valor}`),
   ].join("\n");
 }
@@ -251,6 +264,8 @@ function blocoDeCamposColetados(campos: ReadonlyArray<{ rotulo: string; valor: s
 function blocoDoCheckpoint(
   checkpoint: CheckpointParaBriefing | null,
   declaracao: DeclaracaoDoTurno | null,
+  r: RotulosDoBriefing,
+  idioma: Idioma,
 ): string {
   if (checkpoint === null) return "";
   const partes: string[] = [];
@@ -258,12 +273,33 @@ function blocoDoCheckpoint(
   // A declaração vem ANTES dos campos antigos de propósito: quem assume uma
   // conversa no meio precisa primeiro do que a pessoa quer e do que foi
   // prometido a ela — é o que decide a próxima frase que ele vai digitar.
-  const declarado = renderDeclaracaoParaHumano(declaracao);
+  const declarado =
+    idioma === IDIOMA_PADRAO ? renderDeclaracaoParaHumano(declaracao) : declaracaoNoIdioma(declaracao, r);
   if (declarado !== "") partes.push(declarado);
-  if (checkpoint.commitments.length > 0) partes.push(`Compromissos: ${checkpoint.commitments.join("; ")}`);
-  if (checkpoint.objections.length > 0) partes.push(`Objeções: ${checkpoint.objections.join("; ")}`);
-  if (checkpoint.next_action) partes.push(`Próxima ação: ${checkpoint.next_action}`);
+  if (checkpoint.commitments.length > 0) partes.push(`${r.compromissos}${checkpoint.commitments.join("; ")}`);
+  if (checkpoint.objections.length > 0) partes.push(`${r.objecoes}${checkpoint.objections.join("; ")}`);
+  if (checkpoint.next_action) partes.push(`${r.proximaAcao}${checkpoint.next_action}`);
   return partes.join("\n");
+}
+
+/**
+ * `renderDeclaracaoParaHumano` com os rótulos do idioma — a mesma forma. Em
+ * português chama-se a original, para o texto de sempre não depender desta cópia.
+ */
+function declaracaoNoIdioma(declaracao: DeclaracaoDoTurno | null, r: RotulosDoBriefing): string {
+  if (declaracao === null) return "";
+  const linhas: string[] = [];
+  if (declaracao.intencoes.length > 0) {
+    linhas.push(`${r.pessoaQuer}${declaracao.intencoes.map((i) => i.o_que).join("; ")}`);
+  }
+  if (declaracao.promessas.length > 0) {
+    linhas.push(
+      `${r.prometido}${declaracao.promessas
+        .map((p) => (p.prazo === null ? p.o_que : `${p.o_que} (${r.ate}${p.prazo})`))
+        .join("; ")}`,
+    );
+  }
+  return linhas.join("\n");
 }
 
 /**
@@ -271,12 +307,14 @@ function blocoDoCheckpoint(
  * entrada.
  */
 export function montarBriefingDaPassagem(e: EntradaDoBriefing): BriefingDaPassagem {
+  const idioma = e.idioma ?? IDIOMA_PADRAO;
+  const r = rotulosDoBriefing(idioma);
   const tentativas = normalizarTentativas(e.declaradoPeloModelo?.tentativas);
   const campos = normalizarCamposColetados(e.camposColetados);
   // A declaração fresca vence a do checkpoint: a do checkpoint é do turno
   // anterior, e numa passagem o que vale é o que a pessoa acabou de dizer.
   const declaracao = e.declaracaoDoTurno ?? e.checkpoint?.declaracao ?? null;
-  const doCheckpoint = blocoDoCheckpoint(e.checkpoint, declaracao);
+  const doCheckpoint = blocoDoCheckpoint(e.checkpoint, declaracao, r, idioma);
 
   // A moldura da mídia é instrução ao MODELO ("NUNCA responda que não consegue
   // ver/ouvir…") e saía no cartão entre aspas, como se o cliente a tivesse dito.
@@ -294,7 +332,7 @@ export function montarBriefingDaPassagem(e: EntradaDoBriefing): BriefingDaPassag
   const title =
     limpo(e.declaradoPeloModelo?.cliente_quer) ??
     limpo(intencoes) ??
-    (campos.length > 0 ? `Dados coletados: ${campos.map((c) => c.rotulo).join(", ")}`.slice(0, 300) : null);
+    (campos.length > 0 ? `${r.tituloDosCampos}${campos.map((c) => c.rotulo).join(", ")}`.slice(0, 300) : null);
 
   // Precedência declarada, e não "o que estiver preenchido": o texto de quem
   // ACIONOU a passagem é mais específico que a razão registrada no caso, e é ele
@@ -304,40 +342,37 @@ export function montarBriefingDaPassagem(e: EntradaDoBriefing): BriefingDaPassag
   const blocos: string[] = [];
 
   if (e.motivo) {
-    const marca = e.motivo.percebidoPeloJev === true ? ` ${MARCA_DO_JEV}` : "";
-    blocos.push(`Por que a IA passou: ${FRASE_DO_MOTIVO[e.motivo.codigo]}${marca}`);
+    blocos.push(`${r.porQue}${fraseDoMotivoNoIdioma(e.motivo.codigo, e.motivo.percebidoPeloJev === true, idioma)}`);
     const escrito = limpo(e.motivo.texto);
     // Autoria variável (o modelo na ferramenta, uma pessoa no MCP), e não
     // confiável em nenhum dos casos: sai entre aspas, como citação.
-    if (escrito !== null) blocos.push(`Quem passou escreveu: "${escrito}"`);
+    if (escrito !== null) blocos.push(`${r.quemPassouEscreveu}"${escrito}"`);
   }
 
   // O bloco 2 só é impresso quando ACRESCENTA: se o título saiu da declaração,
   // o bloco do checkpoint já vai dizer a mesma frase, e duas fontes do mesmo
   // texto na mesma tela é o anti-pattern nº 2 com outro nome.
   if (title !== null && !doCheckpoint.includes(title)) {
-    blocos.push(`O que o cliente quer (segundo a IA — confira): ${title}`);
+    blocos.push(`${r.clienteQuer}${title}`);
   }
 
   if (tentativas.length > 0) {
     const lista = tentativas.map(
       (t, i) => `${i + 1}) ${t.o_que}${t.desfecho === undefined ? "" : ` — ${t.desfecho}`}`,
     );
-    blocos.push(["O que a IA já tentou:", ...lista].join("\n"));
+    blocos.push([r.jaTentou, ...lista].join("\n"));
   }
 
   if (falas.length > 0) {
     // LITERAL e entre aspas. Trocar isto pela paráfrase do modelo é a sabotagem
     // que `tests/unit/briefing-da-passagem.test.ts` tem de derrubar.
-    blocos.push(
-      `Últimas mensagens do cliente (palavras dele): ${falas.map((f) => `"${f}"`).join("; ")}`,
-    );
+    blocos.push(`${r.ultimasMensagens}${falas.map((f) => `"${f}"`).join("; ")}`);
   }
 
   // Depois da fala do cliente e ANTES do bloco legado — mesma regra dos blocos
   // novos: o checkpoint continua byte a byte o de sempre para quem não coletou
   // campo nenhum.
-  const doBlocoDeCampos = blocoDeCamposColetados(campos);
+  const doBlocoDeCampos = blocoDeCamposColetados(campos, r);
   if (doBlocoDeCampos !== "") {
     blocos.push(doBlocoDeCampos);
   }
@@ -347,26 +382,41 @@ export function montarBriefingDaPassagem(e: EntradaDoBriefing): BriefingDaPassag
     // (o adaptador `buildHandoffSummary`) ganharia uma linha que ele nunca teve,
     // e o teste de formato que hoje prova o piso passaria a provar outra coisa.
     blocos.push(
-      blocos.length === 0 ? doCheckpoint : `Contexto acumulado (segundo a IA — confira):\n${doCheckpoint}`,
+      blocos.length === 0 ? doCheckpoint : `${r.contextoAcumulado}\n${doCheckpoint}`,
     );
   }
 
   if (e.caso) {
-    const doCaso: string[] = [`Caso: ${e.caso.titulo}`];
+    const doCaso: string[] = [`${r.caso}${e.caso.titulo}`];
     const resumo = limpo(e.caso.summary);
     if (resumo !== null) doCaso.push(resumo);
     const bloqueio = limpo(e.caso.blocker);
-    if (bloqueio !== null) doCaso.push(`Bloqueio: ${bloqueio}`);
+    if (bloqueio !== null) doCaso.push(`${r.bloqueio}${bloqueio}`);
     const razao = limpo(e.caso.razaoHumana);
-    if (razao !== null) doCaso.push(`A pessoa que escalou escreveu: "${razao}"`);
+    if (razao !== null) doCaso.push(`${r.pessoaQueEscalou}"${razao}"`);
     blocos.push(doCaso.join("\n"));
   }
 
   return {
-    body: blocos.length === 0 ? PISO_DO_BRIEFING : blocos.join("\n"),
+    body: blocos.length === 0 ? r.piso : blocos.join("\n"),
     title,
     notes,
     content,
     tentativas,
+    entrada: e,
   };
+}
+
+/**
+ * O briefing remontado no idioma da EMPRESA, para quem grava a linha (U46).
+ *
+ * Os chamadores montam o briefing antes de saber o idioma — são uma dúzia de
+ * caminhos de passagem, e o idioma só é lido por quem GRAVA (`performHumanHandoff`
+ * e `triggerHandoff`, que já o liam para o título do aviso da Central). Em
+ * português, ou sem a entrada, devolve o mesmo objeto: o texto de sempre.
+ */
+export function briefingNoIdioma(briefing: BriefingDaPassagem, idioma: Idioma | null | undefined): BriefingDaPassagem {
+  const alvo = idioma ?? IDIOMA_PADRAO;
+  if (briefing.entrada === undefined || (briefing.entrada.idioma ?? IDIOMA_PADRAO) === alvo) return briefing;
+  return montarBriefingDaPassagem({ ...briefing.entrada, idioma: alvo });
 }

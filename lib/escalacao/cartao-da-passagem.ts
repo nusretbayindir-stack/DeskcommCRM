@@ -44,14 +44,13 @@
 import {
   FRASE_DO_MOTIVO,
   FRASE_DO_MOTIVO_DO_AVISO,
-  MOTIVO_PERCEBIDO_PELO_JEV,
-  PISO_DO_BRIEFING,
   tentativaDaPassagemSchema,
   type MotivoDaPassagem,
   type MotivoDoAviso,
   type OrigemDaPassagem,
   type TentativaDaPassagem,
 } from "./passagem";
+import { ehPisoDoBriefing, temMarcaDoJev } from "./briefing-no-idioma";
 import { ROTULO_DE_ANONIMIZADO } from "./texto-do-aviso";
 
 /** A linha como a rota da conversa a devolve. As chaves são as colunas. */
@@ -211,7 +210,9 @@ export function montarCartoesDaPassagem(
     const optOut = p.motivo_codigo === "suspected_optout";
     const estado = estadoDe(p);
     const corpo = texto(p.body);
-    const semContexto = anonimizada || corpo === null || corpo === PISO_DO_BRIEFING.trim();
+    // O piso em qualquer idioma: a linha antiga é portuguesa, a nova sai no
+    // idioma da empresa (U46).
+    const semContexto = anonimizada || corpo === null || ehPisoDoBriefing(corpo);
 
     return {
       id: p.id,
@@ -225,7 +226,7 @@ export function montarCartoesDaPassagem(
       // O motivo aparece em destaque, e o resumo embaixo é que dizia quem
       // percebeu: a atribuição ficava longe da frase que ela qualifica.
       percebidoPeloJev:
-        !anonimizada && p.motivo_codigo === "low_sentiment" && p.body.includes(MOTIVO_PERCEBIDO_PELO_JEV),
+        !anonimizada && p.motivo_codigo === "low_sentiment" && temMarcaDoJev(p.body),
       clienteQuer: anonimizada ? null : texto(p.title),
       resumo: semContexto ? null : corpo,
       semContexto,

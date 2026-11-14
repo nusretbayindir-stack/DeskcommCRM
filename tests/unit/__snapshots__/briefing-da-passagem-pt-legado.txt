@@ -1,0 +1,8 @@
+Quer remarcar a entrega.
+O que a pessoa quer: remarcar para sexta
+Prometido a ela: confirmar o horário (até amanhã)
+Compromissos: enviar o orçamento
+Objeções: achou caro
+Próxima ação: ligar amanhã
+--title--
+remarcar para sexta

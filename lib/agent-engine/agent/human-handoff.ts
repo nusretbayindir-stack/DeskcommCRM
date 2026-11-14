@@ -35,6 +35,7 @@ import {
   turnoSemPalavraDoCliente,
 } from '@/lib/escalacao/handoff-tecnico';
 import {
+  briefingNoIdioma,
   montarBriefingDaPassagem,
   type BriefingDaPassagem,
   type CheckpointParaBriefing,
@@ -591,6 +592,14 @@ export async function performHumanHandoff(
     log: Logger;
   },
 ): Promise<void> {
+  // O idioma da ORGANIZAÇÃO, lido uma vez por passagem e só se alguém precisar:
+  // o resumo da linha (U46), o título e o corpo do aviso da Central.
+  let idiomaLido: Promise<Idioma> | undefined;
+  const idiomaDaOrg = (): Promise<Idioma> =>
+    opts.passagem?.idioma !== undefined
+      ? Promise.resolve(opts.passagem.idioma)
+      : (idiomaLido ??= idiomaDaOrganizacao(db, ids.tenantId, opts.log));
+
   // (a) FONTE DA VERDADE: force_human no contato — irrevogável pelo agente (regra dura 2).
   await guardServiceEffect();
   await db.query(`update contacts set force_human = true where organization_id = $1 and id = $2`, [
@@ -666,7 +675,12 @@ export async function performHumanHandoff(
       motor: 'engine',
       origem: opts.passagem.origem,
       motivoCodigo: opts.passagem.motivoCodigo,
-      briefing: opts.passagem.briefing,
+      // U46: o resumo é lido pela EQUIPE — sai no idioma da organização, não
+      // no português em que o chamador o montou.
+      briefing: briefingNoIdioma(
+        opts.passagem.briefing,
+        await idiomaDaOrg(),
+      ),
       ...(opts.avisoAoLead !== undefined ? { aviso: desfechoDaPassagem(opts.avisoAoLead) } : {}),
     });
     // Falhar fechado na AÇÃO, aberto na INFORMAÇÃO: a passagem já aconteceu
@@ -692,6 +706,7 @@ export async function performHumanHandoff(
       checkpoint: null,
       camposColetados: opts.camposColetados,
       motivo: { codigo: 'verificacao_manual' },
+      idioma: await idiomaDaOrg(),
     });
     const gravou = await registrarPassagem(db, {
       organizationId: ids.tenantId,
@@ -769,9 +784,9 @@ export async function performHumanHandoff(
       opts.inboxTitle ??
         traduzir(
           'Handoff humano solicitado — assumir a conversa',
-          opts.passagem?.idioma ?? (await idiomaDaOrganizacao(db, ids.tenantId, opts.log)),
+          await idiomaDaOrg(),
         ),
-      await corpoDaCentral(db, ids.tenantId, opts),
+      await corpoDaCentral(opts, await idiomaDaOrg()),
       ids.conversationId,
       episodioDoAviso,
       EVENTO_AVISO_HANDOFF,
@@ -885,16 +900,14 @@ async function idiomaDaOrganizacao(db: pg.Pool, tenantId: string, log: Logger): 
  * resumo: é o único caso em que não há motivo canônico a traduzir.
  */
 async function corpoDaCentral(
-  db: pg.Pool,
-  tenantId: string,
   opts: {
     reason: string;
     avisoAoLead?: DesfechoDoAviso;
     passagem?: { motivoCodigo: MotivoDaPassagem; idioma?: Idioma };
     log: Logger;
   },
+  idioma: Idioma,
 ): Promise<string> {
-  const idioma = opts.passagem?.idioma ?? (await idiomaDaOrganizacao(db, tenantId, opts.log));
   const t = (texto: string): string => traduzir(texto, idioma);
   const aviso = opts.avisoAoLead === undefined ? null : desfechoDaPassagem(opts.avisoAoLead);
   if (opts.passagem === undefined) {
