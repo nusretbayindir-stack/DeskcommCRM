@@ -74,6 +74,10 @@ const PAIS_DO_FUSO: Record<string, string> = {
   "Europe/Lisbon": "PT",
   "Europe/Madrid": "ES",
   "Europe/Rome": "IT",
+  // U48: as duas praças do fork. A Turquia não tem perfil legal revisado ainda:
+  // o país sai daqui só para o fuso e a moeda, e não é gravado (ver acima).
+  "Europe/Brussels": "BE",
+  "Europe/Istanbul": "TR",
   "America/New_York": "US",
   "America/Los_Angeles": "US",
 };
@@ -93,6 +97,8 @@ const FUSO_DO_PAIS: Record<string, string> = {
   PT: "Europe/Lisbon",
   ES: "Europe/Madrid",
   IT: "Europe/Rome",
+  BE: "Europe/Brussels",
+  TR: "Europe/Istanbul",
 };
 
 /**
@@ -108,6 +114,8 @@ const MOEDA_DO_PAIS: Record<string, MoedaServida> = {
   PT: "EUR",
   ES: "EUR",
   IT: "EUR",
+  BE: "EUR",
+  TR: "TRY",
 };
 
 /** `es-MX` → `MX`. Só a PRIMEIRA etiqueta com região, na ordem do navegador. */
