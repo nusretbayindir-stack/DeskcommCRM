@@ -61,6 +61,8 @@ export function normalizarTexto(texto: string): string {
  * Palavra-chave enviada SOZINHA (mensagem inteira = a palavra) — a convenção
  * universal de descadastro em canais de mensagem. A comparação é feita sobre o
  * texto normalizado e sem pontuação de borda, para "STOP." e "SAIR!" contarem.
+ * Acompanhada só de cortesia ("STOP svp", "Stop aub") ela também conta — ver
+ * `palavraComCortesia` (U44).
  */
 export const PALAVRAS_DE_OPT_OUT: ReadonlySet<string> = new Set([
   "stop",
@@ -962,6 +964,99 @@ function ehPalavraIsolada(normalizado: string): boolean {
 }
 
 /**
+ * ─── A PALAVRA COM CORTESIA (U44, decisão do dono 2026-11-13) ────────────────
+ *
+ * "STOP svp", "Stop aub", "RET lütfen": a mensagem inteira é a palavra de saída
+ * MAIS uma cortesia. A regra de cima exige a palavra sozinha e não casava; o
+ * cliente que respondeu ao "Antwoord STOP" com "Stop aub" seguia recebendo.
+ *
+ * A mensagem conta como a palavra sozinha quando é feita SÓ da palavra e de uma
+ * ou mais cortesias desta lista FECHADA, em qualquer ordem — pontuação e emoji
+ * ignorados como lá. Mais que cortesia ("stop svp je veux juste l'horaire")
+ * não conta: é conversa, e a regra de sempre a julga.
+ *
+ * As formas estão já normalizadas (`normalizarTexto`, sem acento) e com a
+ * pontuação trocada por espaço: "a.u.b." chega como `a u b`, "s'il vous plaît"
+ * como `s il vous plait`, "teşekkür" como `tesekkur`.
+ */
+const CORTESIAS: readonly (readonly string[])[] = [
+  // holandês
+  "aub", "a u b", "alstublieft", "alsjeblieft", "astublieft", "bedankt", "dank u", "dank je", "dankjewel",
+  "dank u wel", "dank je wel",
+  // francês ("merci beaucoup" inteira: `beaucoup` sozinha não é cortesia)
+  "svp", "s v p", "stp", "s il vous plait", "s il te plait", "merci", "merci beaucoup",
+  // inglês
+  "please", "pls", "plz", "thanks", "thank you", "thx",
+  // português e espanhol
+  "por favor", "pf", "pfv", "obrigado", "obrigada", "obg", "porfa", "gracias",
+  // turco ("sağ ol" separado e "sağol" junto)
+  "lutfen", "tesekkurler", "tesekkur ederim", "sagol", "sag ol", "sagolun",
+]
+  .map((forma) => forma.split(" "))
+  // A mais longa primeiro: "dank u" antes de um `u` solto, "a u b" inteira.
+  .sort((a, b) => b.length - a.length);
+
+/** Com cortesia, estas bloqueiam como sozinhas. */
+const PALAVRAS_QUE_BLOQUEIAM_COM_CORTESIA: ReadonlySet<string> = new Set([
+  "stop",
+  "parar",
+  "pare",
+  "baja",
+  "ret",
+  "unsubscribe",
+  "descadastrar",
+  "desuscribir",
+  "desuscribirme",
+  "uitschrijven",
+  "uitschrijving",
+  "desabonner",
+  "desabonnement",
+  "desinscrire",
+  "desinscription",
+]);
+
+/**
+ * Com cortesia, estas vão para o AMBÍGUO (uma pessoa decide): "cancelar por
+ * favor" depois de um lembrete de consulta quase sempre é a consulta. Sozinhas,
+ * seguem como sempre. `afmelden` já é ambígua sozinha.
+ */
+const PALAVRAS_AMBIGUAS_COM_CORTESIA: ReadonlySet<string> = new Set([
+  "cancelar",
+  "sair",
+  "remover",
+  "salir",
+  "bajar",
+  "afmelden",
+]);
+
+/**
+ * A palavra que sobra quando a mensagem é só UMA palavra + cortesia, ou `null`
+ * quando não há cortesia, não há palavra, há mais que cortesia, ou há número.
+ */
+function palavraComCortesia(normalizado: string): string | null {
+  // Número ou símbolo de valor é CONTEÚDO, não pontuação: "Baja 10% por favor"
+  // é pedir desconto, e bloquear é para sempre (revisão do U44).
+  if (/[0-9%$#@€£₺]/u.test(normalizado)) return null;
+  const tokens = normalizado.replace(/[^a-z]+/gu, " ").trim().split(" ").filter((t) => t !== "");
+  const resto: string[] = [];
+  let cortesias = 0;
+  for (let i = 0; i < tokens.length; ) {
+    const forma = CORTESIAS.find((c) => c.every((parte, j) => tokens[i + j] === parte));
+    if (forma) {
+      cortesias += 1;
+      i += forma.length;
+    } else {
+      resto.push(tokens[i] ?? "");
+      i += 1;
+    }
+  }
+  // UMA palavra, inteira: pedaços separados ("pa re por favor", "pa por favor
+  // re") não se colam aqui, como não se colariam entre cortesias.
+  if (cortesias === 0 || resto.length !== 1) return null;
+  return resto[0] ?? null;
+}
+
+/**
  * ─── A ASSINATURA DA ATENDENTE NA PRIMEIRA LINHA (#3078, ajustada no #3158) ──
  *
  * Num WhatsApp Business com vários atendentes, a assinatura é prefixada ao
@@ -1067,13 +1162,16 @@ export function semAssinaturaDaAtendente(texto: string): string {
 }
 
 /**
- * A régua de UM texto: a palavra sozinha ou uma frase de `FRASES_DE_OPT_OUT`.
+ * A régua de UM texto: a palavra sozinha (ou só com cortesia, U44) ou uma
+ * frase de `FRASES_DE_OPT_OUT`.
  * É a mesma régua de sempre — não sabe nada sobre assinatura.
  */
 function ehPedidoInequivoco(texto: string): boolean {
   const normalizado = normalizarTexto(texto.trim());
   if (normalizado === "") return false;
   if (ehPalavraIsolada(normalizado)) return true;
+  const comCortesia = palavraComCortesia(normalizado);
+  if (comCortesia !== null && PALAVRAS_QUE_BLOQUEIAM_COM_CORTESIA.has(comCortesia)) return true;
   return FRASES_DE_OPT_OUT.some((re) => re.test(normalizado));
 }
 
@@ -1081,6 +1179,8 @@ function ehPedidoInequivoco(texto: string): boolean {
 function ehSinalAmbiguo(texto: string): boolean {
   const normalizado = normalizarTexto(texto.trim());
   if (normalizado === "") return false;
+  const comCortesia = palavraComCortesia(normalizado);
+  if (comCortesia !== null && PALAVRAS_AMBIGUAS_COM_CORTESIA.has(comCortesia)) return true;
   return FRASES_AMBIGUAS_DE_OPT_OUT.some((re) => re.test(normalizado));
 }
 
