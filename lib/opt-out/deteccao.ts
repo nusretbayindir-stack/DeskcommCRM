@@ -982,14 +982,15 @@ function ehPalavraIsolada(normalizado: string): boolean {
 const CORTESIAS: readonly (readonly string[])[] = [
   // holandês
   "aub", "a u b", "alstublieft", "alsjeblieft", "astublieft", "bedankt", "dank u", "dank je", "dankjewel",
-  // francês
-  "svp", "s v p", "stp", "s il vous plait", "s il te plait", "merci",
+  "dank u wel", "dank je wel",
+  // francês ("merci beaucoup" inteira: `beaucoup` sozinha não é cortesia)
+  "svp", "s v p", "stp", "s il vous plait", "s il te plait", "merci", "merci beaucoup",
   // inglês
-  "please", "pls", "plz", "thanks", "thank you",
+  "please", "pls", "plz", "thanks", "thank you", "thx",
   // português e espanhol
-  "por favor", "pf", "pfv", "obrigado", "obrigada", "porfa", "gracias",
-  // turco
-  "lutfen", "tesekkurler", "tesekkur ederim", "sagol", "sagolun",
+  "por favor", "pf", "pfv", "obrigado", "obrigada", "obg", "porfa", "gracias",
+  // turco ("sağ ol" separado e "sağol" junto)
+  "lutfen", "tesekkurler", "tesekkur ederim", "sagol", "sag ol", "sagolun",
 ]
   .map((forma) => forma.split(" "))
   // A mais longa primeiro: "dank u" antes de um `u` solto, "a u b" inteira.

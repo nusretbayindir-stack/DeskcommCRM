@@ -43,6 +43,13 @@ const BLOQUEIAM = [
   "STOP!!! merci",
   "desinscription bedankt",
   "Stop svp merci",
+  // Formas acrescentadas na leitura do U44 (decisão do dono, 2026-11-14).
+  "Stop dank u wel",
+  "uitschrijven, dank je wel",
+  "STOP merci beaucoup",
+  "stop thx",
+  "pare obg",
+  "ret sağ ol",
 ];
 
 const AMBIGUAS = [
@@ -52,6 +59,8 @@ const AMBIGUAS = [
   "Remover, obrigado",
   "salir por favor",
   "bajar gracias",
+  "afmelden dank u wel",
+  "cancelar obg",
 ];
 
 const NADA = [
@@ -62,6 +71,12 @@ const NADA = [
   "aub",
   "thank you",
   "lütfen",
+  "dank u wel",
+  "dank je wel",
+  "merci beaucoup",
+  "thx",
+  "obg",
+  "sağ ol",
 ];
 
 describe("palavra de saída + cortesia: bloqueia como a palavra sozinha", () => {
