@@ -1,9 +1,6 @@
 import { VoltarDaPaginaLegal } from "@/components/legal/VoltarDaPaginaLegal";
 
 import { marcaDaSaida } from "@/lib/branding/saida";
-import { valorDaInstalacao } from "@/lib/instalacao/config";
-import { VOLTAR_NA_POLITICA_BELGA, idiomaBelgaDoVisitante } from "@/lib/legal/politica-belga";
-import { perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
@@ -31,11 +28,11 @@ export default async function LegalLayout({ children }: { children: React.ReactN
   const idioma = await idiomaDoVisitante(
     (user?.user_metadata?.locale as string | undefined) ?? null,
   );
-  // O layout não recebe o `?lang=` da página: este é o rótulo PADRÃO (segue o
-  // navegador); o `?lang=` é lido no cliente por `VoltarDaPaginaLegal`.
-  const paisDaInstalacao = (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor;
-  const semSessaoNaBelgica = !user && perfilDoPais(paisDaInstalacao).codigo === "BE";
-  const belga = user ? null : await idiomaBelgaDoVisitante(paisDaInstalacao, null);
+  // O layout não recebe o `?lang=` da página: este é o rótulo PADRÃO (a língua do
+  // visitante, a mesma que a página usa sem `?lang=`); o `?lang=` é lido no
+  // cliente por `VoltarDaPaginaLegal`. As duas páginas obedecem ao `?lang=` com
+  // sessão e sem, em qualquer país (S2a Task 15, U38), e o Voltar acompanha.
+  const rotulos = { nl: traduzir("Voltar", "nl"), fr: traduzir("Voltar", "fr"), tr: traduzir("Voltar", "tr") };
 
   return (
     <IdiomaProvider locale={idioma}>
@@ -44,9 +41,9 @@ export default async function LegalLayout({ children }: { children: React.ReactN
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-6 py-4">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{marca.nome}</p>
             <VoltarDaPaginaLegal
-              padrao={belga ? VOLTAR_NA_POLITICA_BELGA[belga] : traduzir("Voltar", idioma)}
-              rotulos={{ ...VOLTAR_NA_POLITICA_BELGA, tr: traduzir("Voltar", "tr") }}
-              aceitaLang={semSessaoNaBelgica}
+              padrao={traduzir("Voltar", idioma)}
+              rotulos={rotulos}
+              aceitaLang
             />
           </div>
         </header>

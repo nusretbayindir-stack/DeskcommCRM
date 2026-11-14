@@ -1,11 +1,17 @@
 /**
  * O cliente belga da empresa cliente abre /legal/privacy sem sessão. O produto não
- * tem holandês nem francês, e o texto saía em português: ele não conseguia ler.
+ * tinha holandês nem francês, e o texto saía em português: ele não conseguia ler.
  *
- * A página serve texto fixo nessas duas línguas, só nesse caso: sem sessão e numa
- * instalação da Bélgica. Quem tem sessão e quem navega em português, espanhol ou
- * turco continua no caminho de sempre.
+ * A página servia texto fixo nessas duas línguas, só para o visitante sem sessão
+ * numa instalação da Bélgica. Desde a S2a Task 15 esse texto mora no catálogo
+ * (`tests/unit/politica-belga-mora-no-catalogo.test.ts`), a língua vem de
+ * `?lang=` ou de `idiomaDoVisitante`, e quem tem sessão lê o mesmo texto. Os
+ * casos abaixo são os mesmos de antes, medidos na página em vez de nos helpers
+ * que saíram (`idiomaBelgaDoCabecalho`, `POLITICA_BELGA`).
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -62,10 +68,25 @@ import LegalLayout from "@/app/legal/layout";
 import PrivacyPage, { generateMetadata } from "@/app/legal/privacy/page";
 import { entradaDoCatalogo } from "@/lib/i18n/catalogos";
 import { traduzir } from "@/lib/i18n/dicionario";
-import {
-  idiomaBelgaDoCabecalho,
-  POLITICA_BELGA,
-} from "@/lib/legal/politica-belga";
+
+/**
+ * A política belga como o visitante a lê hoje: as frases publicadas (a cópia
+ * congelada), com o texto que o catálogo dá para cada uma.
+ */
+const PUBLICADA = JSON.parse(
+  readFileSync(join(__dirname, "..", "fixtures", "politica-belga", "publicada.json"), "utf8"),
+) as Record<"nl" | "fr", Record<string, string>>;
+const POLITICA_BELGA = {
+  nl: Object.fromEntries(Object.keys(PUBLICADA.nl).map((chave) => [chave, entradaDoCatalogo("nl", chave) ?? chave])),
+  fr: Object.fromEntries(Object.keys(PUBLICADA.fr).map((chave) => [chave, entradaDoCatalogo("fr", chave) ?? chave])),
+};
+
+/** Em que língua belga a página abriu, ou `null` quando seguiu o caminho de sempre. */
+async function idiomaBelgaDaPagina(cabecalho: string | null): Promise<"nl" | "fr" | null> {
+  estado.cabecalho = cabecalho;
+  const lingua = (await abrir()).querySelector("div[lang]")?.getAttribute("lang");
+  return lingua === "nl" || lingua === "fr" ? lingua : null;
+}
 
 const abrir = async (lang?: string) => {
   const { container } = render(await PrivacyPage({ searchParams: Promise.resolve({ lang }) }));
@@ -94,14 +115,14 @@ describe("qual língua o navegador pede", () => {
     ["tr,nl;q=0.8", null],
     ["pt-BR,nl;q=0.5", null],
     ["es,fr;q=0.5", null],
-  ])("%s → %s", (cabecalho, esperado) => {
-    expect(idiomaBelgaDoCabecalho(cabecalho)).toBe(esperado);
+  ])("%s → %s", async (cabecalho, esperado) => {
+    expect(await idiomaBelgaDaPagina(cabecalho)).toBe(esperado);
   });
 
   it.each([["de-DE,de;q=0.9"], ["en-US"], [""], [null]])(
     "%s não diz nada que sirva: abre em holandês, com o link para o francês",
-    (cabecalho) => {
-      expect(idiomaBelgaDoCabecalho(cabecalho)).toBe("nl");
+    async (cabecalho) => {
+      expect(await idiomaBelgaDaPagina(cabecalho)).toBe("nl");
     },
   );
 });
@@ -168,13 +189,19 @@ describe("sem sessão, numa instalação da Bélgica", () => {
     ["fr", "fr-BE", null],
     ["nl", "nl-BE", "dpo@exemplo.be"],
     ["fr", "fr-BE", "dpo@exemplo.be"],
-  ])("%s (%s, encarregado %s): nenhuma frase cai no dicionário", async (_lingua, cabecalho, dpo) => {
-    // É a catraca: frase nova na página sem a tradução aqui sairia em português
-    // no meio do holandês, sem erro nenhum.
+  ])("%s (%s, encarregado %s): nenhuma frase cai no português", async (lingua, cabecalho, dpo) => {
+    // É a catraca: frase nova na página sem a tradução no catálogo sairia em
+    // português no meio do holandês, sem erro nenhum. (Antes da Task 15 a
+    // catraca era "o dicionário nem é chamado"; hoje o texto vem dele.)
     estado.cabecalho = cabecalho;
     estado.dpo = dpo;
     await abrir();
-    expect(vi.mocked(traduzir)).not.toHaveBeenCalled();
+    const semTraducao = vi
+      .mocked(traduzir)
+      .mock.calls.map(([texto]) => texto)
+      .filter((texto) => entradaDoCatalogo(lingua as "nl" | "fr", texto) === undefined);
+    expect(vi.mocked(traduzir)).toHaveBeenCalled();
+    expect(semTraducao).toEqual([]);
   });
 
   it("a escolha no link vence o navegador", async () => {
@@ -238,11 +265,29 @@ describe("fora desse caso nada muda", () => {
       privacy_policy_url: null,
       country: "BE",
     };
-    const pagina = await abrir("nl");
+    // Sem escolha no link, vale o idioma da pessoa, e não o navegador.
+    const pagina = await abrir();
     expect(pagina.querySelector("h1")?.textContent).toBe("Política de Privacidade");
     expect(pagina.textContent).toContain("1. Quem é o responsável pelo tratamento");
-    expect(pagina.querySelector("nav")).toBeNull();
-    expect((await generateMetadata({ searchParams: Promise.resolve({ lang: "nl" }) })).title).not.toBe(
+    expect((await generateMetadata({ searchParams: Promise.resolve({}) })).title).not.toBe("Privacyverklaring");
+  });
+
+  it("com sessão, a escolha no link vale como para o visitante (S2a Task 15)", async () => {
+    estado.cabecalho = "pt-BR";
+    estado.usuario = { id: "u1", idioma: "pt-BR", user_metadata: { locale: "pt-BR" } };
+    estado.org = { orgId: "o1" };
+    estado.linha = {
+      display_name: "Empresa",
+      legal_name: null,
+      cnpj: null,
+      dpo_email: null,
+      privacy_policy_url: null,
+      country: "BE",
+    };
+    const pagina = await abrir("nl");
+    expect(pagina.querySelector("h1")?.textContent).toBe("Privacyverklaring");
+    expect(pagina.querySelector("nav")).not.toBeNull();
+    expect((await generateMetadata({ searchParams: Promise.resolve({ lang: "nl" }) })).title).toBe(
       "Privacyverklaring",
     );
   });

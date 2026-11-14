@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { loadAuthUser } from "@/lib/auth/server";
-import { valorDaInstalacao } from "@/lib/instalacao/config";
 import { nomeDoOperador, resolverOperador } from "@/lib/legal/operador";
 import { PAIS_PADRAO, perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import {
   AUTORIDADE_EM_FRANCES,
   IDIOMAS_DA_POLITICA_BELGA,
-  POLITICA_BELGA,
-  idiomaBelgaDoVisitante,
   lerEscolhaDeIdioma,
 } from "@/lib/legal/politica-belga";
 import { createClient } from "@/lib/supabase/server";
@@ -26,16 +22,9 @@ interface PropsDaPagina {
 const tituloNoIdiomaDoProduto = tituloDaAba((t) => t("Política de Privacidade"));
 
 export async function generateMetadata({ searchParams }: PropsDaPagina = {}): Promise<Metadata> {
-  const semSessao = !(await loadAuthUser());
-  const pais = (await valorDaInstalacao("PAIS_DA_INSTALACAO")).valor;
+  // A aba acompanha a página: com `?lang=` vale a escolha, com sessão ou sem.
   const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
-  // `?lang=tr` não é língua belga: a página inteira sai em turco (ver o corpo),
-  // e a aba tem de acompanhá-la em vez de seguir o navegador.
-  if (semSessao && escolha === "tr" && perfilDoPais(pais).codigo === "BE") {
-    return { title: traduzir("Política de Privacidade", "tr") };
-  }
-  const belga = semSessao ? await idiomaBelgaDoVisitante(pais, escolha) : null;
-  return belga ? { title: POLITICA_BELGA[belga]["Política de Privacidade"] } : tituloNoIdiomaDoProduto();
+  return escolha ? { title: traduzir("Política de Privacidade", escolha) } : tituloNoIdiomaDoProduto();
 }
 
 /**
@@ -63,19 +52,13 @@ export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  // Sem sessão, numa instalação da Bélgica: o texto vem de `politica-belga.ts`, a
-  // política escrita para lá. Com sessão, nada disto vale: holandês e francês são
-  // idiomas do produto desde o doc S2a (Task 7) e o texto vem do catálogo.
+  // A língua é a escolhida no link (`?lang=`), senão a do visitante: a mesma
+  // regra com sessão e sem, e o mesmo texto, do catálogo (S2a Task 15). O texto
+  // belga que só o visitante sem sessão lia mora hoje no catálogo, byte a byte.
   const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
-  const semSessaoNaBelgica = !user && perfilDoPais(op.pais).codigo === "BE";
-  const belga = semSessaoNaBelgica ? await idiomaBelgaDoVisitante(op.pais, escolha) : null;
   const idioma =
-    semSessaoNaBelgica && escolha === "tr"
-      ? "tr"
-      : await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null);
-  const textoFixo = belga ? POLITICA_BELGA[belga] : null;
-  const noIdiomaDoProduto = (texto: string) => traduzir(texto, idioma);
-  const t = (texto: string) => textoFixo?.[texto] ?? noIdiomaDoProduto(texto);
+    escolha ?? (await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null));
+  const t = (texto: string) => traduzir(texto, idioma);
 
   // O vocabulário legal desta política é o do PAÍS da organização ativa
   // (issue #2344): no Brasil "controlador", "CNPJ" e "LGPD"; fora dele
@@ -91,12 +74,13 @@ export default async function PrivacyPage({ searchParams }: PropsDaPagina = {}) 
   // aqui: o nome dele está no contrato de serviço.
   const perfil = perfilDoPais(op.pais);
   const foraDoBrasil = perfil.codigo !== PAIS_PADRAO;
-  const autoridade = belga === "fr" ? AUTORIDADE_EM_FRANCES : perfil.autoridadeDeSupervisao;
-  const linguaDaPagina = belga ?? idioma;
+  const naBelgica = perfil.codigo === "BE";
+  const autoridade = naBelgica && idioma === "fr" ? AUTORIDADE_EM_FRANCES : perfil.autoridadeDeSupervisao;
+  const linguaDaPagina = idioma;
 
   return (
     <div lang={linguaDaPagina} className="space-y-6">
-      {semSessaoNaBelgica && (
+      {naBelgica && (
         <nav aria-label="Language" className="flex flex-wrap gap-3 text-xs">
           {IDIOMAS_DA_POLITICA_BELGA.map(({ codigo, nome }) => (
             <a

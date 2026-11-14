@@ -1,5 +1,8 @@
 
+import type { Metadata } from "next";
+
 import { resolverOperador } from "@/lib/legal/operador";
+import { lerEscolhaDeIdioma } from "@/lib/legal/politica-belga";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -7,9 +10,19 @@ import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
 
 export const dynamic = "force-dynamic";
 
-export const generateMetadata = tituloDaAba((t) => t("Termos de Uso"));
+interface PropsDaPagina {
+  searchParams?: Promise<{ lang?: string | string[] }>;
+}
 
-export default async function TermsPage() {
+const tituloNoIdiomaDoProduto = tituloDaAba((t) => t("Termos de Uso"));
+
+/** A aba acompanha a página: com `?lang=` vale a escolha (U38). */
+export async function generateMetadata({ searchParams }: PropsDaPagina = {}): Promise<Metadata> {
+  const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
+  return escolha ? { title: traduzir("Termos de Uso", escolha) } : tituloNoIdiomaDoProduto();
+}
+
+export default async function TermsPage({ searchParams }: PropsDaPagina = {}) {
   const op = await resolverOperador();
 
   // Rota fora da árvore de `app/app/layout.tsx` — sem `IdiomaProvider`, então
@@ -19,16 +32,22 @@ export default async function TermsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = await idiomaDoVisitante(
-    (user?.user_metadata?.locale as string | undefined) ?? null,
-  );
+  // A língua escolhida no link (`?lang=`), senão a do visitante — a mesma regra
+  // da política de privacidade (U38: quem chegava pelo link em holandês ou
+  // francês sem sessão lia os termos em português).
+  const escolha = lerEscolhaDeIdioma((await searchParams)?.lang);
+  const idioma =
+    escolha ?? (await idiomaDoVisitante((user?.user_metadata?.locale as string | undefined) ?? null));
   const t = (texto: string) => traduzir(texto, idioma);
 
   // Quem opera o serviço é o prestador do contrato assinado, e não a empresa que
   // usa o sistema. O texto não nomeia o prestador: a marca é da instalação, e o
   // nome, o número e o e-mail dele estão no contrato. A numeração das cláusulas
   // citadas é a do contrato de serviço; mudou lá, muda aqui.
-  return (
+  // Quando a língua veio do `?lang=`, ela pode não ser a do `<html lang>` (que o
+  // layout raiz tira do visitante): o bloco declara a sua. Sem escolha, nada a
+  // declarar — e o HTML em português fica o mesmo de antes.
+  const conteudo = (
     <>
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{t("Termos de Uso")}</h1>
@@ -149,5 +168,12 @@ export default async function TermsPage() {
         </p>
       </section>
     </>
+  );
+  return escolha ? (
+    <div lang={idioma} className="space-y-6">
+      {conteudo}
+    </div>
+  ) : (
+    conteudo
   );
 }
