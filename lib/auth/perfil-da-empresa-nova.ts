@@ -105,8 +105,13 @@ const FUSO_DO_PAIS: Record<string, string> = {
  * A moeda do país — só as que o produto serve (`MOEDAS_SERVIDAS`). País cuja
  * moeda não é servida fica no default da coluna: trocar por uma moeda que o
  * país não usa seria inventar.
+ *
+ * Casa ÚNICA da tabela: o cadastro aberto (abaixo) e a criação pelo painel da
+ * plataforma (`app/api/v1/admin/tenants/route.ts`, por `moedaDoPais`) leem
+ * daqui. O Brasil não está: lá a moeda é o default da coluna (`BRL`), e a
+ * escrita fica a de sempre.
  */
-const MOEDA_DO_PAIS: Record<string, MoedaServida> = {
+export const MOEDA_DO_PAIS: Readonly<Record<string, MoedaServida>> = {
   MX: "MXN",
   EC: "USD",
   US: "USD",
@@ -117,6 +122,11 @@ const MOEDA_DO_PAIS: Record<string, MoedaServida> = {
   BE: "EUR",
   TR: "TRY",
 };
+
+/** A moeda servida do país, ou `undefined` (país fora da tabela: fica o default da coluna). */
+export function moedaDoPais(pais: string): MoedaServida | undefined {
+  return Object.hasOwn(MOEDA_DO_PAIS, pais) ? MOEDA_DO_PAIS[pais] : undefined;
+}
 
 /** `es-MX` → `MX`. Só a PRIMEIRA etiqueta com região, na ordem do navegador. */
 function regiaoDoAcceptLanguage(header: string | null | undefined): string | null {

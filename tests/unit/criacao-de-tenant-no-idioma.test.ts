@@ -141,7 +141,7 @@ describe("POST /api/v1/admin/tenants — idioma e fuso da empresa nova", () => {
 
     expect(res.status).toBe(201);
     const cadeia = escritaNaOrganizacao();
-    expect(argumentos(cadeia!, "update")).toEqual([{ country: "BE" }]);
+    expect(argumentos(cadeia!, "update")).toEqual([{ country: "BE", currency: "EUR" }]); // U40: a moeda do país vai na mesma escrita
     expect(valorDoFiltro(cadeia!, "eq", "id")).toBe(ORG);
     expect(gravadoAntesDoConvite).toBe(true);
     expect((await res.json()).data.idioma_gravado).toBe(true);
