@@ -91,7 +91,7 @@ export const ROTULOS_DO_BRIEFING: Record<Idioma, RotulosDoBriefing> = {
     porQue: "AI konuşmayı neden devretti: ",
     quemPassouEscreveu: "Devreden şunu yazdı: ",
     clienteQuer: "Müşterinin istediği (AI'ya göre — kontrol edin): ",
-    jaTentou: "AI'nın zaten denedikleri:",
+    jaTentou: "AI'nın şimdiye kadar denedikleri:",
     ultimasMensagens: "Müşterinin son mesajları (kendi sözleri): ",
     dadosColetados: "Otomatik toplanan bilgiler (kullanmadan önce kontrol edin):",
     tituloDosCampos: "Toplanan bilgiler: ",
@@ -104,7 +104,7 @@ export const ROTULOS_DO_BRIEFING: Record<Idioma, RotulosDoBriefing> = {
     pessoaQueEscalou: "Vakayı yükselten ekip üyesi şunu yazdı: ",
     pessoaQuer: "Kişinin istediği: ",
     prometido: "Kişiye verilen söz: ",
-    ate: "son tarih ",
+    ate: "son tarih: ",
     piso: "Henüz birikmiş özet yok (yeni konuşma) — tüm bağlam için konuşmayı CRM'de açın.",
   },
   nl: {
