@@ -14971,6 +14971,15 @@ export const DICIONARIO: Traducoes = {
   "A cópia dos seus dados pessoais (data.json) está em:": { es: "La copia de sus datos personales (data.json) está en:" },
   "A ligação expira em {prazo}.": { es: "El enlace caduca el {prazo}." },
   // ─── fim do bloco da Task 13 ───
+  // ─── A descrição da página no idioma de quem abre (U39). Bloco do fork. ───
+  // app/layout.tsx: fora do pt-BR, sem Brasil, sem LGPD e sem afirmar lei nenhuma.
+  "Centralize o atendimento por WhatsApp num funil só. Agentes de IA resolvem o que dá pra resolver e passam para o time humano o que importa — com tudo registrado. Multi-tenant, LGPD-nativo, feito para operações brasileiras.@@descricao-da-pagina": {
+    es: "Centraliza la atención por WhatsApp en un solo embudo. Los agentes de IA resuelven lo que se puede resolver y pasan al equipo humano lo que importa — con todo registrado.",
+  },
+  "CRM, atendimento, WhatsApp, IA conversacional, LGPD, multi-tenant@@palavras-chave-da-pagina": {
+    es: "CRM, atención, WhatsApp, IA conversacional, multi-tenant",
+  },
+  // ─── fim do bloco da U39 ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {
