@@ -82,6 +82,16 @@ const PAIS_DO_FUSO: Record<string, string> = {
   "America/Los_Angeles": "US",
 };
 
+/**
+ * U50: nomes antigos (aliases do IANA) que alguns navegadores ainda informam,
+ * para o nome canônico que `FUSOS_OFERECIDOS` lista. Sem isto, Linux e Firefox
+ * que dizem `Asia/Istanbul` tinham o fuso descartado e a empresa turca nascia
+ * sem fuso nem lira. Traduz ANTES de qualquer régua: a coluna guarda o canônico.
+ */
+const FUSO_CANONICO: Record<string, string> = {
+  "Asia/Istanbul": "Europe/Istanbul",
+};
+
 /** O fuso de quem só disse o país (pela região do `Accept-Language`). Um por país. */
 const FUSO_DO_PAIS: Record<string, string> = {
   PY: "America/Asuncion",
@@ -137,7 +147,8 @@ export function perfilDaEmpresaNova(pistas: PistasDoCadastro): PerfilDaEmpresaNo
   // Em pt-BR a empresa nasce como sempre nasceu: só o idioma, que é o default.
   if (locale === "pt-BR") return { locale };
 
-  const fusoBruto = pistas.fuso?.trim() ?? "";
+  const fusoInformado = pistas.fuso?.trim() ?? "";
+  const fusoBruto = Object.hasOwn(FUSO_CANONICO, fusoInformado) ? FUSO_CANONICO[fusoInformado]! : fusoInformado;
   // Só um fuso que as telas de configuração conseguem MOSTRAR: fora da lista, o
   // <select> de Configurações exibiria São Paulo enquanto a coluna guarda outro.
   const fusoDoNavegador =
