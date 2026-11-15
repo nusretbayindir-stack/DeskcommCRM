@@ -14814,10 +14814,10 @@ export const DICIONARIO: Traducoes = {
   "Só um pedido recebido, antes da aprovação, pode ser encerrado.": { es: "Solo una solicitud recibida, antes de la aprobación, puede cerrarse." },
   "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": { es: "Envíe el mensaje por WhatsApp y marque la confirmación antes de aprobar." },
   // O aviso da exclusão que a equipe envia pelo WhatsApp quando o titular não tem e-mail (painel do pedido).
-  "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": { es: "A petición suya, hoy se eliminan sus datos de los registros de {marca}. Este es el último mensaje que recibe de nuestra parte." },
+  "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": { es: "A petición suya, hoy se eliminarán sus datos de los registros de {marca}. Este es el último mensaje que recibirá de nuestra parte." },
   // O direito de reclamar, no texto de recusa pronto do painel do pedido (a autoridade vem do perfil do país).
-  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} ({site}) o acudir a los tribunales." },
-  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} o acudir a los tribunales." },
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la autoridad de control — {autoridade} ({site}) — o acudir a los tribunales." },
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la autoridad de control — {autoridade} — o acudir a los tribunales." },
   // A tela do cartão e do diálogo do pedido do titular (página do contato).
   "Pedido do titular": { es: "Solicitud del titular" },
   "Pedido aberto: {tipo} · prazo {data}": { es: "Solicitud abierta: {tipo} · plazo {data}" },
@@ -14846,11 +14846,11 @@ export const DICIONARIO: Traducoes = {
   "Aberto por": { es: "Abierta por" },
   "Aberto em": { es: "Abierta el" },
   "Para onde vai o relatório": { es: "Adónde va el informe" },
-  "Sem e-mail cadastrado; o relatório será entregue à mão.": { es: "Sin correo electrónico registrado; el informe se entregará en mano." },
-  "A parte \"finalidades, destinatários, prazo de conservação\" do relatório está vazia. Preencha em Configurações › Empresa; sem isso o relatório diz \"não informado\".": { es: "La parte \"finalidades, destinatarios, plazo de conservación\" del informe está vacía. Complétela en Configuración › Empresa; sin eso el informe dice \"no informado\"." },
+  "Sem e-mail cadastrado; o relatório será entregue à mão.": { es: "Sin correo electrónico registrado; un administrador entregará el informe manualmente." },
+  "A parte \"finalidades, destinatários, prazo de conservação\" do relatório está vazia. Preencha em Configurações › Empresa; sem isso o relatório diz \"não informado\".": { es: "La parte \"finalidades, destinatarios, plazo de conservación\" del informe está vacía. Complétela en Configuración › Organización; sin eso el informe dice \"no informado\"." },
   "Abrir configurações": { es: "Abrir configuración" },
   "Este contato tem um pedido de acesso aberto. Envie o relatório primeiro; depois da exclusão ele sai vazio.": { es: "Este contacto tiene una solicitud de acceso abierta. Envíe primero el informe; después de la eliminación sale vacío." },
-  "Depois da aprovação não será possível falar com esta pessoa: o número e a conversa também são apagados. Envie agora, pela conversa do WhatsApp, a mensagem abaixo.": { es: "Tras la aprobación no será posible hablar con esta persona: el número y la conversación también se eliminan. Envíe ahora, por la conversación de WhatsApp, el mensaje de abajo." },
+  "Depois da aprovação não será possível falar com esta pessoa: o número e a conversa também são apagados. Envie agora, pela conversa do WhatsApp, a mensagem abaixo.": { es: "Tras la aprobación no será posible hablar con esta persona: el número y la conversación también se eliminan. Envíe ahora, por la conversación de WhatsApp, el siguiente mensaje." },
   "Enviei a mensagem": { es: "Envié el mensaje" },
   "Marcar como entregue": { es: "Marcar como entregada" },
   "Observação da entrega": { es: "Observación de la entrega" },
