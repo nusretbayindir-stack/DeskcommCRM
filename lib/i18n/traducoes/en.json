@@ -9740,5 +9740,9 @@
   "Este aviso fecha sozinho quando uma mensagem voltar a ser entregue.": "This notice closes on its own once a message is delivered again.",
   "Novo pedido de acesso aos dados — prazo {data}": "New data access request — due {data}",
   "Novo pedido de exclusão dos dados — prazo {data}": "New data erasure request — due {data}",
-  "Abrir pedido": "Open request"
+  "Abrir pedido": "Open request",
+  "Este contato já foi anonimizado.": "This contact has already been anonymized.",
+  "Já existe um pedido aberto deste tipo para este contato.": "An open request of this type already exists for this contact.",
+  "A data de chegada não pode estar no futuro.": "The date of receipt cannot be in the future.",
+  "Este contato não tem o canal escolhido.": "This contact does not have the chosen channel."
 }

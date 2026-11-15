@@ -14806,6 +14806,10 @@ export const DICIONARIO: Traducoes = {
   "Novo pedido de acesso aos dados — prazo {data}": { es: "Nueva solicitud de acceso a los datos — plazo {data}" },
   "Novo pedido de exclusão dos dados — prazo {data}": { es: "Nueva solicitud de eliminación de los datos — plazo {data}" },
   "Abrir pedido": { es: "Abrir solicitud" },
+  "Este contato já foi anonimizado.": { es: "Este contacto ya fue anonimizado." },
+  "Já existe um pedido aberto deste tipo para este contato.": { es: "Ya existe una solicitud abierta de este tipo para este contacto." },
+  "A data de chegada não pode estar no futuro.": { es: "La fecha de llegada no puede estar en el futuro." },
+  "Este contato não tem o canal escolhido.": { es: "Este contacto no tiene el canal elegido." },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
