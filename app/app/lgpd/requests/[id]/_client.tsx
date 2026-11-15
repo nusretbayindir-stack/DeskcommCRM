@@ -12,10 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLgpdRequest } from "@/hooks/useLgpdRequest";
 import { prazoEmBr } from "@/lib/lgpd/sla";
+import { encerradoPeloResponsavel } from "@/lib/lgpd/encerramento";
+import { rotuloDaOrigem } from "@/lib/lgpd/pedido-manual";
 import { SlaTimeline } from "./SlaTimeline";
 import { PreviewPanel } from "./PreviewPanel";
 import { ApproveButton } from "./ApproveButton";
 import { AuditTrail } from "./AuditTrail";
+import { PainelDoPedidoManual } from "./PainelDoPedidoManual";
+import { EncerrarPedido, RecusaPronta, ROTULOS_DOS_MOTIVOS } from "./EncerrarPedido";
 import type { LgpdRequestStatus, LgpdRequestType } from "@/hooks/useLgpdRequests";
 
 interface Props {
@@ -78,7 +82,12 @@ export function LgpdRequestDetail({ id, hrefDaLista = "/app/lgpd/requests" }: Pr
 
   const shortId = request.id.slice(0, 8);
   const typeLabel = t(TYPE_LABELS[request.request_type] ?? request.request_type);
-  const statusLabel = t(STATUS_LABELS[request.status] ?? request.status);
+  // U53: pedido fechado pelo responsável não "falhou" — o worker não errou nada.
+  const encerrado = encerradoPeloResponsavel(request);
+  const statusLabel = encerrado ? t("Encerrado") : t(STATUS_LABELS[request.status] ?? request.status);
+  const statusVariant = encerrado ? "secondary" : (STATUS_VARIANT[request.status] ?? "secondary");
+  // O painel pode faltar (detalhe antigo em cache); sem ele a tela fica como era.
+  const painel = data.data.painel;
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,7 +106,7 @@ export function LgpdRequestDetail({ id, hrefDaLista = "/app/lgpd/requests" }: Pr
           <h1 className="text-xl font-semibold tracking-tight font-mono">
             #{shortId}
           </h1>
-          <Badge variant={STATUS_VARIANT[request.status] ?? "secondary"}>
+          <Badge variant={statusVariant}>
             {statusLabel}
           </Badge>
           <Badge variant="outline">{typeLabel}</Badge>
@@ -151,8 +160,21 @@ export function LgpdRequestDetail({ id, hrefDaLista = "/app/lgpd/requests" }: Pr
           requestType={request.request_type}
           status={request.status}
           titular={titular}
+          painel={painel}
         />
+        <EncerrarPedido requestId={request.id} status={request.status} painel={painel} />
       </div>
+
+      {painel && (
+        <PainelDoPedidoManual
+          painel={painel}
+          requestType={request.request_type}
+          status={request.status}
+          emailDoTitular={titular?.email_destino ?? null}
+        />
+      )}
+
+      {painel?.recusa_pronta && <RecusaPronta texto={painel.recusa_pronta} />}
 
       {/* 2-col grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -183,7 +205,7 @@ export function LgpdRequestDetail({ id, hrefDaLista = "/app/lgpd/requests" }: Pr
             <Row label={t("ID completo")} value={request.id} mono />
             <Row label={t("Tipo")} value={typeLabel} />
             <Row label={t("Status")} value={statusLabel} />
-            <Row label={t("Origem")} value={request.source ?? "—"} />
+            <Row label={t("Origem")} value={t(rotuloDaOrigem(request.source))} />
             <Row label={t("Escopo")} value={request.scope} />
             <Row label={t("Tentativas")} value={String(request.attempts)} />
             {request.contact_id && (
@@ -198,7 +220,18 @@ export function LgpdRequestDetail({ id, hrefDaLista = "/app/lgpd/requests" }: Pr
                 value={format(new Date(request.completed_at), "dd/MM/yyyy HH:mm", { locale: localeDaData })}
               />
             )}
-            {request.error_message && (
+            {painel?.encerramento && (
+              <>
+                <Row label={t("Motivo")} value={t(ROTULOS_DOS_MOTIVOS[painel.encerramento.motivo_codigo])} />
+                {painel.encerramento.nota && (
+                  <Row label={t("Observação")} value={painel.encerramento.nota} />
+                )}
+              </>
+            )}
+            {painel?.entrega_manual?.nota && (
+              <Row label={t("Observação da entrega")} value={painel.entrega_manual.nota} />
+            )}
+            {request.error_message && !encerrado && (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1">
                 <p className="text-xs text-muted-foreground">{t("Erro")}</p>
                 <p className="text-destructive text-xs">{request.error_message}</p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useT } from "@/hooks/i18n/useT";
 import { distanciaDoPrazo } from "@/lib/lgpd/contagem-do-prazo";
+import { encerradoPeloResponsavel } from "@/lib/lgpd/encerramento";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -270,6 +271,8 @@ export function RequestsTable({
             ) : (
               rows.map((r) => {
                 const due = distanciaDoPrazo(r.due_at, t);
+                // U53: pedido fechado pelo responsável aparece como "Encerrado", sem o vermelho de falha.
+                const encerrado = encerradoPeloResponsavel(r);
                 const subject = r.external_customer_id
                   ? r.external_customer_id.slice(0, 16)
                   : r.contact_id
@@ -308,10 +311,10 @@ export function RequestsTable({
                     </TableCell>
                     <TableCell className="max-md:p-0">
                       <Badge
-                        variant={STATUS_VARIANT[r.status]}
+                        variant={encerrado ? "secondary" : STATUS_VARIANT[r.status]}
                         className="whitespace-nowrap text-xs"
                       >
-                        {t(STATUS_LABELS[r.status] ?? r.status)}
+                        {encerrado ? t("Encerrado") : t(STATUS_LABELS[r.status] ?? r.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-md:ml-auto max-md:p-0">
