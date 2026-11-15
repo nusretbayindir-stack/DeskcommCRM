@@ -1478,6 +1478,9 @@ export const AUDIT_ACTIONS = [
   // 9096), na organização NOVA, com o id do molde e as contagens no metadata;
   // quem lê é Painel › Empresas › [empresa] ("IA copiada do molde").
   "ai.molde_de_ia_aplicado",
+  // O admin encerrou um pedido do titular ainda não aprovado (U53), com motivo.
+  // metadata só com `motivo_codigo` e `request_id`; a nota não entra na trilha.
+  "lgpd.request_closed",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

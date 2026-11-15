@@ -855,9 +855,13 @@ const REPASSA_O_VALOR: readonly string[] = [
   "lib/mcp/tools/privacidade.ts",
   "app/api/v1/lgpd/requests/[id]/route.ts",
   "app/api/v1/lgpd/requests/[id]/approve/route.ts",
+  // U53: o cartão do contato recebe o prazo cru e formata com prazoEmBr na tela.
+  "app/api/v1/lgpd/contacts/[contactId]/open-requests/route.ts",
   "app/api/v1/webhooks/nuvemshop/customer-redact/route.ts",
   "app/api/v1/webhooks/nuvemshop/store-redact/route.ts",
   "app/api/v1/webhooks/nuvemshop/customer-data-request/route.ts",
+  // U53: o hook só repassa o prazo cru do cartão do contato; quem formata é a tela.
+  "hooks/usePedidoDoTitular.ts",
   "hooks/useLgpdRequests.ts",
   "hooks/useAdminLGPDRequests.ts",
   "app/api/v1/admin/lgpd/requests/[id]/route.ts",

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useT } from "@/hooks/i18n/useT";
+import { showApiError } from "@/components/feedback/ApiErrorToast";
 import { CheckCircle } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useApproveLgpdRequest } from "@/hooks/useApproveLgpdRequest";
 import type { LgpdRequestType } from "@/hooks/useLgpdRequests";
+// Só o TIPO: o módulo do painel é de servidor e não entra no bundle.
+import type { PainelDoPedido } from "@/lib/lgpd/painel-do-pedido";
+import { AvisoDaExclusaoSemEmail } from "./PainelDoPedidoManual";
 
 interface ApproveButtonProps {
   requestId: string;
@@ -27,6 +31,8 @@ interface ApproveButtonProps {
   status: string;
   /** Nome e destino do envio: quem aprova confere a pessoa ANTES de o dado sair (doc 134). */
   titular?: { nome: string | null; email_destino: string | null };
+  /** U53: `exclusao_sem_email` liga o bloco do aviso pelo WhatsApp; sem painel, nada muda. */
+  painel?: PainelDoPedido;
 }
 
 const VARIANT_LABELS: Record<LgpdRequestType, { button: string; title: string; description: string }> = {
@@ -50,37 +56,49 @@ const VARIANT_LABELS: Record<LgpdRequestType, { button: string; title: string; d
   },
 };
 
-export function ApproveButton({ requestId, requestType, status, titular }: ApproveButtonProps) {
+export function ApproveButton({ requestId, requestType, status, titular, painel }: ApproveButtonProps) {
   const t = useT();
   const [reason, setReason] = useState("");
   const [open, setOpen] = useState(false);
+  const [avisoEnviado, setAvisoEnviado] = useState(false);
   const { mutate, isPending } = useApproveLgpdRequest();
 
   // Only show if status is 'received'
   if (status !== "received") return null;
 
   const labels = VARIANT_LABELS[requestType];
-  const isValid = reason.trim().length >= 10;
+  // U53: a mesma regra da rota de aprovação (422 `aviso_whatsapp_obrigatorio`).
+  const exigeAviso = painel?.exclusao_sem_email === true;
+  const isValid = reason.trim().length >= 10 && (!exigeAviso || avisoEnviado);
 
   function handleConfirm() {
     if (!isValid) return;
     mutate(
-      { id: requestId, approved_reason: reason.trim() },
+      {
+        id: requestId,
+        approved_reason: reason.trim(),
+        ...(exigeAviso ? { aviso_whatsapp_enviado: true as const } : {}),
+      },
       {
         onSuccess: () => {
           toast.success(t("Aprovação registrada — request mudou para processing"));
-          setOpen(false);
+          mudarAbertura(false);
           setReason("");
         },
-        onError: () => {
-          toast.error(t("Falha ao aprovar a solicitação. Tente novamente."));
-        },
+        // O motivo da rota (ex.: 422 `aviso_whatsapp_obrigatorio`) chega à tela.
+        onError: showApiError,
       },
     );
   }
 
+  /** A marca "Enviei a mensagem" atesta um envio antes de apagar: vale só para esta abertura. */
+  function mudarAbertura(aberta: boolean) {
+    if (!aberta) setAvisoEnviado(false);
+    setOpen(aberta);
+  }
+
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={open} onOpenChange={mudarAbertura}>
       <AlertDialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <CheckCircle size={16} aria-hidden />
@@ -105,6 +123,10 @@ export function ApproveButton({ requestId, requestType, status, titular }: Appro
               {titular?.email_destino ?? t("Sem e-mail: o arquivo fica para entrega manual")}
             </dd>
           </dl>
+        )}
+
+        {exigeAviso && painel && (
+          <AvisoDaExclusaoSemEmail painel={painel} enviado={avisoEnviado} onEnviado={setAvisoEnviado} />
         )}
 
         <div className="space-y-2 py-2">

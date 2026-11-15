@@ -45,6 +45,12 @@ describe("destinos da Central", () => {
     expect(invalidPair?.destination).not.toHaveProperty("href");
     expect(l.queries).toHaveLength(0);
   });
+  it("o pedido do titular leva o admin ao pedido, e só o admin", async () => {
+    const [admin] = await resolverDestinosDosAvisos(leitor().client, ORG, "admin", [aviso("other", "lgpd_request", ID)]);
+    expect(admin?.destination).toEqual({ estado: "disponivel", rotulo: "Abrir pedido", href: `/app/lgpd/requests/${ID}` });
+    const [agente] = await resolverDestinosDosAvisos(leitor().client, ORG, "agent", [aviso("other", "lgpd_request", ID)]);
+    expect(agente?.destination.estado).toBe("sem_permissao");
+  });
   it("toda categoria possui política", () => expect(Object.keys(POLITICAS_DE_AVISO).sort()).toEqual(Object.keys(KIND_LABEL).sort()));
   it.each([
     ["handoff", "conversation", `/app/inbox/${ID}`], ["job_dead", "conversation", `/app/inbox/${ID}`],

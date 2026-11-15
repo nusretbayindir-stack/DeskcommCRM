@@ -24,12 +24,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ipDoCliente } from "@/lib/http/ip-do-cliente";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { exclusaoForaDoBrasil } from "@/lib/lgpd/atestado-de-anonimizacao";
+import {
+  exigeAvisoAntesDaAprovacao,
+  podeExigirAvisoAntesDaAprovacao,
+} from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   approved_reason: z.string().min(10).max(500),
+  // U53: o admin confirma que avisou o titular pelo WhatsApp antes de apagar.
+  aviso_whatsapp_enviado: z.literal(true).optional(),
 });
 
 export async function POST(
@@ -83,7 +89,7 @@ export async function POST(
     });
   }
 
-  const { approved_reason } = parsed.data;
+  const { approved_reason, aviso_whatsapp_enviado } = parsed.data;
 
   // Idempotency check — endpoint is /lgpd/requests/:id/approve
   const endpoint = `/api/v1/lgpd/requests/${id}/approve`;
@@ -139,6 +145,47 @@ export async function POST(
     );
   }
 
+  // U53: exclusão fora do Brasil sem e-mail só segue com o aviso pelo WhatsApp
+  // já enviado — depois do apagamento o telefone deixa de existir. Antes do
+  // evento: recusado, nada é emitido nem alterado.
+  const perfil = await perfilDaOrganizacao(admin, orgId);
+  // Só pedido de exclusão de uma pessoa (com contato) fora do Brasil pode exigir
+  // o aviso; nos demais casos o contato nem é lido.
+  const podeExigirAviso = podeExigirAvisoAntesDaAprovacao({
+    contactId: request.contact_id,
+    requestType: request.request_type,
+    paisCodigo: perfil.codigo,
+  });
+  let avisoObrigatorio = false;
+  if (podeExigirAviso) {
+    const { data: contato, error: contatoErr } = await admin
+      .from("contacts")
+      .select("email, is_anonymized")
+      .eq("organization_id", orgId)
+      .eq("id", request.contact_id as string)
+      .maybeSingle();
+    if (contatoErr) {
+      return fail("internal_error", "contact_read_failed", 500, { requestId });
+    }
+    const lido = contato as { email?: string | null; is_anonymized?: boolean | null } | null;
+    avisoObrigatorio = exigeAvisoAntesDaAprovacao({
+      contactId: request.contact_id,
+      requestType: request.request_type,
+      paisCodigo: perfil.codigo,
+      emailDoContato: lido?.email ?? null,
+      contatoAnonimizado: lido?.is_anonymized === true,
+      payload: request.request_payload,
+    });
+  }
+  if (avisoObrigatorio && !aviso_whatsapp_enviado) {
+    return fail(
+      "aviso_whatsapp_obrigatorio",
+      t("Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar."),
+      422,
+      { requestId },
+    );
+  }
+
   // Determine event type based on request_type
   const eventType =
     request.request_type === "data_request"
@@ -186,7 +233,6 @@ export async function POST(
   // Brasil e em pedido de dados ninguém a lê, e dado de quem opera sem leitor
   // não fica guardado. (Levar o IP para o `actor_ip` da auditoria de
   // `lgpd.manually_approved` é dívida anotada no PR #3321.)
-  const perfil = await perfilDaOrganizacao(admin, orgId);
   const geraAtestado = exclusaoForaDoBrasil(request.request_type, perfil.codigo);
   const evidenciaDaExecucao = {
     origem: "aprovacao_manual" as const,
@@ -205,19 +251,30 @@ export async function POST(
     em: new Date().toISOString(),
   };
 
+  // U53: o aviso só é registrado quando a regra o exigia e a marca veio.
+  const gravaAvisoWhatsapp = avisoObrigatorio && aviso_whatsapp_enviado === true;
+
   // Transition status → processing
   const { error: updateErr } = await admin
     .from("lgpd_requests")
     .update({
       status: "processing",
       updated_at: new Date().toISOString(),
-      ...(geraAtestado
+      ...(geraAtestado || gravaAvisoWhatsapp
         ? {
             request_payload: {
               ...(typeof request.request_payload === "object" && request.request_payload !== null
                 ? (request.request_payload as Record<string, unknown>)
                 : {}),
-              execucao: evidenciaDaExecucao,
+              ...(geraAtestado
+                ? {
+                    execucao: evidenciaDaExecucao,
+                  }
+                : {}),
+              // U53: quem avisou o titular pelo WhatsApp antes de apagar (só ids e instante).
+              ...(gravaAvisoWhatsapp
+                ? { aviso_whatsapp_antes: { por: authUser.id, em: new Date().toISOString() } }
+                : {}),
             },
           }
         : {}),

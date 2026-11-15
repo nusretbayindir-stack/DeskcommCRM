@@ -45,6 +45,7 @@ import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { JuntarComOutraFicha } from "@/components/contacts/JuntarComOutraFicha";
 import { CartaoDaCarteira } from "@/components/contacts/CartaoDaCarteira";
+import { CartaoDoPedidoDoTitular } from "@/components/contacts/CartaoDoPedidoDoTitular";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
 import { PropostasDeDado } from "@/components/contacts/PropostasDeDado";
 import { RoteirosDoContato } from "@/components/contacts/RoteirosDoContato";
@@ -569,6 +570,16 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
               <CartaoDaCarteira contactId={contactId} />
             </div>
           )}
+          {/* PEDIDO DO TITULAR (U53): a equipe registra aqui o pedido de acesso ou
+              exclusão que chegou por fora; o admin aprova. Fora do contato
+              anonimizado e de quem só lê (suporte somente leitura e `viewer`). */}
+          {!contact.is_anonymized &&
+            user.support?.access_mode !== "support_readonly" &&
+            roleAtLeast(activeOrg?.role, "agent") && (
+              <div className="mt-4">
+                <CartaoDoPedidoDoTitular contactId={contactId} />
+              </div>
+            )}
           <div className="mt-4">
             <RoteirosDoContato contactId={contactId} />
           </div>

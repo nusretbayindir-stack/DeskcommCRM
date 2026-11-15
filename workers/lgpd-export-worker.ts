@@ -34,6 +34,8 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { collectExportData } from "@/lib/lgpd/export-collector";
 import { findLgpdRequest } from "@/lib/lgpd/repository";
+import { resolverAvisosDoPedido } from "@/lib/lgpd/avisos-do-pedido-manual";
+import { enderecoDeEntrega } from "@/lib/lgpd/pedido-manual";
 // IMPORT TARDIO, e a razão é o laço rápido do `event_log`.
 //
 // `lib/event-log/register-handlers.ts` — cujo próprio comentário pede "keep it
@@ -151,6 +153,19 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     };
   }
 
+  // U53: `failed` é estado final, como no worker de exclusão. Um pedido aprovado
+  // cujo envio falhou volta a `received` com o evento na fila de retry; se o
+  // admin o encerra com motivo nesse meio-tempo (`encerrado_pelo_responsavel`),
+  // o retry não pode exportar nem sobrescrever o encerramento. A reivindicação
+  // abaixo repete a condição, para a trava valer mesmo com leitura antiga.
+  if (req.status === "failed") {
+    return {
+      consumer_key: "lgpd-export-worker.v1",
+      status: "skipped",
+      detail: "already_failed",
+    };
+  }
+
   if (req.request_type !== "data_request") {
     return {
       consumer_key: "lgpd-export-worker.v1",
@@ -214,6 +229,8 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     .eq("organization_id", orgId)
     .eq("id", requestId)
     .neq("status", "completed")
+    // U53: pedido encerrado (`failed`) também não é reivindicado.
+    .neq("status", "failed")
     .or(`export_claimed_at.is.null,export_claimed_at.lt.${limiteDaReivindicacao}`)
     .select("id");
 
@@ -237,7 +254,12 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     return {
       consumer_key: "lgpd-export-worker.v1",
       status: "skipped",
-      detail: atual?.status === "completed" ? "already_completed" : "already_in_flight",
+      detail:
+        atual?.status === "completed"
+          ? "already_completed"
+          : atual?.status === "failed"
+            ? "already_failed"
+            : "already_in_flight",
     };
   }
 
@@ -340,13 +362,10 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     const signedUrlDados = signedDados.signedUrl;
 
     // 8. Resolve delivery email.
-    const deliveryFromPayload = (req.request_payload as Record<string, unknown>)?.delivery as
-      | Record<string, unknown>
-      | undefined;
-    const deliveryEmail =
-      (typeof deliveryFromPayload?.address === "string"
-        ? (deliveryFromPayload.address as string)
-        : null) ?? data.contact?.email ?? null;
+    // Pedido aberto pela tela: o endereço é só o fixado no pedido, nunca o e-mail
+    // atual do contato (decisão do dono do produto, 2026-11-15). Pedido antigo
+    // (Nuvemshop) segue com `delivery.address` ou o e-mail do contato.
+    const deliveryEmail = enderecoDeEntrega(req.request_payload, data.contact?.email);
 
     if (!deliveryEmail) {
       // Mark as pending_review — operator must contact manually.
@@ -499,6 +518,9 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
       })
       .eq("organization_id", orgId)
       .eq("id", requestId);
+
+    // U53: o pedido acabou, os avisos dele na Central se resolvem (nunca lança).
+    await resolverAvisosDoPedido(admin, orgId, requestId);
 
     // 11. Domain events.
     await admin.rpc("emit_event" as never, {

@@ -58,7 +58,10 @@ vi.mock("@/lib/supabase/admin", () => ({
               },
               error: estado.erroPedido,
             }
-          : { data: [], error: estado.erroAudit };
+          : tabela === "organizations"
+            ? // O painel do detalhe lê o país da empresa (perfil); o erro da trilha não é desta leitura.
+              { data: { country: "BR" }, error: null }
+            : { data: [], error: estado.erroAudit };
       const q: Consulta = {
         select: () => q,
         eq: (coluna, valor) => {

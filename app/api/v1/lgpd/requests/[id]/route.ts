@@ -28,6 +28,8 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
+import { painelDoPedido, painelNeutro } from "@/lib/lgpd/painel-do-pedido";
+import { enderecoDeEntrega } from "@/lib/lgpd/pedido-manual";
 
 export const dynamic = "force-dynamic";
 
@@ -74,11 +76,12 @@ export async function GET(
   // Quem recebe e para onde vai: o admin aprova o envio VENDO o nome do
   // titular e o e-mail de destino (doc 134). O destino é o mesmo que o worker
   // usa — o endereço que veio no pedido, senão o e-mail do contato.
-  let contato: { display_name: string | null; email: string | null } | null = null;
+  let contato: { display_name: string | null; email: string | null; is_anonymized: boolean | null } | null =
+    null;
   if (request.contact_id) {
     const { data: c } = await admin
       .from("contacts")
-      .select("display_name, email")
+      .select("display_name, email, is_anonymized")
       .eq("organization_id", orgId)
       .eq("id", request.contact_id)
       .maybeSingle();
@@ -86,13 +89,26 @@ export async function GET(
   }
   const pedido = (request.request_payload ?? {}) as {
     customer?: { name?: unknown } | null;
-    delivery?: { address?: unknown } | null;
   };
   const textoOuNulo = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const titular = {
     nome: textoOuNulo(contato?.display_name) ?? textoOuNulo(pedido.customer?.name),
-    email_destino: textoOuNulo(pedido.delivery?.address) ?? textoOuNulo(contato?.email),
+    email_destino: enderecoDeEntrega(request.request_payload, contato?.email),
   };
+  // O painel é apoio: se falhar, o detalhe do pedido abre sem os avisos.
+  let painel = painelNeutro();
+  try {
+    painel = await painelDoPedido(admin, {
+      orgId,
+      pedido: request,
+      emailDoContato: textoOuNulo(contato?.email),
+      contatoAnonimizado: contato?.is_anonymized === true,
+    });
+  } catch {
+    logger.warn("[lgpd-request-detail] painel unavailable", {
+      code: "painel_failed", requestId, organizationId: orgId,
+    });
+  }
 
   // Fetch audit trail entries for this request
   const { data: auditRows, error: auditErr } = await admin
@@ -158,7 +174,7 @@ export async function GET(
   }
 
   return ok(
-    { request, audit_trail, signed_pdf_url, signed_json_url, titular },
+    { request, audit_trail, signed_pdf_url, signed_json_url, titular, painel },
     { requestId },
   );
 }

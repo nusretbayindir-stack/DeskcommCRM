@@ -10,10 +10,24 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/wrappers";
+import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
+import { requireSupportWrite } from "@/lib/impersonate/support";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { avisarAdminsDoNovoPedido } from "@/lib/lgpd/avisos-do-pedido-manual";
 import { computeSlaBucket } from "@/lib/lgpd/balde-de-sla";
+import {
+  PRAZO_DO_PEDIDO_MANUAL,
+  canaisDoContato,
+  diaNoFuturo,
+  instanteDoRecebimento,
+  novoPedidoSchema,
+  payloadDoPedidoManual,
+} from "@/lib/lgpd/pedido-manual";
+import { createLgpdRequest } from "@/lib/lgpd/repository";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -118,4 +132,166 @@ export async function GET(req: NextRequest): Promise<Response> {
       has_more: offset + limit < total,
     },
   });
+}
+
+/**
+ * POST /api/v1/lgpd/requests (U53)
+ *
+ * A equipe registra, pela tela do contato, um pedido de acesso ou apagamento
+ * que chegou por fora do CRM. Role >= agent, só por sessão de cookie (sem
+ * chave de API). O endereço de entrega nunca vem do corpo: é o e-mail do
+ * cadastro naquele momento. Abrir NÃO emite evento — quem dispara a execução
+ * é a aprovação do admin (`[id]/approve`). A auditoria leva só código e id:
+ * nota, e-mail e telefone ficam fora dela, do log e da Central.
+ */
+export async function POST(req: NextRequest): Promise<Response> {
+  const supportDenied = await requireSupportWrite();
+  if (supportDenied) return supportDenied;
+
+  const requestId = randomUUID();
+
+  const authz = await requireRole("agent", {
+    requestId,
+    resource: "lgpd_requests",
+    allowPlatformAdmin: true,
+    permiteOrgSuspensa: true,
+  });
+  if (!authz.ok) return authz.response;
+  const t = (texto: string) => traduzir(texto, authz.user.idioma);
+  const { user: authUser, org: activeOrg } = authz;
+  const orgId = activeOrg.orgId;
+
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return fail("invalid_request", t("Body JSON inválido."), 400, { requestId });
+  }
+
+  const parsed = novoPedidoSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return fail("validation_failed", t("Parâmetros inválidos."), 422, {
+      details: parsed.error.flatten(),
+      requestId,
+    });
+  }
+  const { contact_id, request_type, received_at, canal } = parsed.data;
+  const observacao = parsed.data.observacao ? parsed.data.observacao : null;
+
+  const agora = new Date();
+  if (diaNoFuturo(received_at, agora)) {
+    return fail(
+      "data_no_futuro",
+      t("A data de chegada não pode estar no futuro."),
+      422,
+      { requestId },
+    );
+  }
+
+  const admin = createAdminClient();
+
+  const { data: contato, error: contatoErr } = await admin
+    .from("contacts")
+    .select("id, email, phone_number, wa_lid, is_anonymized")
+    .eq("organization_id", orgId)
+    .eq("id", contact_id)
+    .maybeSingle();
+  if (contatoErr) {
+    return fail("internal_error", t("Erro interno. Tente de novo em instantes."), 500, { requestId });
+  }
+  if (!contato) {
+    return fail("not_found", t("Contato não encontrado."), 404, { requestId });
+  }
+  if (contato.is_anonymized) {
+    return fail(
+      "contato_anonimizado",
+      t("Este contato já foi anonimizado."),
+      409,
+      { requestId },
+    );
+  }
+
+  const canais = canaisDoContato(contato);
+  const canalExiste =
+    canal === "whatsapp_registrado"
+      ? canais.whatsapp
+      : canal === "email_registrado"
+        ? canais.email
+        : true;
+  if (!canalExiste) {
+    return fail(
+      "canal_incompativel",
+      t("Este contato não tem o canal escolhido."),
+      422,
+      { requestId },
+    );
+  }
+
+  const { data: aberto, error: abertoErr } = await admin
+    .from("lgpd_requests")
+    .select("id, due_at")
+    .eq("organization_id", orgId)
+    .eq("contact_id", contact_id)
+    .eq("request_type", request_type)
+    .in("status", ["received", "processing", "pending_review"])
+    .limit(1)
+    .maybeSingle();
+  if (abertoErr) {
+    return fail("internal_error", t("Erro interno. Tente de novo em instantes."), 500, { requestId });
+  }
+  if (aberto) {
+    return fail(
+      "pedido_aberto",
+      t("Já existe um pedido aberto deste tipo para este contato."),
+      409,
+      { details: { due_at: aberto.due_at }, requestId },
+    );
+  }
+
+  let criado: { id: string; due_at: string };
+  try {
+    criado = await createLgpdRequest({
+      organizationId: orgId,
+      requestType: request_type,
+      source: "manual",
+      contactId: contact_id,
+      slaDays: PRAZO_DO_PEDIDO_MANUAL[request_type],
+      receivedAt: instanteDoRecebimento(received_at, agora),
+      payload: payloadDoPedidoManual({
+        canal,
+        observacao,
+        criadoPor: authUser.id,
+        agora,
+        emailDoContato: contato.email,
+      }),
+    });
+  } catch (err) {
+    logger.error("[lgpd-pedido-manual] pedido não gravado", {
+      erro: err instanceof Error ? err.name : "desconhecido",
+    });
+    return fail("internal_error", t("Erro interno. Tente de novo em instantes."), 500, { requestId });
+  }
+
+  void audit({
+    action:
+      request_type === "data_request"
+        ? "lgpd.data_request_received"
+        : "lgpd.redact_received",
+    actorUserId: authUser.id,
+    organizationId: orgId,
+    resourceType: "lgpd_request",
+    resourceId: criado.id,
+    requestId,
+    metadata: { source: "manual", canal, request_id: criado.id },
+  });
+
+  // Não lança: o pedido já está gravado e um aviso que falha não o desfaz.
+  await avisarAdminsDoNovoPedido(admin, {
+    organizationId: orgId,
+    requestId: criado.id,
+    tipo: request_type,
+    dueAt: criado.due_at,
+  });
+
+  return ok({ id: criado.id, due_at: criado.due_at }, { requestId, status: 201 });
 }

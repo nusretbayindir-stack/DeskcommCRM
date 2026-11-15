@@ -31,6 +31,9 @@ const RAIZ = join(__dirname, "..", "..");
 const AREAS = ["app", "lib", "workers", "components", "hooks"];
 
 const CHAMADORES_PERMITIDOS = [
+  // U53: a pré-condição (#2340) foi cumprida em código (PR #2354 e #2356) e a decisão é do
+  // dono do produto (2026-11-15). Esta rota só abre por sessão de cookie e com papel agent+.
+  "app/api/v1/lgpd/requests/route.ts",
   "app/api/v1/webhooks/nuvemshop/customer-data-request/route.ts",
   "app/api/v1/webhooks/nuvemshop/customer-redact/route.ts",
   "app/api/v1/webhooks/nuvemshop/store-redact/route.ts",
