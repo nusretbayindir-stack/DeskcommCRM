@@ -195,6 +195,8 @@ describe("POST /api/v1/lgpd/requests/[id]/encerrar (U53)", () => {
     expect(h.estado.atualizacoes[0]).toMatchObject({
       status: "completed",
       completed_at: expect.any(String),
+      // O worker deixou `no_delivery_email`; o pedido concluído não pode exibir erro.
+      error_message: null,
       result: {
         pdf_path: "org-1/p1/report.pdf",
         entrega_manual: { nota: "PDF enviado pela conversa", por: "u1", em: expect.any(String) },

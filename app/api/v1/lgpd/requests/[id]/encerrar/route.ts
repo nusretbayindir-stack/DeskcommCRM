@@ -111,6 +111,9 @@ export async function POST(
   const mudanca = entrega
     ? {
         status: "completed",
+        // O worker parou em `no_delivery_email`; concluído, o pedido não exibe erro
+        // (o mesmo que o worker faz ao concluir pelo e-mail).
+        error_message: null,
         completed_at: agora,
         updated_at: agora,
         result: { ...resultAtual, entrega_manual: { nota: notaDoAdmin, por: authUser.id, em: agora } },
