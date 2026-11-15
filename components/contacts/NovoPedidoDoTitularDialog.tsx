@@ -80,7 +80,8 @@ export function NovoPedidoDoTitularDialog({
 
   const [tipo, setTipo] = useState<TipoDoPedidoManual>(() => primeiroTipoLivre(tiposAbertos));
   const [dia, setDia] = useState<string>(hoje);
-  const [canal, setCanal] = useState<CanalDoPedido>(canaisVisiveis[0]);
+  // "outro" está sempre na lista; o `?? "outro"` só atende ao noUncheckedIndexedAccess.
+  const [canal, setCanal] = useState<CanalDoPedido>(canaisVisiveis[0] ?? "outro");
   const [observacao, setObservacao] = useState("");
   // Prazo do pedido que já existe, quando o servidor responde 409 `pedido_aberto`.
   const [prazoExistente, setPrazoExistente] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function NovoPedidoDoTitularDialog({
   function reiniciar() {
     setTipo(primeiroTipoLivre(tiposAbertos));
     setDia(hojeLocal());
-    setCanal(canaisVisiveis[0]);
+    setCanal(canaisVisiveis[0] ?? "outro");
     setObservacao("");
     setPrazoExistente(null);
   }

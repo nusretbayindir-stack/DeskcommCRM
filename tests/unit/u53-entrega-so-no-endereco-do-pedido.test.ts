@@ -9,6 +9,7 @@
  * concluir, os avisos do pedido na Central são fechados.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ModuloDeEnvioPorEmail from "@/lib/lgpd/email-delivery";
 
 type Patch = Record<string, unknown>;
 const estado = vi.hoisted(() => ({
@@ -35,7 +36,7 @@ vi.mock("@/lib/lgpd/copia-do-titular", () => ({ partesDoArquivoDoTitular: functi
 vi.mock("@/lib/branding/saida", () => ({ marcaDaSaida: async () => ({}) }));
 vi.mock("@/lib/legal/perfil-do-pais", () => ({ perfilDaOrganizacao: async () => ({ codigo: "BR" }) }));
 vi.mock("@/lib/lgpd/email-delivery", async (original) => {
-  const real = await original<typeof import("@/lib/lgpd/email-delivery")>();
+  const real = await original<typeof ModuloDeEnvioPorEmail>();
   return {
     ...real,
     sendExportEmail: async (args: { to: string }) => {

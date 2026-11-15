@@ -74,6 +74,12 @@ function corpo(extra: Record<string, unknown> = {}) {
   };
 }
 
+// Só os campos da resposta que os testes leem.
+type Corpo = {
+  data: unknown;
+  error: { code: string; details: Record<string, unknown> };
+};
+
 async function enviar(body: unknown) {
   const req = new NextRequest("http://localhost/api/v1/lgpd/requests", {
     method: "POST",
@@ -81,7 +87,7 @@ async function enviar(body: unknown) {
     body: JSON.stringify(body),
   });
   const res = await POST(req);
-  return { res, json: (await res.json()) as Record<string, any> };
+  return { res, json: (await res.json()) as Corpo };
 }
 
 beforeEach(() => {
@@ -212,7 +218,7 @@ describe("POST /api/v1/lgpd/requests (U53)", () => {
 
   it("source manual, prazo 7 e 15, delivery do cadastro", async () => {
     await enviar(corpo({ delivery: { address: "x@fora.test" } }));
-    expect(h.criar.mock.calls[0][0]).toMatchObject({
+    expect(h.criar.mock.calls[0]![0]).toMatchObject({
       organizationId: "org-1",
       requestType: "data_request",
       source: "manual",
@@ -221,12 +227,12 @@ describe("POST /api/v1/lgpd/requests (U53)", () => {
       payload: { delivery: { address: "ana@loja.test", origem: "cadastro_no_pedido" } },
     });
     await enviar(corpo({ request_type: "redact" }));
-    expect(h.criar.mock.calls[1][0]).toMatchObject({ requestType: "redact", slaDays: 15 });
+    expect(h.criar.mock.calls[1]![0]).toMatchObject({ requestType: "redact", slaDays: 15 });
   });
 
   it("observação vazia vira null no payload", async () => {
     await enviar(corpo({ canal: "whatsapp_registrado", observacao: "   " }));
-    expect(h.criar.mock.calls[0][0].payload.origem_manual).toMatchObject({
+    expect(h.criar.mock.calls[0]![0].payload.origem_manual).toMatchObject({
       canal: "whatsapp_registrado",
       observacao: null,
       criado_por: "u1",
@@ -235,11 +241,11 @@ describe("POST /api/v1/lgpd/requests (U53)", () => {
 
   it("auditoria sem observação nem e-mail", async () => {
     await enviar(corpo());
-    const meta = JSON.stringify(h.audit.mock.calls[0][0].metadata);
+    const meta = JSON.stringify(h.audit.mock.calls[0]![0].metadata);
     expect(meta).not.toContain("ana@loja.test");
     expect(meta).not.toContain("veio à loja com documento");
-    expect(h.audit.mock.calls[0][0].action).toBe("lgpd.data_request_received");
-    expect(h.audit.mock.calls[0][0].metadata).toEqual({
+    expect(h.audit.mock.calls[0]![0].action).toBe("lgpd.data_request_received");
+    expect(h.audit.mock.calls[0]![0].metadata).toEqual({
       source: "manual",
       canal: "outro",
       request_id: "p1",
@@ -248,7 +254,7 @@ describe("POST /api/v1/lgpd/requests (U53)", () => {
 
   it("exclusão audita como lgpd.redact_received", async () => {
     await enviar(corpo({ request_type: "redact" }));
-    expect(h.audit.mock.calls[0][0].action).toBe("lgpd.redact_received");
+    expect(h.audit.mock.calls[0]![0].action).toBe("lgpd.redact_received");
   });
 
   it("abrir não emite evento", async () => {
@@ -259,7 +265,7 @@ describe("POST /api/v1/lgpd/requests (U53)", () => {
   it("avisa os admins com o prazo do pedido", async () => {
     await enviar(corpo({ request_type: "redact" }));
     expect(h.avisar).toHaveBeenCalledTimes(1);
-    expect(h.avisar.mock.calls[0][1]).toEqual({
+    expect(h.avisar.mock.calls[0]![1]).toEqual({
       organizationId: "org-1",
       requestId: "p1",
       tipo: "redact",

@@ -71,6 +71,9 @@ function pedido(status: string) {
   };
 }
 
+// Só os campos da resposta que os testes leem.
+type Corpo = { data: unknown; error: { code: string } };
+
 async function enviar(body: unknown, id: string = PEDIDO) {
   const req = new NextRequest(`http://localhost/api/v1/lgpd/requests/${id}/encerrar`, {
     method: "POST",
@@ -78,7 +81,7 @@ async function enviar(body: unknown, id: string = PEDIDO) {
     body: JSON.stringify(body),
   });
   const res = await POST(req, { params: Promise.resolve({ id }) });
-  return { res, json: (await res.json()) as Record<string, any> };
+  return { res, json: (await res.json()) as Corpo };
 }
 
 beforeEach(() => {
@@ -200,11 +203,11 @@ describe("POST /api/v1/lgpd/requests/[id]/encerrar (U53)", () => {
     expect(h.estado.filtrosUpdate).toContainEqual(["organization_id", "org-1"]);
     expect(h.estado.filtrosUpdate).toContainEqual(["id", PEDIDO]);
     expect(h.estado.filtrosUpdate).toContainEqual(["status", "pending_review"]);
-    expect(h.audit.mock.calls[0][0]).toMatchObject({
+    expect(h.audit.mock.calls[0]![0]).toMatchObject({
       action: "lgpd.export_delivered",
       metadata: { delivery: "manual", request_id: PEDIDO },
     });
-    expect(JSON.stringify(h.audit.mock.calls[0][0])).not.toContain("PDF enviado");
+    expect(JSON.stringify(h.audit.mock.calls[0]![0])).not.toContain("PDF enviado");
   });
 
   it("encerrado vira failed com o código do responsável", async () => {
@@ -230,11 +233,11 @@ describe("POST /api/v1/lgpd/requests/[id]/encerrar (U53)", () => {
       motivo_codigo: "identidade_nao_confirmada",
       nota: "não apresentou documento",
     });
-    expect(h.audit.mock.calls[0][0]).toMatchObject({
+    expect(h.audit.mock.calls[0]![0]).toMatchObject({
       action: "lgpd.request_closed",
       metadata: { motivo_codigo: "identidade_nao_confirmada", request_id: PEDIDO },
     });
-    expect(JSON.stringify(h.audit.mock.calls[0][0])).not.toContain("não apresentou documento");
+    expect(JSON.stringify(h.audit.mock.calls[0]![0])).not.toContain("não apresentou documento");
   });
 
   it("fecha os avisos da Central", async () => {

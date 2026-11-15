@@ -12,6 +12,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ModuloDaMarca from "@/lib/branding/saida";
+import type * as ModuloDoPerfil from "@/lib/legal/perfil-do-pais";
 
 const h = vi.hoisted(() => {
   const estado = {
@@ -86,11 +88,11 @@ const h = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/branding/saida", async (original) => ({
-  ...(await original<typeof import("@/lib/branding/saida")>()),
+  ...(await original<typeof ModuloDaMarca>()),
   marcaDaSaida: vi.fn(async () => ({ nome: h.estado.nomeDaMarca })),
 }));
 vi.mock("@/lib/legal/perfil-do-pais", async (original) => {
-  const real = await original<typeof import("@/lib/legal/perfil-do-pais")>();
+  const real = await original<typeof ModuloDoPerfil>();
   return {
     ...real,
     perfilDaOrganizacao: async (...args: Parameters<typeof real.perfilDaOrganizacao>) => {

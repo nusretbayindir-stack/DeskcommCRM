@@ -4,6 +4,7 @@
  * responde 200, com o painel neutro, e o log leva só códigos e ids.
  */
 import { describe, expect, it, vi } from "vitest";
+import type * as ModuloDoPainel from "@/lib/lgpd/painel-do-pedido";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 
@@ -12,7 +13,7 @@ vi.mock("@/lib/auth/require-role", () => ({
   requireRole: async () => ({ ok: true, user: { idioma: "pt-BR" }, org: { orgId: ORG } }),
 }));
 vi.mock("@/lib/lgpd/painel-do-pedido", async (original) => ({
-  ...(await original<typeof import("@/lib/lgpd/painel-do-pedido")>()),
+  ...(await original<typeof ModuloDoPainel>()),
   painelDoPedido: async () => {
     throw new Error("falha com dado@loja.test");
   },
