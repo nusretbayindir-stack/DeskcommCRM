@@ -7,6 +7,7 @@ import { format } from "date-fns";
 
 import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,12 +33,13 @@ export function TextoParaCopiar({ texto, rotulo }: { texto: string; rotulo: stri
   const [copiado, setCopiado] = useState(false);
 
   async function copiar() {
-    try {
-      await navigator.clipboard.writeText(texto);
+    // O helper do repo também copia em contexto não seguro (self-host em http://IP).
+    if (await copyToClipboard(texto)) {
       setCopiado(true);
       toast.success(t("Copiado"));
-    } catch {
-      // Sem permissão do navegador: o texto segue selecionável na caixa.
+    } else {
+      // O texto segue selecionável na caixa.
+      toast.error(t("Não deu para copiar. Selecione o texto e copie à mão."));
     }
   }
 

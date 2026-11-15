@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useT } from "@/hooks/i18n/useT";
+import { showApiError } from "@/components/feedback/ApiErrorToast";
 import { CheckCircle } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,19 +82,23 @@ export function ApproveButton({ requestId, requestType, status, titular, painel 
       {
         onSuccess: () => {
           toast.success(t("Aprovação registrada — request mudou para processing"));
-          setOpen(false);
+          mudarAbertura(false);
           setReason("");
-          setAvisoEnviado(false);
         },
-        onError: () => {
-          toast.error(t("Falha ao aprovar a solicitação. Tente novamente."));
-        },
+        // O motivo da rota (ex.: 422 `aviso_whatsapp_obrigatorio`) chega à tela.
+        onError: showApiError,
       },
     );
   }
 
+  /** A marca "Enviei a mensagem" atesta um envio antes de apagar: vale só para esta abertura. */
+  function mudarAbertura(aberta: boolean) {
+    if (!aberta) setAvisoEnviado(false);
+    setOpen(aberta);
+  }
+
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={open} onOpenChange={mudarAbertura}>
       <AlertDialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <CheckCircle size={16} aria-hidden />

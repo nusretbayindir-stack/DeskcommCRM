@@ -25,6 +25,7 @@ const deps = vi.hoisted(() => ({
   encerrar: vi.fn(),
   copiar: vi.fn(),
   success: vi.fn(),
+  erro: vi.fn(),
   post: vi.fn(),
 }));
 
@@ -40,7 +41,9 @@ vi.mock("@/hooks/useLgpdPreview", () => ({
   useLgpdPreview: () => ({ isLoading: false, data: null, error: null, refetch: vi.fn() }),
 }));
 vi.mock("@/lib/api/client", () => ({ apiClient: { post: deps.post, get: vi.fn() } }));
-vi.mock("sonner", () => ({ toast: { success: deps.success, error: vi.fn(), info: vi.fn(), warning: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: deps.success, error: deps.erro, info: vi.fn(), warning: vi.fn() } }));
+// Componente de cliente copia pelo helper do repo (lib/clipboard.test.ts proíbe navigator.clipboard cru).
+vi.mock("@/lib/clipboard", () => ({ copyToClipboard: deps.copiar }));
 vi.mock("@/hooks/i18n/useT", () => ({ useT: () => (s: string) => s }));
 
 import { LgpdRequestDetail } from "@/app/app/lgpd/requests/[id]/_client";
@@ -114,13 +117,11 @@ function abrirDetalhe(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  deps.copiar.mockResolvedValue(true);
 });
 
-/** O `userEvent.setup()` instala a própria área de transferência; o espião vai por cima, depois dele. */
 function usuario() {
-  const user = userEvent.setup();
-  vi.spyOn(navigator.clipboard, "writeText").mockImplementation(deps.copiar);
-  return user;
+  return userEvent.setup();
 }
 afterEach(cleanup);
 
@@ -260,6 +261,53 @@ describe("aprovação da exclusão", () => {
       { id: PEDIDO, approved_reason: "Pedido confirmado por telefone", aviso_whatsapp_enviado: true },
       expect.anything(),
     );
+  });
+
+  it("cópia que falha avisa a equipe para copiar à mão", async () => {
+    deps.copiar.mockResolvedValueOnce(false);
+    const user = usuario();
+    abrirDetalhe({ request_type: "redact" }, { exclusao_sem_email: true, mensagem_de_exclusao: MENSAGEM });
+    await user.click(screen.getByRole("button", { name: "Aprovar anonimização" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Copiar" }));
+
+    expect(deps.success).not.toHaveBeenCalled();
+    expect(deps.erro).toHaveBeenCalledWith("Não deu para copiar. Selecione o texto e copie à mão.");
+  });
+
+  it("'Enviei a mensagem' volta desmarcado quando a janela é cancelada e reaberta", async () => {
+    const user = usuario();
+    abrirDetalhe({ request_type: "redact" }, { exclusao_sem_email: true, mensagem_de_exclusao: MENSAGEM });
+    await user.click(screen.getByRole("button", { name: "Aprovar anonimização" }));
+    let janela = screen.getByRole("alertdialog");
+    await user.type(within(janela).getByLabelText(/Justificativa/), "Pedido confirmado por telefone");
+    await user.click(within(janela).getByLabelText("Enviei a mensagem"));
+    expect((within(janela).getByLabelText("Enviei a mensagem") as HTMLInputElement).checked).toBe(true);
+
+    await user.click(within(janela).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    await user.click(screen.getByRole("button", { name: "Aprovar anonimização" }));
+    janela = screen.getByRole("alertdialog");
+
+    // A justificativa pode ficar; a marca atesta um envio e precisa ser feita de novo.
+    expect((within(janela).getByLabelText("Enviei a mensagem") as HTMLInputElement).checked).toBe(false);
+    expect((within(janela).getByRole("button", { name: "Confirmar aprovação" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("aprovação recusada mostra o motivo do servidor, não um erro genérico", async () => {
+    // Painel neutro (montagem falhou): a caixa some, mas o servidor cobra a marca.
+    const motivo = "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.";
+    deps.aprovar.mockImplementationOnce((_corpo: unknown, opcoes: { onError?: (e: unknown) => void }) =>
+      opcoes.onError?.(new ApiError(422, "aviso_whatsapp_obrigatorio", undefined, "req-422", motivo)),
+    );
+    const user = usuario();
+    abrirDetalhe({ request_type: "redact" }, { exclusao_sem_email: false });
+    await user.click(screen.getByRole("button", { name: "Aprovar anonimização" }));
+    const janela = screen.getByRole("alertdialog");
+    await user.type(within(janela).getByLabelText(/Justificativa/), "Pedido confirmado por telefone");
+    await user.click(within(janela).getByRole("button", { name: "Confirmar aprovação" }));
+
+    expect(deps.erro).toHaveBeenCalledWith(motivo, expect.anything());
+    expect(deps.erro).not.toHaveBeenCalledWith("Falha ao aprovar a solicitação. Tente novamente.");
   });
 
   it("sem a regra ligada, o bloco não existe e o corpo não leva o campo do aviso", async () => {
