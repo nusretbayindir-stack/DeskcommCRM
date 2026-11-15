@@ -20,6 +20,12 @@ export const LGPD_REQUEST_TYPE_LABELS: Record<LgpdRequestType, string> = {
   store_redact: "Anonimização tenant",
 };
 
+/**
+ * Os valores que o CHECK `lgpd_requests_source_check` aceita, exatamente.
+ * `admin_panel` nunca existiu no banco: pedido criado com ele estourava no INSERT.
+ */
+export type LgpdRequestSource = "nuvemshop" | "manual" | "api" | "support";
+
 export type LgpdScope = "contact" | "tenant";
 
 export type LgpdRequestStatus =
@@ -34,7 +40,7 @@ export interface LgpdRequest {
   organization_id: string;
   request_type: LgpdRequestType;
   /** Origin channel that triggered the request. */
-  source: "nuvemshop" | "admin_panel" | "api";
+  source: LgpdRequestSource;
   /** Internal contact id (may be null if contact not yet in CRM — L-03). */
   contact_id: string | null;
   /** Nuvemshop customer id or other external platform identifier. */

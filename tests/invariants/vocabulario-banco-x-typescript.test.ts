@@ -571,6 +571,12 @@ const PARES: Array<{
     arquivo: "lib/external-db/types.ts",
     simbolo: "TipoBanco",
   },
+  {
+    tabela: "lgpd_requests",
+    coluna: "source",
+    arquivo: "lib/lgpd/types.ts",
+    simbolo: "LgpdRequestSource",
+  },
 ];
 
 /** Tira um nível de parênteses externos, se ele envolver a expressão inteira. */
