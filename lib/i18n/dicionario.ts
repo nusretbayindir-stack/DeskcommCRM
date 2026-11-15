@@ -14971,6 +14971,14 @@ export const DICIONARIO: Traducoes = {
   "A cópia dos seus dados pessoais (data.json) está em:": { es: "La copia de sus datos personales (data.json) está en:" },
   "A ligação expira em {prazo}.": { es: "El enlace caduca el {prazo}." },
   // ─── fim do bloco da Task 13 ───
+  // ─── Os títulos PRÓPRIOS da Central no idioma da organização (U55). Bloco do fork. ───
+  // lib/agent-engine/agent/inbound-turn.ts → human-handoff.ts: chegam como variável, então
+  // quem os cobra é tests/unit/titulo-proprio-do-handoff-no-idioma.test.ts.
+  "Suspeita de opt-out — assumir a conversa e pedir ao cliente a palavra que a regra reconhece":
+    { es: "Posible baja — asume la conversación y pide al cliente la palabra que el sistema reconoce" },
+  "Teto de gasto com IA atingido — assumir a conversa":
+    { es: "Se alcanzó el tope de gasto de IA — asume la conversación" },
+  // ─── fim do bloco da U55 ───
   // O aviso do espelho de etapa recusado (lib/agent-engine/edge/crm/move-lead-stage.ts),
   // gravado no idioma da organização (U14). Os detalhes vêm do sync e da tabela do espelho.
   "O assistente quis organizar um negócio de um funil que não é dele": {
