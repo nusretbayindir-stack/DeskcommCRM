@@ -14818,6 +14818,26 @@ export const DICIONARIO: Traducoes = {
   // O direito de reclamar, no texto de recusa pronto do painel do pedido (a autoridade vem do perfil do país).
   "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} ({site}) o acudir a los tribunales." },
   "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} o acudir a los tribunales." },
+  // A tela do cartão e do diálogo do pedido do titular (página do contato).
+  "Pedido do titular": { es: "Solicitud del titular" },
+  "Pedido aberto: {tipo} · prazo {data}": { es: "Solicitud abierta: {tipo} · plazo {data}" },
+  "Acesso": { es: "Acceso" },
+  "Exclusão": { es: "Eliminación" },
+  "Registrar pedido do titular": { es: "Registrar solicitud del titular" },
+  "Acesso — \"o que vocês guardam sobre mim\"": { es: "Acceso — \"qué guardan sobre mí\"" },
+  "Exclusão — \"apaguem os meus dados\"": { es: "Eliminación — \"borren mis datos\"" },
+  "Dia em que chegou": { es: "Día en que llegó" },
+  "Como chegou": { es: "Cómo llegó" },
+  "Pelo número de WhatsApp cadastrado": { es: "Por el número de WhatsApp registrado" },
+  "Pelo e-mail cadastrado": { es: "Por el correo electrónico registrado" },
+  "Por outro meio": { es: "Por otro medio" },
+  "Obrigatória quando chegou por outro meio (10 a 500 caracteres).": { es: "Obligatoria cuando llegó por otro medio (de 10 a 500 caracteres)." },
+  "Este contato não tem e-mail cadastrado. Quando o relatório ficar pronto, um admin baixa e entrega.": { es: "Este contacto no tiene correo electrónico registrado. Cuando el informe esté listo, un administrador lo descarga y lo entrega." },
+  "Um admin aprova o pedido; o relatório só é preparado depois disso. A exclusão também só acontece depois da aprovação.": { es: "Un administrador aprueba la solicitud; el informe solo se prepara después. La eliminación también ocurre solo tras la aprobación." },
+  "O prazo deste pedido já passou; avise um admin agora.": { es: "El plazo de esta solicitud ya venció; avise a un administrador ahora." },
+  "Já existe um pedido aberto deste tipo — prazo {data}": { es: "Ya existe una solicitud abierta de este tipo — plazo {data}" },
+  "Pedido registrado; os admins foram avisados.": { es: "Solicitud registrada; se avisó a los administradores." },
+  "Registrar pedido": { es: "Registrar solicitud" },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).

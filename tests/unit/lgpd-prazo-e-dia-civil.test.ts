@@ -860,6 +860,8 @@ const REPASSA_O_VALOR: readonly string[] = [
   "app/api/v1/webhooks/nuvemshop/customer-redact/route.ts",
   "app/api/v1/webhooks/nuvemshop/store-redact/route.ts",
   "app/api/v1/webhooks/nuvemshop/customer-data-request/route.ts",
+  // U53: o hook só repassa o prazo cru do cartão do contato; quem formata é a tela.
+  "hooks/usePedidoDoTitular.ts",
   "hooks/useLgpdRequests.ts",
   "hooks/useAdminLGPDRequests.ts",
   "app/api/v1/admin/lgpd/requests/[id]/route.ts",
