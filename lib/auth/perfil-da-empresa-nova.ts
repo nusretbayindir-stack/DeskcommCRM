@@ -82,6 +82,16 @@ const PAIS_DO_FUSO: Record<string, string> = {
   "America/Los_Angeles": "US",
 };
 
+/**
+ * U50: nomes antigos (aliases do IANA) que alguns navegadores ainda informam,
+ * para o nome canônico que `FUSOS_OFERECIDOS` lista. Sem isto, Linux e Firefox
+ * que dizem `Asia/Istanbul` tinham o fuso descartado e a empresa turca nascia
+ * sem fuso nem lira. Traduz ANTES de qualquer régua: a coluna guarda o canônico.
+ */
+const FUSO_CANONICO: Record<string, string> = {
+  "Asia/Istanbul": "Europe/Istanbul",
+};
+
 /** O fuso de quem só disse o país (pela região do `Accept-Language`). Um por país. */
 const FUSO_DO_PAIS: Record<string, string> = {
   PY: "America/Asuncion",
@@ -147,7 +157,8 @@ export function perfilDaEmpresaNova(pistas: PistasDoCadastro): PerfilDaEmpresaNo
   // Em pt-BR a empresa nasce como sempre nasceu: só o idioma, que é o default.
   if (locale === "pt-BR") return { locale };
 
-  const fusoBruto = pistas.fuso?.trim() ?? "";
+  const fusoInformado = pistas.fuso?.trim() ?? "";
+  const fusoBruto = Object.hasOwn(FUSO_CANONICO, fusoInformado) ? FUSO_CANONICO[fusoInformado]! : fusoInformado;
   // Só um fuso que as telas de configuração conseguem MOSTRAR: fora da lista, o
   // <select> de Configurações exibiria São Paulo enquanto a coluna guarda outro.
   const fusoDoNavegador =
@@ -181,6 +192,20 @@ export function perfilDaEmpresaNova(pistas: PistasDoCadastro): PerfilDaEmpresaNo
  */
 export const CHAVE_IDIOMA_DO_CADASTRO = "idioma_do_cadastro";
 export const CHAVE_FUSO_DO_CADASTRO = "fuso_do_cadastro";
+/**
+ * U51: o `Accept-Language` de quem se cadastra. No cadastro aberto o
+ * `/auth/confirm` lê o cabeçalho do próprio navegador; no `com_aprovacao` a
+ * empresa nasce na aprovação, com o navegador de OUTRA pessoa — então o da
+ * pessoa só existe se ficou guardado na conta.
+ */
+export const CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO = "accept_language_do_cadastro";
+
+/** Saneia o `Accept-Language` antes de ir para o `user_metadata`: só etiqueta de idioma, até 200 caracteres. */
+export function acceptLanguageParaGuardar(bruto: unknown): string | undefined {
+  if (typeof bruto !== "string") return undefined;
+  const limpo = bruto.trim();
+  return limpo !== "" && limpo.length <= 200 && /^[A-Za-z0-9,;=.*\- ]+$/.test(limpo) ? limpo : undefined;
+}
 
 /** Saneia as pistas antes de irem para o `user_metadata` (ou para a URL do Google). */
 export function pistasParaGuardar(bruto: { idioma?: unknown; fuso?: unknown }): {

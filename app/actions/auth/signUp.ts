@@ -20,17 +20,26 @@ import { audit, hashEmail } from "@/lib/audit";
 import { authRateLimited, AUTH_LIMITS } from "@/lib/auth/rate-limit";
 import { env } from "@/lib/env";
 import {
+  acceptLanguageParaGuardar,
+  CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO,
   CHAVE_FUSO_DO_CADASTRO,
   CHAVE_IDIOMA_DO_CADASTRO,
   pistasParaGuardar,
 } from "@/lib/auth/perfil-da-empresa-nova";
 
 /** As pistas saneadas, nas chaves que o provisionamento lê. */
-function metadadosDasPistas(pistas: { idioma?: string; fuso?: string } | undefined): Record<string, string> {
+function metadadosDasPistas(
+  pistas: { idioma?: string; fuso?: string } | undefined,
+  acceptLanguage: string | null,
+): Record<string, string> {
   const limpas = pistasParaGuardar(pistas ?? {});
+  // U51: o cabeçalho do navegador, para a aprovação (com_aprovacao) ter a mesma
+  // pista que o /auth/confirm tem no cadastro aberto.
+  const cabecalho = acceptLanguageParaGuardar(acceptLanguage);
   return {
     ...(limpas.idioma ? { [CHAVE_IDIOMA_DO_CADASTRO]: limpas.idioma } : {}),
     ...(limpas.fuso ? { [CHAVE_FUSO_DO_CADASTRO]: limpas.fuso } : {}),
+    ...(cabecalho ? { [CHAVE_ACCEPT_LANGUAGE_DO_CADASTRO]: cabecalho } : {}),
   };
 }
 
@@ -262,7 +271,7 @@ export async function signUp(
         : {
             org_name: (parsed.data as SignupInput).org_name,
             ...(planoEscolhido ? { cobranca_plan_id: planoEscolhido } : {}),
-            ...metadadosDasPistas(pistas),
+            ...metadadosDasPistas(pistas, hdrs.get("accept-language")),
           },
     },
   });
