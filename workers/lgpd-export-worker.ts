@@ -153,6 +153,19 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     };
   }
 
+  // U53: `failed` é estado final, como no worker de exclusão. Um pedido aprovado
+  // cujo envio falhou volta a `received` com o evento na fila de retry; se o
+  // admin o encerra com motivo nesse meio-tempo (`encerrado_pelo_responsavel`),
+  // o retry não pode exportar nem sobrescrever o encerramento. A reivindicação
+  // abaixo repete a condição, para a trava valer mesmo com leitura antiga.
+  if (req.status === "failed") {
+    return {
+      consumer_key: "lgpd-export-worker.v1",
+      status: "skipped",
+      detail: "already_failed",
+    };
+  }
+
   if (req.request_type !== "data_request") {
     return {
       consumer_key: "lgpd-export-worker.v1",
@@ -216,6 +229,8 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     .eq("organization_id", orgId)
     .eq("id", requestId)
     .neq("status", "completed")
+    // U53: pedido encerrado (`failed`) também não é reivindicado.
+    .neq("status", "failed")
     .or(`export_claimed_at.is.null,export_claimed_at.lt.${limiteDaReivindicacao}`)
     .select("id");
 
@@ -239,7 +254,12 @@ export async function processLgpdExport(event: EventRow): Promise<HandlerResult>
     return {
       consumer_key: "lgpd-export-worker.v1",
       status: "skipped",
-      detail: atual?.status === "completed" ? "already_completed" : "already_in_flight",
+      detail:
+        atual?.status === "completed"
+          ? "already_completed"
+          : atual?.status === "failed"
+            ? "already_failed"
+            : "already_in_flight",
     };
   }
 
