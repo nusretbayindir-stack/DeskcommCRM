@@ -780,12 +780,14 @@ export async function performHumanHandoff(
     [
       ids.tenantId,
       // No idioma da ORGANIZAÇÃO, como o corpo: o título da Central sai como foi
-      // gravado (nunca passa por t() na tela).
-      opts.inboxTitle ??
-        traduzir(
-          'Handoff humano solicitado — assumir a conversa',
-          await idiomaDaOrg(),
-        ),
+      // gravado (nunca passa por t() na tela). O título PRÓPRIO de quem chama
+      // (suspeita de opt-out, teto de gasto) passa pelo mesmo dicionário (U55).
+      opts.inboxTitle !== undefined
+        ? traduzir(opts.inboxTitle, await idiomaDaOrg())
+        : traduzir(
+            'Handoff humano solicitado — assumir a conversa',
+            await idiomaDaOrg(),
+          ),
       await corpoDaCentral(opts, await idiomaDaOrg()),
       ids.conversationId,
       episodioDoAviso,

@@ -36,6 +36,8 @@ const PALAVRAS: Readonly<Record<IdiomaAlgilado, ReadonlySet<string>>> = {
   fr: new Set([
     "je", "vous", "pour", "avec", "est", "une", "des", "les", "pas", "voudrais", "souhaite",
     "combien", "rendez", "nous", "votre", "mon", "sur", "dans", "aussi", "quand", "beaucoup", "plaît",
+    // U56: "je veux…", "vous pouvez…" — sem eles a abertura mais comum ficava com 1 ponto.
+    "veux", "voulez", "peux", "pouvez",
   ]),
   tr: new Set([
     "istiyorum", "randevu", "fiyat", "kadar", "ederim", "nasil", "nasıl", "icin", "için", "lutfen",
