@@ -11,6 +11,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { lerPlano } from "@/lib/cobranca/dono";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { gravarIdiomaEFuso } from "@/lib/organizacao/sementes-no-idioma";
+import { moedaDoPais } from "@/lib/auth/perfil-da-empresa-nova";
 import { logger } from "@/lib/logger";
 import { registrarConviteEmitido } from "@/lib/team/convites";
 import { querySchema, listarTenants } from "./_lista";
@@ -182,9 +183,11 @@ export async function POST(req: NextRequest) {
   // Antes do convite: o e-mail do dono sai no idioma da organização. Roda também
   // na retentativa (mesma chave), e é idempotente: só renomeia o que ainda é
   // semente. Falhar aqui não desfaz a empresa — a resposta conta, e a tela avisa.
+  // U40: com país, a moeda do país vai na mesma escrita (sem país, nada muda).
+  const currency = country ? moedaDoPais(country) : undefined;
   const idiomaGravado =
     locale || timezone || country
-      ? await gravarIdiomaEFuso(admin, org.id, { locale, timezone, country })
+      ? await gravarIdiomaEFuso(admin, org.id, { locale, timezone, country, currency })
       : undefined;
   const inviterName =
     adminCtx.user.user_metadata?.full_name ?? adminCtx.user.email ?? "Administrador";

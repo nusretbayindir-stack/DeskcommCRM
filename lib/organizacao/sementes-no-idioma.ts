@@ -31,6 +31,7 @@
  * `baseline.sql`.
  */
 import type { Idioma } from "@/lib/i18n/idiomas";
+import type { MoedaServida } from "@/lib/money";
 import { vocabularioDoFunilPadrao, vocabularioIntocadoDoBanco } from "@/lib/pipelines/vocabulario-padrao";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -255,7 +256,7 @@ export async function sementesNoIdioma(
 }
 
 /**
- * Grava o país, o idioma e o fuso que quem criou a empresa escolheu e, com idioma,
+ * Grava o país, o idioma, o fuso (e a moeda do país) que quem criou a empresa escolheu e, com idioma,
  * traduz as sementes. Vem ANTES do convite do dono: o e-mail sai no idioma da
  * organização. `false` = a organização não gravou — e aí as sementes ficam
  * como estão, para não traduzir para um idioma que a empresa não tem.
@@ -263,12 +264,14 @@ export async function sementesNoIdioma(
 export async function gravarIdiomaEFuso(
   admin: ReturnType<typeof createAdminClient>,
   orgId: string,
-  escolha: { locale?: Idioma; timezone?: string; country?: string },
+  escolha: { locale?: Idioma; timezone?: string; country?: string; currency?: MoedaServida },
 ): Promise<boolean> {
-  const mudancas: { locale?: Idioma; timezone?: string; country?: string } = {};
+  const mudancas: { locale?: Idioma; timezone?: string; country?: string; currency?: MoedaServida } = {};
   if (escolha.locale) mudancas.locale = escolha.locale;
   if (escolha.timezone) mudancas.timezone = escolha.timezone;
   if (escolha.country) mudancas.country = escolha.country;
+  // U40: a moeda do país, na MESMA escrita — falha junto, e a resposta conta.
+  if (escolha.currency) mudancas.currency = escolha.currency;
   if (Object.keys(mudancas).length === 0) return true;
 
   const gravou = await escrever(
