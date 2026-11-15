@@ -17,6 +17,12 @@ const CASOS: ReadonlyArray<[string, "nl" | "fr" | "tr"]> = [
   ["Bonjour, je voudrais un rendez-vous", "fr"],
   ["Merci beaucoup pour votre aide", "fr"],
   ["Combien ça coûte s'il vous plaît ?", "fr"],
+  // U56: o "querer"/"poder" do dia a dia. "Je veux…" é a abertura mais comum, e só
+  // `je` pontuava (1 ponto, abaixo da régua de 2): o contato ficava sem idioma.
+  ["Je veux parler à un conseiller", "fr"],
+  ["Je peux passer demain ?", "fr"],
+  ["Pouvez-vous m'aider ?", "fr"],
+  ["Vous voulez un devis ?", "fr"],
   ["Merhaba, randevu almak istiyorum", "tr"],
   ["Fiyat ne kadar acaba", "tr"],
   ["Teşekkür ederim", "tr"],
