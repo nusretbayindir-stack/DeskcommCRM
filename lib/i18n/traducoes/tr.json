@@ -677,6 +677,7 @@
   "A senha que o sistema usa para falar com o programa que conecta o WhatsApp.": "Sistemin, WhatsApp'ı bağlayan programla konuşmak için kullandığı şifre.",
   "A senha é cifrada antes de gravar e nunca é mostrada de volta. A conexão é somente leitura e só aceita TLS por padrão.": "Şifre kaydedilmeden önce şifrelenir ve bir daha gösterilmez. Bağlantı salt okunurdur ve varsayılan olarak yalnızca TLS kabul eder.",
   "A sessão expira em 1 hora. Confirma?": "Oturum 1 saat içinde sona erer. Onaylıyor musunuz?",
+  "A seu pedido, os seus dados nos registros de {empresa} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": "Talebiniz üzerine {empresa} kayıtlarındaki verileriniz bugün siliniyor. Bu, bizden alacağınız son mesajdır.",
   "A sincronização bateu no teto de uma passada. Clique em Continuar de onde parou para seguir do próximo contato — o que já entrou não duplica.": "Senkronizasyon tek seferlik sınıra ulaştı. Sonraki kişiden sürdürmek için Kaldığı yerden devam et'e tıklayın — içeri alınanlar mükerrer olmaz.",
   "A skill é carregada quando o cliente escreve uma destas palavras.": "Müşteri bu kelimelerden birini yazdığında skill yüklenir.",
   "A solicitação {id} de {org} atingiu o limiar {limiar}.": "{org} için {id} talebi şu eşiğe ulaştı: {limiar}.",

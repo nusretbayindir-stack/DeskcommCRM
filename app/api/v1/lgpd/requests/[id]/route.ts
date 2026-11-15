@@ -28,6 +28,8 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
+import { painelDoPedido } from "@/lib/lgpd/painel-do-pedido";
+import { enderecoDeEntrega } from "@/lib/lgpd/pedido-manual";
 
 export const dynamic = "force-dynamic";
 
@@ -86,13 +88,17 @@ export async function GET(
   }
   const pedido = (request.request_payload ?? {}) as {
     customer?: { name?: unknown } | null;
-    delivery?: { address?: unknown } | null;
   };
   const textoOuNulo = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const titular = {
     nome: textoOuNulo(contato?.display_name) ?? textoOuNulo(pedido.customer?.name),
-    email_destino: textoOuNulo(pedido.delivery?.address) ?? textoOuNulo(contato?.email),
+    email_destino: enderecoDeEntrega(request.request_payload, contato?.email),
   };
+  const painel = await painelDoPedido(admin, {
+    orgId,
+    pedido: request,
+    emailDoContato: textoOuNulo(contato?.email),
+  });
 
   // Fetch audit trail entries for this request
   const { data: auditRows, error: auditErr } = await admin
@@ -158,7 +164,7 @@ export async function GET(
   }
 
   return ok(
-    { request, audit_trail, signed_pdf_url, signed_json_url, titular },
+    { request, audit_trail, signed_pdf_url, signed_json_url, titular, painel },
     { requestId },
   );
 }

@@ -675,6 +675,7 @@
   "A senha que o sistema usa para falar com o programa que conecta o WhatsApp.": "Le mot de passe que le système utilise pour communiquer avec le programme qui connecte WhatsApp.",
   "A senha é cifrada antes de gravar e nunca é mostrada de volta. A conexão é somente leitura e só aceita TLS por padrão.": "Le mot de passe est chiffré avant l'enregistrement et n'est jamais réaffiché. La connexion est en lecture seule et n'accepte que TLS par défaut.",
   "A sessão expira em 1 hora. Confirma?": "La session expire dans 1 heure. Confirmez-vous ?",
+  "A seu pedido, os seus dados nos registros de {empresa} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": "À votre demande, vos données sont effacées aujourd'hui des fichiers de {empresa}. Ceci est le dernier message que vous recevez de notre part.",
   "A sincronização bateu no teto de uma passada. Clique em Continuar de onde parou para seguir do próximo contato — o que já entrou não duplica.": "La synchronisation a atteint le plafond d'un passage. Cliquez sur « Reprendre là où vous vous êtes arrêté » pour continuer à partir du contact suivant — ce qui est déjà entré n'est pas dupliqué.",
   "A skill é carregada quando o cliente escreve uma destas palavras.": "La compétence est chargée quand le client écrit l'un de ces mots.",
   "A solicitação {id} de {org} atingiu o limiar {limiar}.": "La demande {id} a atteint le seuil {limiar} (entreprise : {org}).",

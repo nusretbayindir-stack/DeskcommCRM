@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { LgpdRequest } from "@/hooks/useLgpdRequests";
+import type { PainelDoPedido } from "@/lib/lgpd/painel-do-pedido";
 
 export interface AuditTrailEntry {
   id: string;
@@ -32,6 +33,8 @@ export interface LgpdRequestDetailResponse {
     signed_json_url: string | null;
     /** Quem recebe o envio — mostrado na confirmação da aprovação (doc 134). */
     titular: { nome: string | null; email_destino: string | null };
+    /** O que a tela mostra além do pedido: origem, avisos antes de aprovar, mensagens prontas (U53). */
+    painel: PainelDoPedido;
   };
 }
 

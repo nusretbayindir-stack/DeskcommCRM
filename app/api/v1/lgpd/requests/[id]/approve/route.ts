@@ -24,7 +24,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ipDoCliente } from "@/lib/http/ip-do-cliente";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { exclusaoForaDoBrasil } from "@/lib/lgpd/atestado-de-anonimizacao";
-import { exigeAvisoNoWhatsapp } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
+import {
+  exigeAvisoAntesDaAprovacao,
+  podeExigirAvisoAntesDaAprovacao,
+} from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -148,10 +151,11 @@ export async function POST(
   const perfil = await perfilDaOrganizacao(admin, orgId);
   // Só pedido de exclusão de uma pessoa (com contato) fora do Brasil pode exigir
   // o aviso; nos demais casos o contato nem é lido.
-  const podeExigirAviso =
-    request.request_type === "redact" &&
-    Boolean(request.contact_id) &&
-    exclusaoForaDoBrasil(request.request_type, perfil.codigo);
+  const podeExigirAviso = podeExigirAvisoAntesDaAprovacao({
+    contactId: request.contact_id,
+    requestType: request.request_type,
+    paisCodigo: perfil.codigo,
+  });
   let avisoObrigatorio = false;
   if (podeExigirAviso) {
     const { data: contato, error: contatoErr } = await admin
@@ -163,7 +167,8 @@ export async function POST(
     if (contatoErr) {
       return fail("internal_error", "contact_read_failed", 500, { requestId });
     }
-    avisoObrigatorio = exigeAvisoNoWhatsapp({
+    avisoObrigatorio = exigeAvisoAntesDaAprovacao({
+      contactId: request.contact_id,
       requestType: request.request_type,
       paisCodigo: perfil.codigo,
       emailDoContato: (contato as { email?: string | null } | null)?.email ?? null,
