@@ -134,8 +134,11 @@ const manual = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const painel = (p: ReturnType<typeof pedido>, emailDoContato: string | null = "titular@loja.test") =>
-  painelDoPedido(h.criar(), { orgId: ORG, pedido: p, emailDoContato });
+const painel = (
+  p: ReturnType<typeof pedido>,
+  emailDoContato: string | null = "titular@loja.test",
+  contatoAnonimizado = false,
+) => painelDoPedido(h.criar(), { orgId: ORG, pedido: p, emailDoContato, contatoAnonimizado });
 
 beforeEach(() => {
   h.estado.semAutoridade = false;
@@ -364,6 +367,16 @@ describe("o painel do pedido", () => {
     });
   });
 
+  it("contato anonimizado por outro caminho: sem caixa, sem mensagem e sem link", async () => {
+    // "Anonimizar" mantém a linha (is_anonymized = true, e-mail e telefone nulos):
+    // o titular não pode mais ser avisado, e a marca seria um atestado falso.
+    h.estado.conversas = [{ id: "conv-1" }];
+    const p = await painel(pedido({ request_type: "redact" }), null, true);
+
+    expect(p).toMatchObject({ exclusao_sem_email: false, mensagem_de_exclusao: null, conversa_href: null });
+    expect(h.estado.leituras.some((l) => l.tabela === "conversations")).toBe(false);
+  });
+
   it("toda leitura de tabela da empresa leva organization_id", async () => {
     h.estado.conversas = [{ id: "conv-1" }];
     await painel(pedido({ request_type: "redact" }), null);
@@ -377,13 +390,14 @@ describe("o painel do pedido", () => {
 
 describe("exclusao_sem_email é a regra que a aprovação cobra", () => {
   const casos = [
-    { pais: "BE", tipo: "redact", contato: "contato-1", email: null, payload: {} },
-    { pais: "BE", tipo: "redact", contato: "contato-1", email: "a@loja.test", payload: {} },
-    { pais: "BE", tipo: "redact", contato: "contato-1", email: null, payload: { email: "b@loja.test" } },
-    { pais: "BE", tipo: "redact", contato: null, email: null, payload: {} },
-    { pais: "BE", tipo: "store_redact", contato: "contato-1", email: null, payload: {} },
-    { pais: "BE", tipo: "data_request", contato: "contato-1", email: null, payload: {} },
-    { pais: "BR", tipo: "redact", contato: "contato-1", email: null, payload: {} },
+    { pais: "BE", tipo: "redact", contato: "contato-1", email: null, payload: {}, anonimizado: false },
+    { pais: "BE", tipo: "redact", contato: "contato-1", email: "a@loja.test", payload: {}, anonimizado: false },
+    { pais: "BE", tipo: "redact", contato: "contato-1", email: null, payload: { email: "b@loja.test" }, anonimizado: false },
+    { pais: "BE", tipo: "redact", contato: null, email: null, payload: {}, anonimizado: false },
+    { pais: "BE", tipo: "redact", contato: "contato-1", email: null, payload: {}, anonimizado: true },
+    { pais: "BE", tipo: "store_redact", contato: "contato-1", email: null, payload: {}, anonimizado: false },
+    { pais: "BE", tipo: "data_request", contato: "contato-1", email: null, payload: {}, anonimizado: false },
+    { pais: "BR", tipo: "redact", contato: "contato-1", email: null, payload: {}, anonimizado: false },
   ];
 
   it.each(casos)("painel e rota concordam: %j", async (c) => {
@@ -391,12 +405,14 @@ describe("exclusao_sem_email é a regra que a aprovação cobra", () => {
     const p = await painel(
       pedido({ request_type: c.tipo, contact_id: c.contato, request_payload: c.payload }),
       c.email,
+      c.anonimizado,
     );
     const regra = exigeAvisoAntesDaAprovacao({
       contactId: c.contato,
       requestType: c.tipo,
       paisCodigo: c.pais,
       emailDoContato: c.email,
+      contatoAnonimizado: c.anonimizado,
       payload: c.payload,
     });
     expect(p.exclusao_sem_email).toBe(regra);
@@ -407,5 +423,15 @@ describe("exclusao_sem_email é a regra que a aprovação cobra", () => {
     expect(ler("app/api/v1/lgpd/requests/[id]/approve/route.ts")).toContain("exigeAvisoAntesDaAprovacao(");
     expect(ler("lib/lgpd/painel-do-pedido.ts")).toContain("exigeAvisoAntesDaAprovacao(");
     expect(ler("hooks/useLgpdRequest.ts")).toMatch(/import type \{ PainelDoPedido \} from "@\/lib\/lgpd\/painel-do-pedido"/);
+  });
+
+  it("as duas leituras do contato trazem is_anonymized e o repassam à regra", () => {
+    const ler = (rel: string) => readFileSync(path.join(RAIZ, rel), "utf8");
+    const aprovacao = ler("app/api/v1/lgpd/requests/[id]/approve/route.ts");
+    const detalhe = ler("app/api/v1/lgpd/requests/[id]/route.ts");
+    expect(aprovacao).toContain('.select("email, is_anonymized")');
+    expect(aprovacao).toContain("contatoAnonimizado:");
+    expect(detalhe).toContain('.select("display_name, email, is_anonymized")');
+    expect(detalhe).toContain("contatoAnonimizado:");
   });
 });

@@ -58,6 +58,8 @@ export interface EntradaDoPainel {
     result: unknown;
   };
   emailDoContato: string | null;
+  /** Contato anonimizado por outro caminho: a linha fica, sem e-mail nem telefone. */
+  contatoAnonimizado: boolean;
 }
 
 /** O texto-fonte (pt) do aviso da exclusão; o catálogo traduz e `{marca}` vira o nome da marca. */
@@ -129,7 +131,7 @@ export function painelNeutro(): PainelDoPedido {
 
 export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promise<PainelDoPedido> {
   const db = admin as LeitorAdmin;
-  const { orgId, pedido, emailDoContato } = i;
+  const { orgId, pedido, emailDoContato, contatoAnonimizado } = i;
   const payload = objeto(pedido.request_payload);
   const result = objeto(pedido.result);
   const perfil = await perfilDaOrganizacao(admin as never, orgId);
@@ -184,6 +186,7 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
     requestType: pedido.request_type,
     paisCodigo: perfil.codigo,
     emailDoContato,
+    contatoAnonimizado,
     payload,
   });
 

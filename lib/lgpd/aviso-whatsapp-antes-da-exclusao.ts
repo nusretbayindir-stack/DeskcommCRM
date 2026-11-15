@@ -48,13 +48,18 @@ export function podeExigirAvisoAntesDaAprovacao(p: {
  * para recusar (422) e o painel do detalhe a usa para mostrar a caixa. Se os
  * dois divergissem, a tela esconderia a caixa onde o servidor a cobra e o admin
  * nunca conseguiria aprovar.
+ *
+ * Contato já anonimizado por outro caminho ("Anonimizar" mantém a linha com
+ * `is_anonymized = true`, e-mail e telefone nulos) não tem a quem avisar: a
+ * caixa não aparece e a aprovação não cobra a marca, que seria um atestado falso.
  */
 export function exigeAvisoAntesDaAprovacao(p: {
   contactId: string | null | undefined;
   requestType: string;
   paisCodigo: string;
   emailDoContato: string | null | undefined;
+  contatoAnonimizado: boolean;
   payload: unknown;
 }): boolean {
-  return podeExigirAvisoAntesDaAprovacao(p) && exigeAvisoNoWhatsapp(p);
+  return podeExigirAvisoAntesDaAprovacao(p) && !p.contatoAnonimizado && exigeAvisoNoWhatsapp(p);
 }

@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     pais: "BE",
     tipo: "redact",
     emailDoContato: null as string | null,
+    contatoAnonimizado: false,
     contactId: "contato-1" as string | null,
     erroNoContato: false,
     payload: { origem: "painel" } as Record<string, unknown>,
@@ -33,12 +34,20 @@ const h = vi.hoisted(() => {
       from(tabela: string) {
         const registro: { tabela: string; eq: Array<[string, unknown]> } = { tabela, eq: [] };
         estado.filtros.push(registro);
+        let colunas = "";
         const resposta = () => {
           if (tabela === "organizations") return { data: { country: estado.pais }, error: null };
           if (tabela === "contacts") {
             return estado.erroNoContato
               ? { data: null, error: { message: "falhou" } }
-              : { data: { email: estado.emailDoContato }, error: null };
+              : {
+                  data: {
+                    email: estado.emailDoContato,
+                    // Só vem se a rota pedir a coluna, como no PostgREST.
+                    ...(colunas.includes("is_anonymized") ? { is_anonymized: estado.contatoAnonimizado } : {}),
+                  },
+                  error: null,
+                };
           }
           if (tabela === "lgpd_requests") {
             return {
@@ -58,7 +67,10 @@ const h = vi.hoisted(() => {
           return { data: null, error: null };
         };
         const cadeia: Record<string, unknown> = {
-          select: () => cadeia,
+          select: (c?: string) => {
+            if (typeof c === "string") colunas = c;
+            return cadeia;
+          },
           eq: (coluna: string, valor: unknown) => {
             registro.eq.push([coluna, valor]);
             return cadeia;
@@ -115,6 +127,7 @@ beforeEach(() => {
   h.estado.pais = "BE";
   h.estado.tipo = "redact";
   h.estado.emailDoContato = null;
+  h.estado.contatoAnonimizado = false;
   h.estado.contactId = "contato-1";
   h.estado.erroNoContato = false;
   h.estado.payload = { origem: "painel" };
@@ -218,6 +231,19 @@ describe("onde a regra NÃO se aplica", () => {
     const res = await aprovar({ aviso_whatsapp_enviado: true });
 
     expect(res.status, await res.clone().text()).toBe(200);
+    const payload = h.estado.atualizacoes[0]!.request_payload as Record<string, unknown>;
+    expect(Object.prototype.hasOwnProperty.call(payload, "aviso_whatsapp_antes")).toBe(false);
+  });
+
+  it("contato anonimizado por outro caminho: aprova sem a marca e não grava o aviso", async () => {
+    // A linha ficou (is_anonymized = true, e-mail e telefone nulos): não há a quem
+    // avisar, e exigir a marca obrigaria o admin a atestar um envio impossível.
+    h.estado.contatoAnonimizado = true;
+
+    const res = await aprovar();
+
+    expect(res.status, await res.clone().text()).toBe(200);
+    expect(h.estado.rpc).toHaveLength(1);
     const payload = h.estado.atualizacoes[0]!.request_payload as Record<string, unknown>;
     expect(Object.prototype.hasOwnProperty.call(payload, "aviso_whatsapp_antes")).toBe(false);
   });

@@ -76,11 +76,12 @@ export async function GET(
   // Quem recebe e para onde vai: o admin aprova o envio VENDO o nome do
   // titular e o e-mail de destino (doc 134). O destino é o mesmo que o worker
   // usa — o endereço que veio no pedido, senão o e-mail do contato.
-  let contato: { display_name: string | null; email: string | null } | null = null;
+  let contato: { display_name: string | null; email: string | null; is_anonymized: boolean | null } | null =
+    null;
   if (request.contact_id) {
     const { data: c } = await admin
       .from("contacts")
-      .select("display_name, email")
+      .select("display_name, email, is_anonymized")
       .eq("organization_id", orgId)
       .eq("id", request.contact_id)
       .maybeSingle();
@@ -101,6 +102,7 @@ export async function GET(
       orgId,
       pedido: request,
       emailDoContato: textoOuNulo(contato?.email),
+      contatoAnonimizado: contato?.is_anonymized === true,
     });
   } catch {
     logger.warn("[lgpd-request-detail] painel unavailable", {

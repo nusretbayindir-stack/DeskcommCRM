@@ -160,18 +160,20 @@ export async function POST(
   if (podeExigirAviso) {
     const { data: contato, error: contatoErr } = await admin
       .from("contacts")
-      .select("email")
+      .select("email, is_anonymized")
       .eq("organization_id", orgId)
       .eq("id", request.contact_id as string)
       .maybeSingle();
     if (contatoErr) {
       return fail("internal_error", "contact_read_failed", 500, { requestId });
     }
+    const lido = contato as { email?: string | null; is_anonymized?: boolean | null } | null;
     avisoObrigatorio = exigeAvisoAntesDaAprovacao({
       contactId: request.contact_id,
       requestType: request.request_type,
       paisCodigo: perfil.codigo,
-      emailDoContato: (contato as { email?: string | null } | null)?.email ?? null,
+      emailDoContato: lido?.email ?? null,
+      contatoAnonimizado: lido?.is_anonymized === true,
       payload: request.request_payload,
     });
   }
