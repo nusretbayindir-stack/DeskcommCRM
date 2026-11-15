@@ -31,6 +31,7 @@ import { valorDaInstalacao } from "@/lib/instalacao/config";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { findContactByExternalId, findLgpdRequest } from "@/lib/lgpd/repository";
 import { evidenciaDoPedido, exclusaoForaDoBrasil, type DadosDoAtestado } from "@/lib/lgpd/atestado-de-anonimizacao";
+import { resolverAvisosDoPedido } from "@/lib/lgpd/avisos-do-pedido-manual";
 import { avisarTitularAposApagamento } from "@/lib/lgpd/aviso-apos-apagar";
 import { emitirAtestadoDeAnonimizacao, type AtestadoEmitido } from "@/lib/lgpd/emitir-atestado";
 import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
@@ -294,6 +295,9 @@ export async function processLgpdRedact(event: EventRow): Promise<HandlerResult>
           .eq("organization_id", orgId)
           .eq("id", requestId);
 
+        // U53: o pedido acabou, os avisos dele na Central se resolvem (nunca lança).
+        await resolverAvisosDoPedido(admin, orgId, requestId);
+
         await audit({
           action: "lgpd.redact_skipped_already_anonymized",
           organizationId: orgId,
@@ -426,6 +430,9 @@ export async function processLgpdRedact(event: EventRow): Promise<HandlerResult>
         })
         .eq("organization_id", orgId)
         .eq("id", requestId);
+
+      // U53: o pedido acabou, os avisos dele na Central se resolvem (nunca lança).
+      await resolverAvisosDoPedido(admin, orgId, requestId);
 
       // Domain event — applied (consumed by SLA monitor / dashboards).
       await admin.rpc("emit_event" as never, {

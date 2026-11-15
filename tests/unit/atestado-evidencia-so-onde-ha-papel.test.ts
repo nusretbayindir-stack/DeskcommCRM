@@ -28,6 +28,8 @@ const h = vi.hoisted(() => {
       from(tabela: string) {
         const resposta = () => {
           if (tabela === "organizations") return { data: { country: estado.pais }, error: null };
+          // U53: o contato tem e-mail, então a exclusão fora do Brasil não pede o aviso pelo WhatsApp.
+          if (tabela === "contacts") return { data: { email: "titular@loja.test" }, error: null };
           if (tabela === "lgpd_requests") {
             return {
               data: {

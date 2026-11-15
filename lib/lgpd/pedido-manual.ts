@@ -8,6 +8,8 @@
 
 import { z } from "zod";
 
+import { exclusaoForaDoBrasil } from "./atestado-de-anonimizacao";
+
 /** Prazo (dias) de cada tipo de pedido aberto pela tela. */
 export const PRAZO_DO_PEDIDO_MANUAL = { data_request: 7, redact: 15 } as const;
 
@@ -132,6 +134,23 @@ export function enderecoDeEntrega(
   const origemManual = p.origem_manual;
   if (origemManual && typeof origemManual === "object") return fixado;
   return fixado ?? textoOuNulo(emailDoContato);
+}
+
+/**
+ * A aprovação desta exclusão exige que a equipe já tenha avisado o titular pelo
+ * WhatsApp? Sim quando é exclusão fora do Brasil e não há e-mail para o aviso e
+ * o atestado. Mesma ordem de endereço do worker de exclusão: e-mail do contato
+ * primeiro, depois `request_payload.email`.
+ */
+export function exigeAvisoNoWhatsapp(p: {
+  requestType: string;
+  paisCodigo: string;
+  emailDoContato: string | null | undefined;
+  payload: unknown;
+}): boolean {
+  if (!exclusaoForaDoBrasil(p.requestType, p.paisCodigo)) return false;
+  const payload = (p.payload && typeof p.payload === "object" ? p.payload : {}) as Record<string, unknown>;
+  return textoOuNulo(p.emailDoContato) === null && textoOuNulo(payload.email) === null;
 }
 
 /** Rótulo pt-BR da origem; a tela traduz com `t()`. */

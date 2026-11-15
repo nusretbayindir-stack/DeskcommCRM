@@ -9746,5 +9746,6 @@
   "A data de chegada não pode estar no futuro.": "The date of receipt cannot be in the future.",
   "Este contato não tem o canal escolhido.": "This contact does not have the chosen channel.",
   "Só um pedido em revisão pendente pode ser marcado como entregue.": "Only a request pending review can be marked as delivered.",
-  "Só um pedido recebido, antes da aprovação, pode ser encerrado.": "Only a received request, before approval, can be closed."
+  "Só um pedido recebido, antes da aprovação, pode ser encerrado.": "Only a received request, before approval, can be closed.",
+  "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": "Send the message via WhatsApp and tick the confirmation before approving."
 }

@@ -3908,6 +3908,7 @@
   "Enviar vendas para o Google Ads ainda não está disponível nesta instalação — não é nada que você tenha feito. Quem instalou o sistema precisa configurar": "Satışları Google Ads'e göndermek bu kurulumda henüz kullanılamıyor — sizin yaptığınız bir şeyden kaynaklanmıyor. Sistemi kuran kişinin şunu yapılandırması gerekiyor",
   "Enviar vendas pelo canal da conversa": "Satışları görüşme kanalı üzerinden gönder",
   "Enviar áudio": "Ses gönder",
+  "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": "Onaylamadan önce mesajı WhatsApp'tan gönderin ve onay kutusunu işaretleyin.",
   "Envie a proposta em PDF, Markdown (.md) ou texto (.txt).": "Teklifi PDF, Markdown (.md) veya metin (.txt) olarak gönderin.",
   "Envie o arquivo como multipart/form-data no campo 'file'.": "Dosyayı 'file' alanında multipart/form-data olarak gönderin.",
   "Envie o arquivo como multipart/form-data.": "Dosyayı multipart/form-data olarak gönderin.",

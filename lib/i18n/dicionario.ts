@@ -14812,6 +14812,7 @@ export const DICIONARIO: Traducoes = {
   "Este contato não tem o canal escolhido.": { es: "Este contacto no tiene el canal elegido." },
   "Só um pedido em revisão pendente pode ser marcado como entregue.": { es: "Solo una solicitud en revisión pendiente puede marcarse como entregada." },
   "Só um pedido recebido, antes da aprovação, pode ser encerrado.": { es: "Solo una solicitud recibida, antes de la aprobación, puede cerrarse." },
+  "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": { es: "Envíe el mensaje por WhatsApp y marque la confirmación antes de aprobar." },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
