@@ -146,25 +146,31 @@ export async function POST(
   // já enviado — depois do apagamento o telefone deixa de existir. Antes do
   // evento: recusado, nada é emitido nem alterado.
   const perfil = await perfilDaOrganizacao(admin, orgId);
-  let emailDoContato: string | null = null;
-  if (request.contact_id) {
-    const { data: contato } = await admin
+  // Só pedido de exclusão de uma pessoa (com contato) fora do Brasil pode exigir
+  // o aviso; nos demais casos o contato nem é lido.
+  const podeExigirAviso =
+    request.request_type === "redact" &&
+    Boolean(request.contact_id) &&
+    exclusaoForaDoBrasil(request.request_type, perfil.codigo);
+  let avisoObrigatorio = false;
+  if (podeExigirAviso) {
+    const { data: contato, error: contatoErr } = await admin
       .from("contacts")
       .select("email")
       .eq("organization_id", orgId)
-      .eq("id", request.contact_id)
+      .eq("id", request.contact_id as string)
       .maybeSingle();
-    emailDoContato = (contato as { email?: string | null } | null)?.email ?? null;
-  }
-  if (
-    !aviso_whatsapp_enviado &&
-    exigeAvisoNoWhatsapp({
+    if (contatoErr) {
+      return fail("internal_error", "contact_read_failed", 500, { requestId });
+    }
+    avisoObrigatorio = exigeAvisoNoWhatsapp({
       requestType: request.request_type,
       paisCodigo: perfil.codigo,
-      emailDoContato,
+      emailDoContato: (contato as { email?: string | null } | null)?.email ?? null,
       payload: request.request_payload,
-    })
-  ) {
+    });
+  }
+  if (avisoObrigatorio && !aviso_whatsapp_enviado) {
     return fail(
       "aviso_whatsapp_obrigatorio",
       t("Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar."),
@@ -238,21 +244,28 @@ export async function POST(
     em: new Date().toISOString(),
   };
 
+  // U53: o aviso só é registrado quando a regra o exigia e a marca veio.
+  const gravaAvisoWhatsapp = avisoObrigatorio && aviso_whatsapp_enviado === true;
+
   // Transition status → processing
   const { error: updateErr } = await admin
     .from("lgpd_requests")
     .update({
       status: "processing",
       updated_at: new Date().toISOString(),
-      ...(geraAtestado || aviso_whatsapp_enviado
+      ...(geraAtestado || gravaAvisoWhatsapp
         ? {
             request_payload: {
               ...(typeof request.request_payload === "object" && request.request_payload !== null
                 ? (request.request_payload as Record<string, unknown>)
                 : {}),
-              ...(geraAtestado ? { execucao: evidenciaDaExecucao } : {}),
+              ...(geraAtestado
+                ? {
+                    execucao: evidenciaDaExecucao,
+                  }
+                : {}),
               // U53: quem avisou o titular pelo WhatsApp antes de apagar (só ids e instante).
-              ...(aviso_whatsapp_enviado
+              ...(gravaAvisoWhatsapp
                 ? { aviso_whatsapp_antes: { por: authUser.id, em: new Date().toISOString() } }
                 : {}),
             },

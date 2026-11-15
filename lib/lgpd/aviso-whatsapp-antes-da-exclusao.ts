@@ -24,7 +24,8 @@ export function exigeAvisoNoWhatsapp(p: {
   emailDoContato: string | null | undefined;
   payload: unknown;
 }): boolean {
-  if (!exclusaoForaDoBrasil(p.requestType, p.paisCodigo)) return false;
+  // `store_redact` é da loja, sem pessoa a avisar: só o pedido de exclusão de contato conta.
+  if (p.requestType !== "redact" || !exclusaoForaDoBrasil(p.requestType, p.paisCodigo)) return false;
   const payload = (p.payload && typeof p.payload === "object" ? p.payload : {}) as Record<string, unknown>;
   return !preenchido(p.emailDoContato) && !preenchido(payload.email);
 }

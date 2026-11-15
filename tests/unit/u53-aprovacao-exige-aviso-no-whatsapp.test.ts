@@ -19,6 +19,8 @@ const h = vi.hoisted(() => {
     pais: "BE",
     tipo: "redact",
     emailDoContato: null as string | null,
+    contactId: "contato-1" as string | null,
+    erroNoContato: false,
     payload: { origem: "painel" } as Record<string, unknown>,
     atualizacoes: [] as Array<Record<string, unknown>>,
     rpc: [] as unknown[],
@@ -33,7 +35,11 @@ const h = vi.hoisted(() => {
         estado.filtros.push(registro);
         const resposta = () => {
           if (tabela === "organizations") return { data: { country: estado.pais }, error: null };
-          if (tabela === "contacts") return { data: { email: estado.emailDoContato }, error: null };
+          if (tabela === "contacts") {
+            return estado.erroNoContato
+              ? { data: null, error: { message: "falhou" } }
+              : { data: { email: estado.emailDoContato }, error: null };
+          }
           if (tabela === "lgpd_requests") {
             return {
               data: {
@@ -41,7 +47,7 @@ const h = vi.hoisted(() => {
                 organization_id: "org-1",
                 request_type: estado.tipo,
                 status: "received",
-                contact_id: "contato-1",
+                contact_id: estado.contactId,
                 external_customer_id: null,
                 due_at: "2026-11-05T00:00:00.000Z",
                 request_payload: estado.payload,
@@ -109,6 +115,8 @@ beforeEach(() => {
   h.estado.pais = "BE";
   h.estado.tipo = "redact";
   h.estado.emailDoContato = null;
+  h.estado.contactId = "contato-1";
+  h.estado.erroNoContato = false;
   h.estado.payload = { origem: "painel" };
   h.estado.atualizacoes.length = 0;
   h.estado.rpc.length = 0;
@@ -184,7 +192,54 @@ describe("a aprovação de exclusão sem e-mail exige o aviso pelo WhatsApp", ()
   });
 });
 
+describe("onde a regra NÃO se aplica", () => {
+  it("exclusão sem contato (contact_id nulo) nunca pede a marca nem lê o contato", async () => {
+    h.estado.contactId = null;
+
+    const res = await aprovar();
+
+    expect(res.status, await res.clone().text()).toBe(200);
+    expect(h.estado.filtros.some((f) => f.tabela === "contacts")).toBe(false);
+  });
+
+  it("pedido de dados e Brasil não leem o contato (a regra não pode se aplicar)", async () => {
+    h.estado.tipo = "data_request";
+    await aprovar();
+    h.estado.pais = "BR";
+    h.estado.tipo = "redact";
+    await aprovar();
+
+    expect(h.estado.filtros.some((f) => f.tabela === "contacts")).toBe(false);
+  });
+
+  it("marca enviada sem a regra se aplicar: não grava aviso_whatsapp_antes", async () => {
+    h.estado.emailDoContato = "titular@loja.test";
+
+    const res = await aprovar({ aviso_whatsapp_enviado: true });
+
+    expect(res.status, await res.clone().text()).toBe(200);
+    const payload = h.estado.atualizacoes[0]!.request_payload as Record<string, unknown>;
+    expect(Object.prototype.hasOwnProperty.call(payload, "aviso_whatsapp_antes")).toBe(false);
+  });
+
+  it("erro ao ler o contato: 500, nunca um 422 enganoso, sem evento e sem update", async () => {
+    h.estado.erroNoContato = true;
+
+    const res = await aprovar();
+
+    expect(res.status).toBe(500);
+    expect(h.estado.rpc).toHaveLength(0);
+    expect(h.estado.atualizacoes).toHaveLength(0);
+  });
+});
+
 describe("exigeAvisoNoWhatsapp", () => {
+  it("store_redact fora do Brasil nunca pede a marca (nível da loja, sem pessoa)", () => {
+    expect(
+      exigeAvisoNoWhatsapp({ requestType: "store_redact", paisCodigo: "BE", emailDoContato: null, payload: {} }),
+    ).toBe(false);
+  });
+
   const base = { requestType: "redact", paisCodigo: "BE", emailDoContato: null, payload: {} };
 
   it("e-mail em branco no cadastro e no payload conta como sem e-mail", () => {
