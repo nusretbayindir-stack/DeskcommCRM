@@ -39,6 +39,9 @@ export const REFERENCIAS_DE_AVISO = {
   // `lib/tarefas/criar-tarefa.ts`). Sem referência o botão cairia na Central,
   // meio caminho — quem recebe o aviso já está nela.
   task: { tabela: "crm_tasks", papel: "agent", rotulo: "Abrir tarefa", href: () => "/app/tasks" },
+  // (U53) O pedido do titular aberto pela tela: o aviso vai a cada admin e leva ao
+  // pedido, onde ele aprova ou fecha. `admin` é o papel da tela do pedido.
+  lgpd_request: { tabela: "lgpd_requests", papel: "admin", rotulo: "Abrir pedido", href: (id: string) => `/app/lgpd/requests/${id}` },
 } satisfies Record<string, Alvo>;
 
 export type InboxRefKind = keyof typeof REFERENCIAS_DE_AVISO | "organization" | "ai_budget" | "plano" | "job_queue" | "cron_jobs";
@@ -201,7 +204,7 @@ export const POLITICAS_DE_AVISO = {
   // Credenciais. O botão diz o que fazer ("Reconectar"), não "revisar", porque
   // nada há para inspecionar: a conta precisa ser conectada de novo.
   assinatura_desconectada: { refs: [], orientacao: "A conta que paga a assinatura recusou o login. Reconecte em IA › Credenciais; este aviso se resolve sozinho quando o login voltar.", geral: { papel: "admin", href: "/app/ai/credentials", rotulo: "Reconectar a assinatura" } },
-  other: { refs: ["agenda_reminder_sender", "lead", "channel_session", "appointment", "ai_agent", "ai_provider_credential", "agent_case"], orientacao: "Confira a situação descrita neste aviso com a pessoa responsável." },
+  other: { refs: ["agenda_reminder_sender", "lead", "channel_session", "appointment", "ai_agent", "ai_provider_credential", "agent_case", "lgpd_request"], orientacao: "Confira a situação descrita neste aviso com a pessoa responsável." },
 } satisfies Record<InboxKind, Politica>;
 
 /**

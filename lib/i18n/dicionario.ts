@@ -14801,6 +14801,12 @@ export const DICIONARIO: Traducoes = {
   "resposta ou decisão": { es: "respuesta o decisión" },
   "pergunta ao cliente": { es: "pregunta al cliente" },
   // ─── fim do bloco dos comandos da equipe ───
+  // ─── O pedido do titular pela tela (U53). Bloco do fork. ───
+  // O aviso na Central para cada admin (lib/lgpd/avisos-do-pedido-manual.ts) e o botão dele.
+  "Novo pedido de acesso aos dados — prazo {data}": { es: "Nueva solicitud de acceso a los datos — plazo {data}" },
+  "Novo pedido de exclusão dos dados — prazo {data}": { es: "Nueva solicitud de eliminación de los datos — plazo {data}" },
+  "Abrir pedido": { es: "Abrir solicitud" },
+  // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
   "Idioma do contato; sem ele, o da empresa (ex: nl)": {
