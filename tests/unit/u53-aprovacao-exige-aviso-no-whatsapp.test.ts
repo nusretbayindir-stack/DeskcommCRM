@@ -91,7 +91,7 @@ vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => h.criar() }));
 
 import { POST } from "@/app/api/v1/lgpd/requests/[id]/approve/route";
-import { exigeAvisoNoWhatsapp } from "@/lib/lgpd/pedido-manual";
+import { exigeAvisoNoWhatsapp } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 
 async function aprovar(corpo: Record<string, unknown> = {}): Promise<Response> {
   const req = new NextRequest("http://localhost/api/v1/lgpd/requests/pedido-1/approve", {

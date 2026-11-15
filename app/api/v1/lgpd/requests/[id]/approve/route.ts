@@ -24,7 +24,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ipDoCliente } from "@/lib/http/ip-do-cliente";
 import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { exclusaoForaDoBrasil } from "@/lib/lgpd/atestado-de-anonimizacao";
-import { exigeAvisoNoWhatsapp } from "@/lib/lgpd/pedido-manual";
+import { exigeAvisoNoWhatsapp } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";

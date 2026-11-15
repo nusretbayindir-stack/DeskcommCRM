@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   canaisDoContato, diaNoFuturo, enderecoDeEntrega, instanteDoRecebimento,
@@ -69,4 +71,12 @@ it("rótulo da origem", () => {
   expect(rotuloDaOrigem("manual")).toBe("Pelo painel");
   expect(rotuloDaOrigem("nuvemshop")).toBe("Nuvemshop");
   expect(rotuloDaOrigem(null)).toBe("—");
+});
+
+describe("isolamento do módulo", () => {
+  it("as regras do pedido pela tela não puxam módulo do servidor", () => {
+    const fonte = readFileSync(resolve(process.cwd(), "lib/lgpd/pedido-manual.ts"), "utf8");
+    const alvos = [...fonte.matchAll(/^import\s[^;]*?from\s+"([^"]+)"/gm)].map((m) => m[1]);
+    expect(alvos).toEqual(["zod"]);
+  });
 });
