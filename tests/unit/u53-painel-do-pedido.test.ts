@@ -15,6 +15,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => {
   const estado = {
+    semAutoridade: false,
+    erroNoSettings: false,
+    nomeDaMarca: "Loja Teste",
     pais: "BE",
     settings: {} as Record<string, unknown>,
     localeDaOrg: "nl",
@@ -22,7 +25,7 @@ const h = vi.hoisted(() => {
     abertos: [] as Array<{ id: string }>,
     conversas: [] as Array<{ id: string }>,
     usuario: { user_metadata: { full_name: "Ana Lima" }, email: "ana@loja.test" } as Record<string, unknown> | null,
-    leituras: [] as Array<{ tabela: string; eq: Array<[string, unknown]>; in: Array<[string, unknown]> }>,
+    leituras: [] as Array<{ tabela: string; colunas: string; eq: Array<[string, unknown]>; in: Array<[string, unknown]> }>,
   };
 
   function criar() {
@@ -33,10 +36,11 @@ const h = vi.hoisted(() => {
         },
       },
       from(tabela: string) {
-        const leitura = { tabela, eq: [] as Array<[string, unknown]>, in: [] as Array<[string, unknown]> };
+        const leitura = { tabela, colunas: "", eq: [] as Array<[string, unknown]>, in: [] as Array<[string, unknown]> };
         estado.leituras.push(leitura);
         const unico = () => {
           if (tabela === "organizations") {
+            if (estado.erroNoSettings && leitura.colunas === "settings") return { data: null, error: { message: "falhou" } };
             return {
               data: {
                 country: estado.pais,
@@ -56,7 +60,10 @@ const h = vi.hoisted(() => {
           return { data: [], error: null };
         };
         const cadeia: Record<string, unknown> = {
-          select: () => cadeia,
+          select: (colunas: string) => {
+            leitura.colunas = colunas;
+            return cadeia;
+          },
           eq: (coluna: string, valor: unknown) => {
             leitura.eq.push([coluna, valor]);
             return cadeia;
@@ -80,9 +87,21 @@ const h = vi.hoisted(() => {
 
 vi.mock("@/lib/branding/saida", async (original) => ({
   ...(await original<typeof import("@/lib/branding/saida")>()),
-  marcaDaSaida: vi.fn(async () => ({ nome: "Loja Teste" })),
+  marcaDaSaida: vi.fn(async () => ({ nome: h.estado.nomeDaMarca })),
 }));
+vi.mock("@/lib/legal/perfil-do-pais", async (original) => {
+  const real = await original<typeof import("@/lib/legal/perfil-do-pais")>();
+  return {
+    ...real,
+    perfilDaOrganizacao: async (...args: Parameters<typeof real.perfilDaOrganizacao>) => {
+      const perfil = await real.perfilDaOrganizacao(...args);
+      return h.estado.semAutoridade ? { ...perfil, autoridadeDeSupervisao: undefined } : perfil;
+    },
+  };
+});
 
+import { autoridadeNoIdioma } from "@/lib/lgpd/idioma-do-documento";
+import { PERFIS_DO_PAIS } from "@/lib/legal/perfil-do-pais";
 import { exigeAvisoAntesDaAprovacao } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { painelDoPedido } from "@/lib/lgpd/painel-do-pedido";
 
@@ -117,6 +136,9 @@ const painel = (p: ReturnType<typeof pedido>, emailDoContato: string | null = "t
   painelDoPedido(h.criar(), { orgId: ORG, pedido: p, emailDoContato });
 
 beforeEach(() => {
+  h.estado.semAutoridade = false;
+  h.estado.erroNoSettings = false;
+  h.estado.nomeDaMarca = "Loja Teste";
   h.estado.pais = "BE";
   h.estado.settings = {};
   h.estado.localeDaOrg = "nl";
@@ -258,9 +280,58 @@ describe("o painel do pedido", () => {
     expect(p.recusa_pronta).toContain("não conseguimos confirmar quem pediu");
     // Contato em nl: o texto não sai no português de origem.
     expect(p.recusa_pronta).not.toContain("não foi atendido");
+    // O direito de reclamar à autoridade (art. 12.º, n.º 4), no idioma do titular.
+    expect(p.recusa_pronta).toContain("Gegevensbeschermingsautoriteit (GBA)");
+    expect(p.recusa_pronta).toContain("https://www.gegevensbeschermingsautoriteit.be");
+    expect(p.recusa_pronta).toContain("klacht");
 
     // Com e-mail no cadastro, o aviso é do sistema: não há texto pronto.
     expect((await painel(encerrado, "titular@loja.test")).recusa_pronta).toBeNull();
+  });
+
+  const encerradoPorIdentidade = () =>
+    pedido({
+      status: "failed",
+      result: {
+        encerramento: {
+          motivo_codigo: "identidade_nao_confirmada",
+          nota: "não conseguimos confirmar quem pediu",
+          em: "2026-11-12T10:00:00.000Z",
+        },
+      },
+    });
+
+  it("recusa pronta em francês cita a autoridade em francês e o direito de réclamation", async () => {
+    h.estado.localeDoContato = "fr";
+    const p = await painel(encerradoPorIdentidade(), null);
+
+    expect(p.recusa_pronta).toContain("réclamation");
+    expect(p.recusa_pronta).toContain(autoridadeNoIdioma(PERFIS_DO_PAIS.BE!.autoridadeDeSupervisao!, "fr").nome);
+    expect(p.recusa_pronta).not.toContain("Gegevensbeschermingsautoriteit");
+  });
+
+  it("recusa pronta sem autoridade no perfil não inventa a linha da reclamação", async () => {
+    h.estado.semAutoridade = true;
+    const p = await painel(encerradoPorIdentidade(), null);
+
+    expect(p.recusa_pronta).toContain("Loja Teste");
+    expect(p.recusa_pronta).not.toContain("klacht");
+    expect(p.recusa_pronta).not.toContain("Gegevensbeschermingsautoriteit");
+  });
+
+  it("nome da empresa com $& e $$ sai como está, nas duas mensagens", async () => {
+    h.estado.nomeDaMarca = "Loja $& $$ Teste";
+    const excl = await painel(pedido({ request_type: "redact" }), null);
+    expect(excl.mensagem_de_exclusao).toContain("Loja $& $$ Teste");
+    expect(excl.mensagem_de_exclusao).not.toContain("{empresa}");
+
+    const recusa = await painel(encerradoPorIdentidade(), null);
+    expect(recusa.recusa_pronta).toContain("Loja $& $$ Teste");
+  });
+
+  it("leitura do settings que falha não acusa art. 15 vazio", async () => {
+    h.estado.erroNoSettings = true;
+    expect((await painel(pedido())).art15_vazio).toBe(false);
   });
 
   it("encerrar por outro motivo, ou entregar à mão, não gera recusa pronta", async () => {

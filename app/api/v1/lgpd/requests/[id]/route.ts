@@ -28,7 +28,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { logger } from "@/lib/logger";
-import { painelDoPedido } from "@/lib/lgpd/painel-do-pedido";
+import { painelDoPedido, painelNeutro } from "@/lib/lgpd/painel-do-pedido";
 import { enderecoDeEntrega } from "@/lib/lgpd/pedido-manual";
 
 export const dynamic = "force-dynamic";
@@ -94,11 +94,19 @@ export async function GET(
     nome: textoOuNulo(contato?.display_name) ?? textoOuNulo(pedido.customer?.name),
     email_destino: enderecoDeEntrega(request.request_payload, contato?.email),
   };
-  const painel = await painelDoPedido(admin, {
-    orgId,
-    pedido: request,
-    emailDoContato: textoOuNulo(contato?.email),
-  });
+  // O painel é apoio: se falhar, o detalhe do pedido abre sem os avisos.
+  let painel = painelNeutro();
+  try {
+    painel = await painelDoPedido(admin, {
+      orgId,
+      pedido: request,
+      emailDoContato: textoOuNulo(contato?.email),
+    });
+  } catch {
+    logger.warn("[lgpd-request-detail] painel unavailable", {
+      code: "painel_failed", requestId, organizationId: orgId,
+    });
+  }
 
   // Fetch audit trail entries for this request
   const { data: auditRows, error: auditErr } = await admin

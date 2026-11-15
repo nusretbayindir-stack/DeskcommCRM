@@ -14,10 +14,12 @@ import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { alineasDoArt15Visiveis, art15DoControlador } from "@/lib/legal/art15";
-import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
+import type { Idioma } from "@/lib/i18n/idiomas";
+import { perfilDaOrganizacao, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { exigeAvisoAntesDaAprovacao } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { montarAvisoArt12, prazoDeUmMes } from "@/lib/lgpd/avisos-do-artigo-12";
 import { MOTIVOS_DE_ENCERRAMENTO, type MotivoDeEncerramento } from "@/lib/lgpd/encerramento";
+import { autoridadeNoIdioma, documentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
 import { enderecoDeEntrega, type CanalDoPedido } from "@/lib/lgpd/pedido-manual";
 
@@ -58,9 +60,14 @@ export interface EntradaDoPainel {
   emailDoContato: string | null;
 }
 
-/** O texto-fonte (pt) do aviso da exclusão; o catálogo traduz e `{empresa}` vira a marca. */
+/** O texto-fonte (pt) do aviso da exclusão; o catálogo traduz e `{marca}` vira o nome da marca. */
 const MENSAGEM_DE_EXCLUSAO =
-  "A seu pedido, os seus dados nos registros de {empresa} serão apagados hoje. Esta é a última mensagem que você recebe de nós.";
+  "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.";
+
+const RECLAMACAO_COM_SITE =
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.";
+const RECLAMACAO_SEM_SITE =
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.";
 
 const STATUS_DE_ACESSO_ABERTO = ["received", "processing", "pending_review"];
 
@@ -93,6 +100,33 @@ async function nomeDeQuemAbriu(db: LeitorAdmin, userId: string | null): Promise<
   }
 }
 
+/** A frase do direito de reclamar; sem autoridade no perfil, não há frase (nada é inventado). */
+function linhaDaReclamacao(perfil: PerfilDoPais, idioma: Idioma | undefined): string | null {
+  if (!perfil.autoridadeDeSupervisao) return null;
+  const autoridade = autoridadeNoIdioma(perfil.autoridadeDeSupervisao, idioma);
+  const { t } = documentoNoIdioma(idioma, perfil.codigo);
+  return autoridade.site
+    ? t(RECLAMACAO_COM_SITE, { autoridade: autoridade.nome, site: autoridade.site })
+    : t(RECLAMACAO_SEM_SITE, { autoridade: autoridade.nome });
+}
+
+/** Painel sem nenhum aviso: o que o detalhe devolve quando o painel não pôde ser montado. */
+export function painelNeutro(): PainelDoPedido {
+  return {
+    abertura: null,
+    destino_do_relatorio: null,
+    art15_vazio: false,
+    acesso_aberto: false,
+    exclusao_sem_email: false,
+    mensagem_de_exclusao: null,
+    conversa_href: null,
+    aviso_por_email_disponivel: false,
+    encerramento: null,
+    entrega_manual: null,
+    recusa_pronta: null,
+  };
+}
+
 export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promise<PainelDoPedido> {
   const db = admin as LeitorAdmin;
   const { orgId, pedido, emailDoContato } = i;
@@ -118,9 +152,16 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
   // ── pedido de acesso: alíneas do art. 15 vazias ─────────────────────────────
   let art15_vazio = false;
   if (pedido.request_type === "data_request" && alineasDoArt15Visiveis(perfil.codigo)) {
-    const { data: org } = await db.from("organizations").select("settings").eq("id", orgId).maybeSingle();
-    const a = art15DoControlador((org as { settings?: unknown } | null)?.settings);
-    art15_vazio = !a.finalidades && !a.destinatarios && !a.prazo_conservacao;
+    const { data: org, error: erroDoSettings } = await db
+      .from("organizations")
+      .select("settings")
+      .eq("id", orgId)
+      .maybeSingle();
+    // Leitura que falhou é "não sei", não "vazio": não levanta um aviso falso.
+    if (!erroDoSettings) {
+      const a = art15DoControlador((org as { settings?: unknown } | null)?.settings);
+      art15_vazio = !a.finalidades && !a.destinatarios && !a.prazo_conservacao;
+    }
   }
 
   // ── exclusão: acesso ainda aberto do mesmo contato ──────────────────────────
@@ -166,7 +207,7 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
   if (exclusao_sem_email && pedido.contact_id) {
     const idioma = (await idiomaDoDocumento()) ?? (await idiomaDaOrgPeloSupabase(admin, orgId));
     const marca = await marcaDaSaida(orgId, { semMemo: true });
-    mensagem_de_exclusao = traduzir(MENSAGEM_DE_EXCLUSAO, idioma).replace("{empresa}", marca.nome);
+    mensagem_de_exclusao = traduzir(MENSAGEM_DE_EXCLUSAO, idioma).replace("{marca}", () => marca.nome);
 
     const { data: conversas } = await db
       .from("conversations")
@@ -207,7 +248,8 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
       const marca = await marcaDaSaida(orgId, { semMemo: true });
       const { data: org } = await db.from("organizations").select("timezone").eq("id", orgId).maybeSingle();
       const recebidoEm = new Date(pedido.received_at);
-      recusa_pronta = montarAvisoArt12({
+      const idioma = (await idiomaDoDocumento()) ?? undefined;
+      const avisoBase = montarAvisoArt12({
         desfecho: "recusa",
         motivo: encerramento.nota,
         requestId: pedido.id,
@@ -216,8 +258,14 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
         prazoDeUmMes: prazoDeUmMes(recebidoEm),
         recebidoEm,
         fuso: texto((org as { timezone?: unknown } | null)?.timezone) ?? undefined,
-        idioma: (await idiomaDoDocumento()) ?? undefined,
+        idioma,
       }).text;
+      // O aviso de recusa do art. 12.º não traz o direito de reclamar (art. 12.º,
+      // n.º 4 do RGPD); o painel o acrescenta, sem mexer no texto do e-mail.
+      const linha = linhaDaReclamacao(perfil, idioma);
+      recusa_pronta = linha ? `${avisoBase}
+
+${linha}` : avisoBase;
     } catch {
       recusa_pronta = null;
     }

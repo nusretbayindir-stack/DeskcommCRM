@@ -9748,5 +9748,7 @@
   "Só um pedido em revisão pendente pode ser marcado como entregue.": "Only a request pending review can be marked as delivered.",
   "Só um pedido recebido, antes da aprovação, pode ser encerrado.": "Only a received request, before approval, can be closed.",
   "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": "Send the message via WhatsApp and tick the confirmation before approving.",
-  "A seu pedido, os seus dados nos registros de {empresa} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": "At your request, your data is being erased from the records of {empresa} today. This is the last message you will receive from us."
+  "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": "At your request, your data is being erased from the records of {marca} today. This is the last message you will receive from us.",
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.": "If you disagree with this decision, you may lodge a complaint with the {autoridade} ({site}) or seek a judicial remedy.",
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.": "If you disagree with this decision, you may lodge a complaint with the {autoridade} or seek a judicial remedy."
 }

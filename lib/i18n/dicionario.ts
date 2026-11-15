@@ -14814,7 +14814,10 @@ export const DICIONARIO: Traducoes = {
   "Só um pedido recebido, antes da aprovação, pode ser encerrado.": { es: "Solo una solicitud recibida, antes de la aprobación, puede cerrarse." },
   "Envie a mensagem pelo WhatsApp e marque a confirmação antes de aprovar.": { es: "Envíe el mensaje por WhatsApp y marque la confirmación antes de aprobar." },
   // O aviso da exclusão que a equipe envia pelo WhatsApp quando o titular não tem e-mail (painel do pedido).
-  "A seu pedido, os seus dados nos registros de {empresa} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": { es: "A petición suya, hoy se eliminan sus datos de los registros de {empresa}. Este es el último mensaje que recibe de nuestra parte." },
+  "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.": { es: "A petición suya, hoy se eliminan sus datos de los registros de {marca}. Este es el último mensaje que recibe de nuestra parte." },
+  // O direito de reclamar, no texto de recusa pronto do painel do pedido (a autoridade vem do perfil do país).
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} ({site}) o acudir a los tribunales." },
+  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.": { es: "Si no está de acuerdo con esta decisión, puede presentar una reclamación ante la {autoridade} o acudir a los tribunales." },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
