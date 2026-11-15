@@ -14810,6 +14810,8 @@ export const DICIONARIO: Traducoes = {
   "Já existe um pedido aberto deste tipo para este contato.": { es: "Ya existe una solicitud abierta de este tipo para este contacto." },
   "A data de chegada não pode estar no futuro.": { es: "La fecha de llegada no puede estar en el futuro." },
   "Este contato não tem o canal escolhido.": { es: "Este contacto no tiene el canal elegido." },
+  "Só um pedido em revisão pendente pode ser marcado como entregue.": { es: "Solo una solicitud en revisión pendiente puede marcarse como entregada." },
+  "Só um pedido recebido, antes da aprovação, pode ser encerrado.": { es: "Solo una solicitud recibida, antes de la aprobación, puede cerrarse." },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).

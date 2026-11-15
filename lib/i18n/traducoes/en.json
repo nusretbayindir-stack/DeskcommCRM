@@ -9744,5 +9744,7 @@
   "Este contato já foi anonimizado.": "This contact has already been anonymized.",
   "Já existe um pedido aberto deste tipo para este contato.": "An open request of this type already exists for this contact.",
   "A data de chegada não pode estar no futuro.": "The date of receipt cannot be in the future.",
-  "Este contato não tem o canal escolhido.": "This contact does not have the chosen channel."
+  "Este contato não tem o canal escolhido.": "This contact does not have the chosen channel.",
+  "Só um pedido em revisão pendente pode ser marcado como entregue.": "Only a request pending review can be marked as delivered.",
+  "Só um pedido recebido, antes da aprovação, pode ser encerrado.": "Only a received request, before approval, can be closed."
 }
