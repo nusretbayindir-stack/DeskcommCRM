@@ -102,6 +102,13 @@ describe("cartão do pedido do titular", () => {
     expect(screen.getByText("Pedido aberto: Acesso · prazo 24/11/2026")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Registrar pedido do titular" })).toBeTruthy();
   });
+
+  it("falha ao carregar os pedidos abertos diz o motivo, sem o botão", () => {
+    deps.abertos.mockReturnValue({ isLoading: false, isError: true, data: undefined });
+    render(<CartaoDoPedidoDoTitular contactId="c1" />);
+    expect(screen.getByText("Não foi possível carregar os pedidos deste contato.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Registrar pedido do titular" })).toBeNull();
+  });
 });
 
 describe("diálogo de novo pedido", () => {

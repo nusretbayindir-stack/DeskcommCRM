@@ -9793,5 +9793,6 @@
   "Avisar o titular por e-mail": "Notify the data subject by email",
   "Envie esta resposta ao titular pela conversa do WhatsApp:": "Send this reply to the data subject through the WhatsApp conversation:",
   "Pedido encerrado.": "Request closed.",
-  "Pedido marcado como entregue.": "Request marked as delivered."
+  "Pedido marcado como entregue.": "Request marked as delivered.",
+  "Não foi possível carregar os pedidos deste contato.": "Could not load this contact's requests."
 }

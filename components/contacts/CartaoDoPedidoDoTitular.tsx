@@ -33,6 +33,12 @@ export function CartaoDoPedidoDoTitular({ contactId }: Props) {
     <Card className="p-4" data-testid="pedido-do-titular">
       <h2 className="text-sm font-semibold">{t("Pedido do titular")}</h2>
 
+      {abertos.isError && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("Não foi possível carregar os pedidos deste contato.")}
+        </p>
+      )}
+
       {pedidos.length > 0 && (
         <ul className="mt-2 space-y-1 text-sm">
           {pedidos.map((p) => (

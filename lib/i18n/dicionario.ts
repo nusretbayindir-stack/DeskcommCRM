@@ -14863,6 +14863,8 @@ export const DICIONARIO: Traducoes = {
   "Envie esta resposta ao titular pela conversa do WhatsApp:": { es: "Envíe esta respuesta al titular por la conversación de WhatsApp:" },
   "Pedido encerrado.": { es: "Solicitud cerrada." },
   "Pedido marcado como entregue.": { es: "Solicitud marcada como entregada." },
+  // O cartão do pedido do titular quando a lista de pedidos abertos não carrega.
+  "Não foi possível carregar os pedidos deste contato.": { es: "No se pudieron cargar las solicitudes de este contacto." },
   // ─── fim do bloco da U53 ───
   // ─── A mensagem fixa no idioma do contato (S2a Task 11). Bloco do fork. ───
   // A ajuda do `{{contact_locale}}` no editor do prompt (lib/ai/guardrails-schema.ts).
