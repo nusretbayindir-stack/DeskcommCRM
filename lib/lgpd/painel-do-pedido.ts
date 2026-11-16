@@ -14,12 +14,11 @@ import { idiomaDaOrgPeloSupabase } from "@/lib/ai/agents/idioma-da-org";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { alineasDoArt15Visiveis, art15DoControlador } from "@/lib/legal/art15";
-import type { Idioma } from "@/lib/i18n/idiomas";
-import { perfilDaOrganizacao, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
+import { perfilDaOrganizacao } from "@/lib/legal/perfil-do-pais";
 import { exigeAvisoAntesDaAprovacao } from "@/lib/lgpd/aviso-whatsapp-antes-da-exclusao";
 import { montarAvisoArt12, prazoDeUmMes } from "@/lib/lgpd/avisos-do-artigo-12";
+import { linhaDaReclamacao, reclamacaoVaiNoEmail } from "@/lib/lgpd/direito-de-reclamar";
 import { MOTIVOS_DE_ENCERRAMENTO, type MotivoDeEncerramento } from "@/lib/lgpd/encerramento";
-import { autoridadeNoIdioma, documentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 import { idiomaDoTitular } from "@/lib/lgpd/idioma-do-titular";
 import { enderecoDeEntrega, type CanalDoPedido } from "@/lib/lgpd/pedido-manual";
 
@@ -66,11 +65,6 @@ export interface EntradaDoPainel {
 const MENSAGEM_DE_EXCLUSAO =
   "A seu pedido, os seus dados nos registros de {marca} serão apagados hoje. Esta é a última mensagem que você recebe de nós.";
 
-const RECLAMACAO_COM_SITE =
-  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ({site}) ou recorrer aos tribunais.";
-const RECLAMACAO_SEM_SITE =
-  "Se não concordar com esta decisão, pode apresentar reclamação à {autoridade} ou recorrer aos tribunais.";
-
 const STATUS_DE_ACESSO_ABERTO = ["received", "processing", "pending_review"];
 
 function objeto(v: unknown): Record<string, unknown> {
@@ -100,16 +94,6 @@ async function nomeDeQuemAbriu(db: LeitorAdmin, userId: string | null): Promise<
   } catch {
     return null;
   }
-}
-
-/** A frase do direito de reclamar; sem autoridade no perfil, não há frase (nada é inventado). */
-function linhaDaReclamacao(perfil: PerfilDoPais, idioma: Idioma | undefined): string | null {
-  if (!perfil.autoridadeDeSupervisao) return null;
-  const autoridade = autoridadeNoIdioma(perfil.autoridadeDeSupervisao, idioma);
-  const { t } = documentoNoIdioma(idioma, perfil.codigo);
-  return autoridade.site
-    ? t(RECLAMACAO_COM_SITE, { autoridade: autoridade.nome, site: autoridade.site })
-    : t(RECLAMACAO_SEM_SITE, { autoridade: autoridade.nome });
 }
 
 /** Painel sem nenhum aviso: o que o detalhe devolve quando o painel não pôde ser montado. */
@@ -263,9 +247,10 @@ export async function painelDoPedido(admin: unknown, i: EntradaDoPainel): Promis
         fuso: texto((org as { timezone?: unknown } | null)?.timezone) ?? undefined,
         idioma,
       }).text;
-      // O aviso de recusa do art. 12.º não traz o direito de reclamar (art. 12.º,
-      // n.º 4 do RGPD); o painel o acrescenta, sem mexer no texto do e-mail.
-      const linha = linhaDaReclamacao(perfil, idioma);
+      // O direito de reclamar (art. 12.º, n.º 4 do RGPD): onde o e-mail de recusa
+      // já o traz (U57: Bélgica e Turquia), o texto pronto não o repete; nos
+      // outros países de fora do Brasil, o painel o acrescenta, sem mexer no e-mail.
+      const linha = reclamacaoVaiNoEmail(perfil) ? null : linhaDaReclamacao(perfil, idioma);
       recusa_pronta = linha ? `${avisoBase}
 
 ${linha}` : avisoBase;
