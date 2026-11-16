@@ -289,6 +289,8 @@ describe("o painel do pedido", () => {
     expect(p.recusa_pronta).toContain("Gegevensbeschermingsautoriteit (GBA)");
     expect(p.recusa_pronta).toContain("https://www.gegevensbeschermingsautoriteit.be");
     expect(p.recusa_pronta).toContain("klacht");
+    // U57: na Bélgica o aviso de recusa já traz a frase; o texto pronto não a repete.
+    expect(p.recusa_pronta!.split("klacht").length - 1).toBe(1);
 
     // Com e-mail no cadastro, o aviso é do sistema: não há texto pronto.
     expect((await painel(encerrado, "titular@loja.test")).recusa_pronta).toBeNull();
@@ -311,8 +313,18 @@ describe("o painel do pedido", () => {
     const p = await painel(encerradoPorIdentidade(), null);
 
     expect(p.recusa_pronta).toContain("réclamation");
+    expect(p.recusa_pronta!.split("réclamation").length - 1).toBe(1);
     expect(p.recusa_pronta).toContain(autoridadeNoIdioma(PERFIS_DO_PAIS.BE!.autoridadeDeSupervisao!, "fr").nome);
     expect(p.recusa_pronta).not.toContain("Gegevensbeschermingsautoriteit");
+  });
+
+  it("Portugal: o e-mail de recusa segue sem a frase (U57), e o texto pronto a acrescenta uma vez", async () => {
+    h.estado.pais = "PT";
+    const p = await painel(encerradoPorIdentidade(), null);
+
+    const cnpd = PERFIS_DO_PAIS.PT!.autoridadeDeSupervisao!.nome;
+    expect(p.recusa_pronta).toContain("pode apresentar reclamação");
+    expect(p.recusa_pronta!.split(cnpd).length - 1).toBe(1);
   });
 
   it("recusa pronta sem autoridade no perfil não inventa a linha da reclamação", async () => {

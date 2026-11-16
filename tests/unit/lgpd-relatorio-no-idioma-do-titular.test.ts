@@ -375,7 +375,25 @@ describe("os avisos do art. 12.º", () => {
 
   it("Portugal com idioma, a Bélgica sem idioma: os de antes, byte a byte", () => {
     expect(JSON.stringify(avisos("PT", "fr"), null, 2)).toBe(ANTES("avisos-pt.json"));
-    expect(JSON.stringify(avisos("BE"), null, 2)).toBe(ANTES("avisos-be.json"));
+
+    // U57: a recusa belga ganhou a frase do direito de reclamar (art. 12.º, n.º 4)
+    // — também sem idioma, porque é a lei que a pede. Tirada a frase, os quatro
+    // avisos belgas seguem os de antes, byte a byte.
+    const frase =
+      "Se não concordar com esta decisão, pode apresentar reclamação à Gegevensbeschermingsautoriteit (GBA) (https://www.gegevensbeschermingsautoriteit.be) ou recorrer aos tribunais.";
+    const belgas = avisos("BE");
+    const [apagamentoNoPrazo, apagamentoForaDoPrazo, recusa, prorrogacao] = belgas;
+    expect(recusa!.html).toContain(`\n  <p>${frase}</p>`);
+    expect(recusa!.text).toContain(`\n${frase}`);
+    for (const outro of [apagamentoNoPrazo, apagamentoForaDoPrazo, prorrogacao]) {
+      expect(outro!.html + outro!.text).not.toContain("reclamação");
+    }
+    const semAFrase = belgas.map((a) => ({
+      ...a,
+      html: a.html.replace(`\n  <p>${frase}</p>`, ""),
+      text: a.text.replace(`\n${frase}`, ""),
+    }));
+    expect(JSON.stringify(semAFrase, null, 2)).toBe(ANTES("avisos-be.json"));
   });
 });
 

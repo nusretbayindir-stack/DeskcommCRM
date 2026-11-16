@@ -56,11 +56,20 @@
  * do titular (`documentoNoIdioma`). Portugal, e quem não passa idioma, recebem o
  * pt-PT de sempre. O que vem de fora (marca, motivo, datas) entra pelas
  * `{marcas}`, escapado no HTML.
+ *
+ * ─── A recusa diz que o titular pode reclamar (U57) ─────────────────────────
+ *
+ * O art. 12.º, n.º 4 pede, na recusa, a possibilidade de reclamar à autoridade
+ * de controlo e de recorrer aos tribunais. A frase sai só nos países de
+ * `lib/lgpd/direito-de-reclamar.ts` (Bélgica e Turquia, decisão de 2026-11-15)
+ * e só com autoridade no perfil; Portugal fica byte a byte como estava. Também
+ * sem idioma: é exigência da lei, não da tradução.
  */
 import { NEUTROS_DE_SAIDA, type MarcaDeSaida } from "@/lib/branding/saida";
 import { sendEmail } from "@/lib/email/roteador";
 import type { Idioma } from "@/lib/i18n/idiomas";
 import { citacaoDaLei, type PerfilDoPais } from "@/lib/legal/perfil-do-pais";
+import { linhaDaReclamacaoNoEmail } from "@/lib/lgpd/direito-de-reclamar";
 import { EmailNotConfigured, EmailSendFailed } from "@/lib/lgpd/email-delivery";
 import { documentoNoIdioma, type DocumentoNoIdioma } from "@/lib/lgpd/idioma-do-documento";
 
@@ -219,6 +228,7 @@ function mensagem(
   // A frase do prazo só afirma cumprimento quando o cumprimento aconteceu.
   const dentro = dentroDoPrazoDeUmMes(aviso.recebidoEm, aviso.agora ?? new Date());
   const motivoNoHtml = escapeHtml(motivo ?? "");
+  const reclamacao = linhaDaReclamacaoNoEmail(aviso.perfil, aviso.idioma);
 
   const linhas: Record<DesfechoDoPedido, { subject: string; bloco: string[] }> = {
     apagamento: {
@@ -237,6 +247,7 @@ function mensagem(
         `  <p>${t("O seu pedido de dados pessoais, recebido em {recebido}, <strong>não foi atendido</strong> por <strong>{empresa}</strong>.", { recebido: recebidoFmt, empresa: orgName })}</p>`,
         `  <p>${t("<strong>Motivo:</strong> {motivo}", { motivo: motivoNoHtml })}</p>`,
         `  <p>${t("Este aviso segue o prazo de um mês a contar do recebimento (até {prazo}), como a lei exige para a recusa.", { prazo: prazoFmt })}</p>`,
+        ...(reclamacao ? [`  <p>${escapeHtml(reclamacao)}</p>`] : []),
       ],
     },
     prorrogacao: {
@@ -278,6 +289,7 @@ function textoPuro(
 ): string {
   const { t } = d;
   const prazoFmt = dataComFuso(aviso.prazoDeUmMes, aviso.fuso, d.etiqueta);
+  const reclamacao = linhaDaReclamacaoNoEmail(aviso.perfil, aviso.idioma);
   const cabecalho = t("Pedido #{pedido} de dados pessoais, tratado por {empresa}.", { pedido: shortId, empresa: marca });
   const corpo: Record<DesfechoDoPedido, string[]> = {
     apagamento: [
@@ -289,6 +301,7 @@ function textoPuro(
     recusa: [
       t("O seu pedido NÃO foi atendido. Motivo: {motivo}", { motivo: motivo ?? "" }),
       t("Aviso enviado dentro do prazo de um mês a contar do recebimento (até {prazo}).", { prazo: prazoFmt }),
+      ...(reclamacao ? [reclamacao] : []),
     ],
     prorrogacao: [
       t("O seu pedido continua em tratamento e foi prorrogado. Motivo: {motivo}", { motivo: motivo ?? "" }),
