@@ -45,7 +45,27 @@ const SO_REDIRECIONAM = [
   "app/app/settings/tenant/whatsapp/page.tsx", // → Conexões
 ];
 
-const DECLARA_TITULO = /^export (const generateMetadata\b|async function generateMetadata\b|function generateMetadata\b|const metadata\b)/m;
+/**
+ * Telas de detalhe que herdam o nome da SEÇÃO de um layout acima da pasta
+ * delas (U43, regra: detalhe leva título fixo de seção, sem ler o banco).
+ * Lista FECHADA: fora dela, o título tem de vir da própria página ou de um
+ * layout na MESMA pasta. Sem isso, uma tela nova que o projeto de origem
+ * trouxesse para dentro de um hub (ex.: `settings/tenant/<nova>`) herdaria o
+ * nome do hub ("Organização") e este teste ficaria verde com o nome errado.
+ */
+const HERDAM_DA_SECAO: Record<string, string> = {
+  "app/app/ai/agents/new/page.tsx": "app/app/ai/agents/layout.tsx",
+  "app/app/ai/agents/[id]/page.tsx": "app/app/ai/agents/layout.tsx",
+  "app/app/ai/followups/[id]/page.tsx": "app/app/ai/followups/layout.tsx",
+  "app/app/ai/followups/enrollments/[id]/page.tsx": "app/app/ai/followups/layout.tsx",
+  "app/app/ai/knowledge/sources/[id]/page.tsx": "app/app/ai/knowledge/sources/layout.tsx",
+  "app/app/ai/routers/[id]/page.tsx": "app/app/ai/routers/layout.tsx",
+  "app/app/lgpd/requests/[id]/page.tsx": "app/app/lgpd/requests/layout.tsx",
+  "app/app/webhooks/automacoes/[id]/page.tsx": "app/app/webhooks/automacoes/layout.tsx",
+};
+
+const DECLARA_TITULO =
+  /^export (const generateMetadata\b|async function generateMetadata\b|function generateMetadata\b|const metadata\b)/m;
 
 function ler(rel: string): string {
   return readFileSync(path.join(RAIZ_DO_REPO, rel), "utf8");
@@ -61,7 +81,8 @@ function origemDoTitulo(pagina: string): string | null {
   let dir = path.posix.dirname(pagina);
   while (dir !== RAIZ_DO_APP && dir.startsWith(`${RAIZ_DO_APP}/`)) {
     const layout = `${dir}/layout.tsx`;
-    if (existsSync(path.join(RAIZ_DO_REPO, layout)) && DECLARA_TITULO.test(ler(layout))) return layout;
+    if (existsSync(path.join(RAIZ_DO_REPO, layout)) && DECLARA_TITULO.test(ler(layout)))
+      return layout;
     dir = path.posix.dirname(dir);
   }
   return null;
@@ -70,33 +91,53 @@ function origemDoTitulo(pagina: string): string | null {
 describe("toda tela do app tem título na aba", () => {
   it("a varredura enxerga as páginas — o verde abaixo não é vacuidade", () => {
     expect(paginas.length).toBeGreaterThan(100);
-    expect(paginas).toEqual(expect.arrayContaining(["app/app/crm/page.tsx", "app/app/ai/agents/page.tsx"]));
+    expect(paginas).toEqual(
+      expect.arrayContaining(["app/app/crm/page.tsx", "app/app/ai/agents/page.tsx"]),
+    );
   });
 
   it("a lista das que só redirecionam existe e não declara título", () => {
     for (const pagina of SO_REDIRECIONAM) {
       expect(paginas, `${pagina} sumiu: tire-a de SO_REDIRECIONAM`).toContain(pagina);
       const fonte = ler(pagina);
-      expect(fonte, `${pagina} não chama redirect(): não é só redirecionamento`).toMatch(/\bredirect\(/);
-      // Só redireciona = não devolve JSX nenhum.
-      expect(fonte, `${pagina} renderiza JSX: tire-a de SO_REDIRECIONAM e dê um título a ela`).not.toMatch(
-        /return\s*\(?\s*</,
+      expect(fonte, `${pagina} não chama redirect(): não é só redirecionamento`).toMatch(
+        /\bredirect\(/,
       );
+      // Só redireciona = não devolve JSX nenhum.
+      expect(
+        fonte,
+        `${pagina} renderiza JSX: tire-a de SO_REDIRECIONAM e dê um título a ela`,
+      ).not.toMatch(/return\s*\(?\s*</);
     }
   });
 
+  it("o título vem da própria página, do layout da mesma pasta, ou da seção declarada em HERDAM_DA_SECAO", () => {
+    const fora = paginas
+      .filter((p) => !SO_REDIRECIONAM.includes(p))
+      .map((p) => ({ p, origem: origemDoTitulo(p) }))
+      .filter(({ p, origem }) => origem !== null && origem !== p)
+      .filter(
+        ({ p, origem }) =>
+          origem !== `${path.posix.dirname(p)}/layout.tsx` && HERDAM_DA_SECAO[p] !== origem,
+      )
+      .map(({ p, origem }) => `${p} ← ${origem}`);
+    expect(fora, "tela que herda o nome de outra seção: dê a ela o próprio título").toEqual([]);
+  });
+
   it("toda página que renderiza tem título, dela mesma ou de um layout acima", () => {
-    const semTitulo = paginas.filter((p) => !SO_REDIRECIONAM.includes(p)).filter((p) => origemDoTitulo(p) === null);
+    const semTitulo = paginas
+      .filter((p) => !SO_REDIRECIONAM.includes(p))
+      .filter((p) => origemDoTitulo(p) === null);
     expect(
       semTitulo,
       `${semTitulo.length} tela(s) sem título — a aba mostra o título padrão. Use ` +
-        "`export const generateMetadata = tituloDaAba((t) => t(\"<nome do menu>\"))` na página ou num layout só de título",
+        '`export const generateMetadata = tituloDaAba((t) => t("<nome do menu>"))` na página ou num layout só de título',
     ).toEqual([]);
   });
 });
 
 describe("layout só de título", () => {
-  const deTitulo = layouts.filter((rel) => /\btituloDaAba\(/.test(ler(rel)));
+  const deTitulo = layouts.filter((rel) => /\btitulo(DaAba|DoSegmento)\(/.test(ler(rel)));
 
   it("a varredura enxerga os layouts de título", () => {
     expect(deTitulo).toEqual(expect.arrayContaining(["app/app/ai/agents/layout.tsx"]));
@@ -112,5 +153,18 @@ describe("layout só de título", () => {
       );
     });
     expect(fora).toEqual([]);
+  });
+
+  it("não declara configuração de segmento (dynamic, revalidate, runtime…), que mudaria a renderização", () => {
+    const CONFIG =
+      /^export const (dynamic|dynamicParams|revalidate|fetchCache|runtime|preferredRegion|maxDuration|experimental_ppr)\b/m;
+    expect(deTitulo.filter((rel) => CONFIG.test(ler(rel)))).toEqual([]);
+  });
+
+  it("usa tituloDoSegmento, que repassa o modelo '%s · <marca>' às telas de baixo", () => {
+    // Um `title` em texto puro num layout zera o modelo do layout raiz para os
+    // segmentos de baixo (Next: resolve-metadata, `titleTemplates` vira null):
+    // "Aviso de agendamento · <marca>" virava "Aviso de agendamento".
+    expect(deTitulo.filter((rel) => !/\btituloDoSegmento\(/.test(ler(rel)))).toEqual([]);
   });
 });

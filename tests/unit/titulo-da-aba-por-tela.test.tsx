@@ -7,6 +7,7 @@
  * turco, holandês e francês, com o texto exato — o mesmo nome que o menu dá
  * à tela.
  */
+import type { ResolvingMetadata } from "next";
 import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -30,22 +31,37 @@ beforeEach(() => {
   mocks.idiomaDoVisitante.mockReset();
 });
 
-type Gerador = () => Promise<{ title?: unknown }>;
+type Gerador = (props: unknown, parent: ResolvingMetadata) => Promise<{ title?: unknown }>;
+
+/** O que o Next entrega ao layout como `parent`: o título já resolvido acima, com o modelo da marca. */
+const PAI = () =>
+  Promise.resolve({
+    title: { absolute: "Marca — padrão", template: "%s · Marca" },
+  }) as unknown as ResolvingMetadata;
 
 const CASOS: ReadonlyArray<{
   tela: string;
   carregar: () => Promise<{ generateMetadata: Gerador }>;
   esperado: Record<"pt-BR" | "tr" | "nl" | "fr", string>;
+  /** Layout: o título leva junto o modelo do pai, para as telas de baixo. */
+  layout?: true;
 }> = [
   {
     tela: "Agentes (layout só de título em app/app/ai/agents)",
     carregar: () => import("@/app/app/ai/agents/layout"),
+    layout: true,
     esperado: { "pt-BR": "Agentes", tr: "Asistanlar", nl: "Assistenten", fr: "Assistants" },
   },
   {
     tela: "Plano e cobrança (layout só de título em app/app/settings/billing)",
     carregar: () => import("@/app/app/settings/billing/layout"),
-    esperado: { "pt-BR": "Plano e cobrança", tr: "Plan ve ödeme", nl: "Plan en facturatie", fr: "Formule et facturation" },
+    layout: true,
+    esperado: {
+      "pt-BR": "Plano e cobrança",
+      tr: "Plan ve ödeme",
+      nl: "Plan en facturatie",
+      fr: "Formule et facturation",
+    },
   },
   {
     tela: "Empresas (linha na própria página, app/app/companies)",
@@ -60,7 +76,10 @@ describe("o título da aba de cada tela", () => {
       it(`${caso.tela} — ${idioma}`, async () => {
         mocks.loadAuthUser.mockResolvedValue({ idioma });
         const { generateMetadata } = await caso.carregar();
-        expect(await generateMetadata()).toEqual({ title: caso.esperado[idioma] });
+        const titulo = caso.esperado[idioma];
+        expect(await generateMetadata({}, PAI())).toEqual(
+          caso.layout ? { title: { default: titulo, template: "%s · Marca" } } : { title: titulo },
+        );
       });
     }
   }
