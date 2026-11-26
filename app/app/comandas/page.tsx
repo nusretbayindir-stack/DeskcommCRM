@@ -7,6 +7,9 @@ import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
 
 import { Comandas } from "./_client";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
+
+export const generateMetadata = tituloDaAba((t) => t("Comandas"));
 
 export const dynamic = "force-dynamic";
 
