@@ -561,7 +561,7 @@ describe("a cascata alcança as fichas absorvidas", () => {
 describe("o bloco de dados alcança o que ficou para trás", () => {
   it("baseline e migration trazem o mesmo bloco", () => {
     expect(blocoDeDados("baseline.sql")).toBe(
-      blocoDeDados("migrations/20261107120001_9243_anonimizar_alcanca_fichas_fundidas.sql"),
+      blocoDeDados("migrations/20261111031952_9243_anonimizar_alcanca_fichas_fundidas.sql"),
     );
   });
 
@@ -569,7 +569,7 @@ describe("o bloco de dados alcança o que ficou para trás", () => {
     const INICIO = "-- Põe um arquivo na fila de remoção.";
     const baseline = readFileSync(join(process.cwd(), "supabase", "baseline.sql"), "utf8");
     const migration = readFileSync(
-      join(process.cwd(), "supabase", "migrations", "20261107120001_9243_anonimizar_alcanca_fichas_fundidas.sql"),
+      join(process.cwd(), "supabase", "migrations", "20261111031952_9243_anonimizar_alcanca_fichas_fundidas.sql"),
       "utf8",
     );
     const noBaseline = baseline.slice(baseline.indexOf(INICIO), baseline.indexOf("-- ---- VARREDURA anon:"));
