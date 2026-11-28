@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 import type { FollowupFlowPointerRow } from "@/hooks/followup/useFollowupFlows";
 import { FlowsList } from "../followups/_components/FlowsList";
 import { ComoUsar } from "./_components/ComoUsar";
+import { tituloDaAba } from "@/lib/i18n/titulo-da-aba";
+
+export const generateMetadata = tituloDaAba((t) => t("Fluxos de atendimento"));
 
 export const dynamic = "force-dynamic";
 

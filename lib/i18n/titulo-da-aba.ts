@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 
 import { loadAuthUser } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -42,4 +42,27 @@ export async function tradutorDaRequisicao(): Promise<(texto: string) => string>
  */
 export function tituloDaAba(titulo: (t: (texto: string) => string) => string): () => Promise<Metadata> {
   return async () => ({ title: titulo(await tradutorDaRequisicao()) });
+}
+
+/**
+ * O `generateMetadata` de um LAYOUT só de título (U43, fork):
+ *
+ *   export const generateMetadata = tituloDoSegmento((t) => t("Agentes"));
+ *
+ * Num layout, `title: "Agentes"` em texto puro sai certo na própria tela
+ * ("Agentes · <marca>"), mas ZERA o modelo `%s · <marca>` do layout raiz para
+ * os segmentos de baixo — o Next só repassa adiante o `template` do último
+ * segmento que tinha um. Medido com `accumulateMetadata` do Next 16.4: com o
+ * layout da Agenda em texto puro, a tela "Aviso de agendamento" perdia a marca.
+ * Por isso o layout devolve o modelo que recebeu do `parent`, intacto.
+ */
+export function tituloDoSegmento(
+  titulo: (t: (texto: string) => string) => string,
+): (props: unknown, parent: ResolvingMetadata) => Promise<Metadata> {
+  return async (_props, parent) => {
+    const [t, acima] = await Promise.all([tradutorDaRequisicao(), parent]);
+    const nome = titulo(t);
+    const modelo = acima.title?.template;
+    return { title: modelo ? { default: nome, template: modelo } : nome };
+  };
 }
