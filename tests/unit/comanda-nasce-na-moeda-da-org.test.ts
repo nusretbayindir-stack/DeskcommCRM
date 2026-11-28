@@ -130,7 +130,18 @@ function montarMundo(opts: MundoOpts = {}) {
         : { data: null, error: null };
     cadeia.single = async () => ({ data: null, error: null });
     cadeia.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
-      Promise.resolve({ data: tabela === "calendar_appointments" ? AGENDAMENTOS : [], error: null }).then(
+      Promise.resolve({
+        data:
+          tabela === "calendar_appointments"
+            ? AGENDAMENTOS
+            : // O faturar-lote confere o CONTATO de cada atendimento contra a
+              // empresa ativa (#4845): o dublê serve o contato da própria
+              // empresa, como o banco serviria.
+              tabela === "contacts"
+              ? [{ id: CONTACT }]
+              : [],
+        error: null,
+      }).then(
         resolve,
         reject,
       );

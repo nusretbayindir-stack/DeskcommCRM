@@ -4,6 +4,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MODELOS_BASE } from "@/lib/propostas/modelos/catalogo-base";
 
+// A imagem do item de catálogo agora também passa pela checagem do endereço
+// RESOLVIDO (`assertDestinoResolvidoSeguro`, que falha fechado quando o nome não
+// resolve). Sem dublê, o veredito dependeria do DNS da máquina — e o host de
+// fixture (`cdn`) não resolve em lugar nenhum. O dublê fixa o resolvedor na
+// borda (`node:dns/promises`); a checagem real continua sendo exercitada.
+const dns = vi.hoisted(() => ({ porHost: new Map<string, string[]>() }));
+
+vi.mock("node:dns/promises", () => {
+  // Função comum (não `vi.fn`): o `vi.resetAllMocks()` do `beforeEach` não
+  // pode apagar a implementação.
+  const lookup = async (hostname: string) => {
+    const enderecos = dns.porHost.get(hostname);
+    if (!enderecos) throw Object.assign(new Error(`getaddrinfo ENOTFOUND ${hostname}`), { code: "ENOTFOUND" });
+    return enderecos.map((address) => ({ address, family: address.includes(":") ? 6 : 4 }));
+  };
+  return { lookup, default: { lookup } };
+});
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mocks: Record<string, any> = vi.hoisted(() => ({
   requireRole: vi.fn(),
@@ -498,6 +516,11 @@ function montarMundoDeEnvio(opts: MundoOpts = {}) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  // Os hosts que as fixtures usam como "imagem pública válida" resolvem para
+  // um IP público fixo.
+  dns.porHost.clear();
+  dns.porHost.set("cdn", ["8.8.8.8"]);
+  dns.porHost.set("cdn.exemplo.com", ["8.8.8.8"]);
 });
 
 describe("POST /api/v1/proposals/[id]/send", () => {
